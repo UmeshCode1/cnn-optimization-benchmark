@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  benchmark-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_PATH=/app/data/benchmark.db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

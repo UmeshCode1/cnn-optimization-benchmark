@@ -1,0 +1,156 @@
+import {
+  Experiment,
+  RankedAlgorithm,
+  AlgorithmStats,
+  ParetoPoint,
+  AblationRecord,
+  AlgorithmMeta,
+  HardwareProfile,
+} from '../types';
+
+const API_BASE = '/api';
+
+export const api = {
+  // Experiments
+  async listExperiments(dataset?: string, model?: string, status?: string): Promise<Experiment[]> {
+    const params = new URLSearchParams();
+    if (dataset) params.append('dataset', dataset);
+    if (model) params.append('model', model);
+    if (status) params.append('status', status);
+    const res = await fetch(`${API_BASE}/experiments?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch experiments');
+    return res.json();
+  },
+
+  async getExperimentDetails(expId: string): Promise<{
+    experiment: Experiment;
+    runs: any[];
+    statistics_by_algorithm: Record<string, AlgorithmStats>;
+    ranked_algorithms: RankedAlgorithm[];
+    pareto_points: ParetoPoint[];
+    ablations: AblationRecord[];
+  }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}`);
+    if (!res.ok) throw new Error(`Failed to fetch experiment details: ${expId}`);
+    return res.json();
+  },
+
+  async validateFairness(config: any): Promise<{
+    is_valid: boolean;
+    status: string;
+    message: string;
+    guarantees: { property: string; value: string; status: string; description: string }[];
+    warnings: string[];
+  }> {
+    const res = await fetch(`${API_BASE}/experiments/validate-fairness`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (!res.ok) throw new Error('Fairness validation request failed');
+    return res.json();
+  },
+
+  async createExperiment(config: any, autoRun: boolean = true): Promise<Experiment> {
+    const res = await fetch(`${API_BASE}/experiments?auto_run=${autoRun}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to create experiment');
+    }
+    return res.json();
+  },
+
+  async runExperiment(expId: string): Promise<{ status: string; experiment_id: string }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/run`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to start benchmark');
+    return res.json();
+  },
+
+  async cloneExperiment(expId: string): Promise<Experiment> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/clone`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to clone experiment');
+    return res.json();
+  },
+
+  async recalculateWeights(
+    expId: string,
+    weights: { weight_accuracy: number; weight_latency: number; weight_model_size: number; weight_energy: number },
+    statMode: string = 'MEAN'
+  ): Promise<{ ranked_algorithms: RankedAlgorithm[]; winner_info: any }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/recalculate-weights?stat_mode=${statMode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(weights),
+    });
+    if (!res.ok) throw new Error('Failed to recalculate objective weights');
+    return res.json();
+  },
+
+  async compareSelected(
+    expId: string,
+    algorithmAcronyms: string[],
+    statMode: string = 'MEAN'
+  ): Promise<{
+    ranked_algorithms: RankedAlgorithm[];
+    statistics_by_algorithm: Record<string, AlgorithmStats>;
+    pareto_points: ParetoPoint[];
+    runs: any[];
+  }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/compare-selected`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ algorithm_acronyms: algorithmAcronyms, stat_mode: statMode }),
+    });
+    if (!res.ok) throw new Error('Failed to compare selected algorithms');
+    return res.json();
+  },
+
+  // Algorithms
+  async getAlgorithms(): Promise<AlgorithmMeta[]> {
+    const res = await fetch(`${API_BASE}/algorithms`);
+    if (!res.ok) throw new Error('Failed to fetch algorithm catalog');
+    return res.json();
+  },
+
+  // Hardware
+  async getHardwareProfile(): Promise<HardwareProfile> {
+    const res = await fetch(`${API_BASE}/hardware`);
+    if (!res.ok) throw new Error('Failed to fetch hardware telemetry');
+    return res.json();
+  },
+
+  // Ablation
+  async getAblationStudy(expId: string): Promise<{ experiment_id: string; stages: AblationRecord[] }> {
+    const res = await fetch(`${API_BASE}/ablation/${expId}`);
+    if (!res.ok) throw new Error('Failed to fetch ablation study');
+    return res.json();
+  },
+
+  // Reports
+  getExportUrl(expId: string, format: 'csv' | 'markdown' | 'json'): string {
+    return `${API_BASE}/reports/${expId}/${format}`;
+  },
+
+  // WebSocket
+  createProgressWebSocket(expId: string, onMessage: (data: any) => void): WebSocket {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = `${protocol}//${host}/ws/experiment/${expId}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        onMessage(data);
+      } catch (err) {
+        console.error('Failed to parse WebSocket message:', err);
+      }
+    };
+
+    return ws;
+  },
+};

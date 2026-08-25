@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.venv/
+env/
+venv/
+
+# Large Datasets and Weights
+datasets/
+checkpoints/
+*.pth
+*.pt
+*.onnx
+*.bin
