@@ -5,14 +5,12 @@ import {
   PlayCircle,
   Cpu,
   Layers,
-  Sparkles,
   ShieldCheck,
   RotateCcw,
   Sliders,
   Database,
   ArrowRight,
   ArrowLeft,
-  Upload,
   Plus,
 } from 'lucide-react';
 import { HardwareProfile, DatasetInfo, CNNModelInfo, AlgorithmMeta } from '../../types';
@@ -50,6 +48,12 @@ const DEFAULT_ALGORITHMS: AlgorithmMeta[] = [
   { key: 'MGO', name: 'Mountain Gazelle Optimizer', acronym: 'MGO', year: 2022, authors: 'Abdollahzadeh et al.', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
   { key: 'GMO', name: 'Geometric Mean Optimizer', acronym: 'GMO', year: 2023, authors: 'Mirrashid et al.', category: 'Mathematical', description: '', strengths: [], status: 'VERIFIED' },
 ];
+
+interface NewBenchmarkWizardProps {
+  hardware?: HardwareProfile;
+  onSubmitBenchmark: (config: any) => void;
+  onCancel: () => void;
+}
 
 export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
   hardware,
@@ -221,31 +225,37 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
     formData.weight_energy;
   const isWeightValid = Math.abs(totalWeight - 1.0) < 0.01;
 
+  const wizardSteps = [
+    { num: 1, label: '1. Dataset' },
+    { num: 2, label: '2. CNN Architecture' },
+    { num: 3, label: '3. Quantization' },
+    { num: 4, label: '4. Pruning' },
+    { num: 5, label: '5. Optimizers' },
+    { num: 6, label: '6. Protocol & Weights' },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Wizard Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-color)] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-3">
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-            <PlayCircle className="w-5 h-5 text-blue-500" />
-            CREATE NEW CNN BENCHMARK EXPERIMENT
-          </h2>
-          <p className="text-xs text-[var(--text-muted)]">
-            Configure identical dataset, model, and experimental constraints to compare metaheuristics under fair conditions.
+          <h2 className="ws-page-title">Configure Benchmark Experiment</h2>
+          <p className="text-xs text-[var(--text-secondary)] mt-1">
+            Specify standardized dataset, CNN architecture, compression parameters, and optimizer search budgets.
           </p>
         </div>
 
         {/* Preset Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-[var(--text-muted)]">Preset:</span>
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <span className="text-[var(--text-muted)] mr-1">Preset:</span>
           {['QUICK_TEST', 'STANDARD', 'RESEARCH'].map((p) => (
             <button
               key={p}
               onClick={() => applyPreset(p)}
-              className={`px-2.5 py-1 rounded-md text-xs font-mono font-semibold transition border ${
+              className={`px-2.5 py-1 rounded transition border ${
                 formData.preset === p
-                  ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
-                  : 'lab-card text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--surface-elevated)] border-[var(--accent)] text-[var(--accent)] font-semibold'
+                  : 'bg-[var(--surface-secondary)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               {p.replace('_', ' ')}
@@ -258,44 +268,48 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Step Wizard */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Step Breadcrumb Bar */}
-          <div className="flex items-center justify-between lab-card p-1.5 rounded-lg overflow-x-auto text-xs font-mono">
-            {[
-              { num: 1, label: '1. Dataset' },
-              { num: 2, label: '2. CNN Model' },
-              { num: 3, label: '3. Quantization' },
-              { num: 4, label: '4. Pruning' },
-              { num: 5, label: '5. Algorithms' },
-              { num: 6, label: '6. Evaluation' },
-            ].map((s) => (
-              <button
-                key={s.num}
-                onClick={() => setStep(s.num)}
-                className={`px-3 py-1.5 rounded-md transition whitespace-nowrap ${
-                  step === s.num
-                    ? 'bg-blue-600 text-white font-bold shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
+          {/* Step Progress Bar */}
+          <div className="flex items-center justify-between ws-panel p-1.5 overflow-x-auto text-xs font-mono">
+            {wizardSteps.map((s) => {
+              const isCurrent = step === s.num;
+              const isCompleted = step > s.num;
+
+              return (
+                <button
+                  key={s.num}
+                  onClick={() => setStep(s.num)}
+                  className={`px-3 py-1.5 rounded transition whitespace-nowrap flex items-center gap-1.5 ${
+                    isCurrent
+                      ? 'bg-[var(--accent)] text-white font-semibold'
+                      : isCompleted
+                      ? 'text-[var(--success)] hover:bg-[var(--surface-secondary)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {isCompleted && <CheckCircle2 className="w-3 h-3 text-[var(--success)]" />}
+                  <span>{s.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Step 1: Dataset */}
+          {/* Step 1: Dataset Selection */}
           {step === 1 && (
-            <div className="lab-card p-5 space-y-4">
+            <div className="ws-panel p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                  Step 1: Dataset Selection
-                </h3>
+                <div>
+                  <h3 className="ws-section-title">Step 1: Benchmark Dataset Selection</h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                    Select standardized computer vision benchmark or custom image dataset.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsDatasetModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs font-semibold border border-indigo-500/30 transition"
+                  className="flex items-center gap-1 px-2.5 py-1 ws-button-secondary text-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Upload Custom Dataset</span>
+                  <span>Upload Dataset</span>
                 </button>
               </div>
 
@@ -311,73 +325,76 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                         input_resolution: d.resolution,
                       })
                     }
-                    className={`p-3.5 rounded-lg border cursor-pointer transition flex flex-col justify-between ${
+                    className={`p-3.5 rounded border cursor-pointer transition flex flex-col justify-between ${
                       formData.dataset_name === d.name
-                        ? 'bg-blue-600/15 border-blue-500 text-[var(--text-primary)] shadow-sm'
-                        : 'lab-card hover:border-slate-600'
+                        ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
+                        : 'ws-panel text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-[var(--text-primary)]">{d.name}</span>
+                        <span className="font-semibold text-xs text-[var(--text-primary)] font-sans">{d.name}</span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
+                          className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
                             d.is_custom
-                              ? 'bg-purple-900/50 text-purple-300 border border-purple-600/40'
-                              : 'bg-[var(--bg-surface)] text-[var(--text-muted)]'
+                              ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
+                              : 'bg-[var(--surface-secondary)] text-[var(--text-muted)]'
                           }`}
                         >
-                          {d.is_custom ? 'CUSTOM' : `${d.classes_count} CLS`}
+                          {d.is_custom ? 'CUSTOM' : `${d.classes_count} Classes`}
                         </span>
                       </div>
-                      <div className="text-xs text-[var(--text-muted)] mt-1">
+                      <div className="text-[11px] font-mono text-[var(--text-muted)] mt-1">
                         {d.train_samples.toLocaleString()} train &bull; {d.test_samples.toLocaleString()} test
                       </div>
                     </div>
-                    <div className="text-[11px] font-mono text-cyan-400 mt-2">
+                    <div className="text-[11px] font-mono text-[var(--accent)] mt-2">
                       Resolution: {d.resolution}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[var(--border)]">
                 <div>
-                  <label className="text-xs font-mono text-[var(--text-muted)] block mb-1">Batch Size:</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Batch Size:</label>
                   <input
                     type="number"
                     value={formData.batch_size}
                     onChange={(e) => setFormData({ ...formData, batch_size: parseInt(e.target.value) || 128 })}
-                    className="w-full lab-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full ws-input p-2 text-xs font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-mono text-[var(--text-muted)] block mb-1">Input Resolution:</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Input Resolution:</label>
                   <input
                     type="text"
                     value={formData.input_resolution}
                     onChange={(e) => setFormData({ ...formData, input_resolution: e.target.value })}
-                    className="w-full lab-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full ws-input p-2 text-xs font-mono"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 2: CNN Model */}
+          {/* Step 2: Target CNN Model */}
           {step === 2 && (
-            <div className="lab-card p-5 space-y-4">
+            <div className="ws-panel p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                  Step 2: Target CNN Model
-                </h3>
+                <div>
+                  <h3 className="ws-section-title">Step 2: Target CNN Architecture</h3>
+                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
+                    Select standard convolutional neural network baseline or register custom model.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsModelModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-xs font-semibold border border-blue-500/30 transition"
+                  className="flex items-center gap-1 px-2.5 py-1 ws-button-secondary text-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Register Custom Model</span>
+                  <span>Register Model</span>
                 </button>
               </div>
 
@@ -386,24 +403,24 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                   <div
                     key={m.id || m.name}
                     onClick={() => setFormData({ ...formData, cnn_model_name: m.name })}
-                    className={`p-3.5 rounded-lg border cursor-pointer transition ${
+                    className={`p-3.5 rounded border cursor-pointer transition ${
                       formData.cnn_model_name === m.name
-                        ? 'bg-blue-600/15 border-blue-500 text-[var(--text-primary)] shadow-sm'
-                        : 'lab-card hover:border-slate-600'
+                        ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
+                        : 'ws-panel text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-[var(--text-primary)]">{m.name}</span>
+                      <span className="font-semibold text-xs text-[var(--text-primary)] font-sans">{m.name}</span>
                       {m.is_custom && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-300 border border-purple-600/40 font-mono">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-400 border border-purple-500/30 font-mono">
                           CUSTOM
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-[var(--text-muted)] mt-1">
-                      Params: {m.parameters_m}M &bull; FLOPs: {m.flops_m} MFLOPs
+                    <div className="text-[11px] font-mono text-[var(--text-muted)] mt-1">
+                      Params: {m.parameters_m}M &bull; FLOPs: {m.flops_m} M
                     </div>
-                    <div className="text-[11px] font-mono text-emerald-400 mt-1">
+                    <div className="text-[11px] font-mono text-[var(--success)] mt-1 font-medium">
                       Baseline Acc: {m.base_accuracy}%
                     </div>
                   </div>
@@ -414,8 +431,8 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
 
           {/* Step 3: Quantization */}
           {step === 3 && (
-            <div className="lab-card p-5 space-y-4">
-              <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Step 3: Quantization Protocol</h3>
+            <div className="ws-panel p-5 space-y-4">
+              <h3 className="ws-section-title">Step 3: Quantization Protocol</h3>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { type: 'FP32', desc: 'Full 32-bit floating point precision (no compression)', factor: '1.0x', bits: 32 },
@@ -426,15 +443,15 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                   <div
                     key={q.type}
                     onClick={() => setFormData({ ...formData, quantization_type: q.type })}
-                    className={`p-3.5 rounded-lg border cursor-pointer transition ${
+                    className={`p-3.5 rounded border cursor-pointer transition ${
                       formData.quantization_type === q.type
-                        ? 'bg-blue-600/15 border-blue-500 text-[var(--text-primary)] shadow-sm'
-                        : 'lab-card hover:border-slate-600'
+                        ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
+                        : 'ws-panel text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <div className="font-bold text-sm text-[var(--text-primary)]">{q.type}</div>
-                    <div className="text-xs text-[var(--text-muted)] mt-1">{q.desc}</div>
-                    <div className="text-[11px] font-mono text-cyan-400 mt-1">
+                    <div className="font-semibold text-xs text-[var(--text-primary)] font-mono">{q.type}</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-1 font-sans">{q.desc}</div>
+                    <div className="text-[11px] font-mono text-[var(--accent)] mt-2">
                       {q.bits}-bit &bull; Compression Factor: {q.factor}
                     </div>
                   </div>
@@ -445,34 +462,34 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
 
           {/* Step 4: Pruning */}
           {step === 4 && (
-            <div className="lab-card p-5 space-y-4">
-              <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Step 4: Pruning Configuration</h3>
+            <div className="ws-panel p-5 space-y-4">
+              <h3 className="ws-section-title">Step 4: Pruning Configuration</h3>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { type: 'STRUCTURED_CHANNEL', label: 'Structured Channel Pruning', desc: 'L1-norm channel removal (Direct hardware speedup)' },
+                  { type: 'STRUCTURED_CHANNEL', label: 'Structured Channel Pruning', desc: 'L1-norm channel removal for hardware speedup' },
                   { type: 'STRUCTURED_FILTER', label: 'Structured Filter Pruning', desc: '2D filter tensor dimension reduction' },
-                  { type: 'UNSTRUCTURED', label: 'Unstructured Magnitude Pruning', desc: 'Sparse zero weights (tensor shapes preserved)' },
-                  { type: 'NONE', label: 'No Pruning', desc: 'Preserves dense CNN parameters' },
+                  { type: 'UNSTRUCTURED', label: 'Unstructured Magnitude Pruning', desc: 'Sparse zero weights with preserved tensor shapes' },
+                  { type: 'NONE', label: 'No Pruning', desc: 'Preserves full dense CNN parameter matrices' },
                 ].map((p) => (
                   <div
                     key={p.type}
                     onClick={() => setFormData({ ...formData, pruning_method: p.type })}
-                    className={`p-3.5 rounded-lg border cursor-pointer transition ${
+                    className={`p-3.5 rounded border cursor-pointer transition ${
                       formData.pruning_method === p.type
-                        ? 'bg-blue-600/15 border-blue-500 text-[var(--text-primary)] shadow-sm'
-                        : 'lab-card hover:border-slate-600'
+                        ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
+                        : 'ws-panel text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <div className="font-bold text-sm text-[var(--text-primary)]">{p.label}</div>
-                    <div className="text-xs text-[var(--text-muted)] mt-1">{p.desc}</div>
+                    <div className="font-semibold text-xs text-[var(--text-primary)] font-sans">{p.label}</div>
+                    <div className="text-xs text-[var(--text-muted)] mt-1 font-sans">{p.desc}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-3 border-t border-[var(--border-color)]">
-                <div className="flex justify-between text-xs font-mono text-[var(--text-secondary)] mb-1">
-                  <span>Pruning Sparsity Ratio:</span>
-                  <span className="font-bold text-blue-500">{(formData.pruning_ratio * 100).toFixed(0)}%</span>
+              <div className="pt-3 border-t border-[var(--border)]">
+                <div className="flex justify-between text-xs font-mono text-[var(--text-secondary)] mb-1.5">
+                  <span>Target Pruning Sparsity Ratio:</span>
+                  <span className="font-bold text-[var(--accent)]">{(formData.pruning_ratio * 100).toFixed(0)}%</span>
                 </div>
                 <input
                   type="range"
@@ -481,27 +498,27 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                   step="0.05"
                   value={formData.pruning_ratio}
                   onChange={(e) => setFormData({ ...formData, pruning_ratio: parseFloat(e.target.value) })}
-                  className="w-full accent-blue-600 cursor-pointer"
+                  className="w-full accent-[var(--accent)] cursor-pointer"
                 />
               </div>
             </div>
           )}
 
-          {/* Step 5: Algorithms */}
+          {/* Step 5: Optimizers */}
           {step === 5 && (
-            <div className="lab-card p-5 space-y-4">
+            <div className="ws-panel p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                  Step 5: Select Optimizers ({formData.selected_algorithms.length}/{algorithms.length} Selected)
+                <h3 className="ws-section-title">
+                  Step 5: Select Optimization Algorithms ({formData.selected_algorithms.length}/{algorithms.length})
                 </h3>
-                <div className="flex items-center gap-3 text-xs">
-                  <button onClick={handleSelectAllAlgs} className="text-blue-500 hover:underline">Select All</button>
-                  <span className="text-slate-600">&bull;</span>
-                  <button onClick={handleClearAllAlgs} className="text-[var(--text-muted)] hover:underline">Clear All</button>
-                  <span className="text-slate-600">&bull;</span>
+                <div className="flex items-center gap-3 text-xs font-mono">
+                  <button onClick={handleSelectAllAlgs} className="text-[var(--accent)] hover:underline">Select All</button>
+                  <span className="text-[var(--text-muted)]">&bull;</span>
+                  <button onClick={handleClearAllAlgs} className="text-[var(--text-muted)] hover:underline">Clear</button>
+                  <span className="text-[var(--text-muted)]">&bull;</span>
                   <button
                     onClick={() => setIsAlgorithmModalOpen(true)}
-                    className="text-emerald-500 font-semibold hover:underline flex items-center gap-1"
+                    className="text-[var(--success)] hover:underline flex items-center gap-0.5"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add Custom</span>
@@ -516,22 +533,22 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                     <div
                       key={alg.key}
                       onClick={() => toggleAlgorithm(alg.key)}
-                      className={`p-2.5 rounded-lg border cursor-pointer transition select-none flex flex-col justify-between ${
+                      className={`p-2.5 rounded border cursor-pointer transition select-none flex flex-col justify-between ${
                         isChecked
-                          ? 'bg-blue-600/15 border-blue-500 text-[var(--text-primary)] shadow-sm'
-                          : 'lab-card opacity-70 hover:opacity-100 hover:border-slate-600'
+                          ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
+                          : 'ws-panel opacity-70 hover:opacity-100'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold font-mono text-sm">{alg.key}</span>
+                        <span className="font-semibold font-mono text-xs text-[var(--text-primary)]">{alg.key}</span>
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          className="rounded text-blue-600"
+                          className="rounded accent-[var(--accent)]"
                         />
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] leading-tight mt-1">{alg.name}</div>
+                      <div className="text-[10px] text-[var(--text-muted)] leading-tight mt-1 font-sans">{alg.name}</div>
                     </div>
                   );
                 })}
@@ -539,65 +556,63 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
             </div>
           )}
 
-          {/* Step 6: Evaluation & Weights */}
+          {/* Step 6: Protocol & Weights */}
           {step === 6 && (
-            <div className="lab-card p-5 space-y-4">
-              <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-                Step 6: Evaluation &amp; Multi-Objective Weights
-              </h3>
+            <div className="ws-panel p-5 space-y-4">
+              <h3 className="ws-section-title">Step 6: Evaluation Protocol &amp; Multi-Objective Weights</h3>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-mono text-[var(--text-muted)] block mb-1">Repetitions (Runs):</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Repetitions (Runs):</label>
                   <select
                     value={formData.number_of_runs}
                     onChange={(e) => setFormData({ ...formData, number_of_runs: parseInt(e.target.value) || 5 })}
-                    className="w-full lab-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full ws-input p-2 text-xs font-mono"
                   >
                     <option value="1">1 Run (Fast Preview)</option>
                     <option value="3">3 Runs (Standard)</option>
                     <option value="5">5 Runs (Statistical)</option>
-                    <option value="10">10 Runs (Rigorous)</option>
+                    <option value="10">10 Runs (Rigorous Research)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-mono text-[var(--text-muted)] block mb-1">Population &bull; Max Iter:</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Population &bull; Iterations:</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
                       value={formData.population_size}
                       onChange={(e) => setFormData({ ...formData, population_size: parseInt(e.target.value) || 20 })}
-                      className="lab-input rounded-lg p-2 text-xs font-mono"
+                      className="ws-input p-2 text-xs font-mono"
                     />
                     <input
                       type="number"
                       value={formData.max_iterations}
                       onChange={(e) => setFormData({ ...formData, max_iterations: parseInt(e.target.value) || 30 })}
-                      className="lab-input rounded-lg p-2 text-xs font-mono"
+                      className="ws-input p-2 text-xs font-mono"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Weight Sliders */}
-              <div className="space-y-3 pt-3 border-t border-[var(--border-color)]">
-                <div className="flex justify-between items-center text-xs">
+              <div className="space-y-3 pt-3 border-t border-[var(--border)]">
+                <div className="flex justify-between items-center text-xs font-mono">
                   <span className="font-semibold text-[var(--text-primary)]">Objective Weights Distribution:</span>
-                  <span className={`font-mono font-bold ${isWeightValid ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  <span className={`font-semibold ${isWeightValid ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
                     Sum: {(totalWeight * 100).toFixed(0)}% {isWeightValid ? '✓' : '(Must equal 100%)'}
                   </span>
                 </div>
 
                 {[
-                  { label: 'Accuracy Weight', key: 'weight_accuracy', val: formData.weight_accuracy, color: 'text-blue-400' },
-                  { label: 'Latency Weight', key: 'weight_latency', val: formData.weight_latency, color: 'text-cyan-400' },
-                  { label: 'Model Size Weight', key: 'weight_model_size', val: formData.weight_model_size, color: 'text-emerald-400' },
-                  { label: 'Energy Weight', key: 'weight_energy', val: formData.weight_energy, color: 'text-amber-400' },
+                  { label: 'Accuracy Weight', key: 'weight_accuracy', val: formData.weight_accuracy },
+                  { label: 'Latency Weight', key: 'weight_latency', val: formData.weight_latency },
+                  { label: 'Model Size Weight', key: 'weight_model_size', val: formData.weight_model_size },
+                  { label: 'Energy Weight', key: 'weight_energy', val: formData.weight_energy },
                 ].map((w) => (
                   <div key={w.key} className="space-y-1">
                     <div className="flex justify-between text-xs font-mono text-[var(--text-secondary)]">
                       <span>{w.label}</span>
-                      <span className="font-bold">{(w.val * 100).toFixed(0)}%</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{(w.val * 100).toFixed(0)}%</span>
                     </div>
                     <input
                       type="range"
@@ -606,7 +621,7 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                       step="0.05"
                       value={w.val}
                       onChange={(e) => setFormData({ ...formData, [w.key]: parseFloat(e.target.value) })}
-                      className="w-full cursor-pointer accent-blue-600"
+                      className="w-full accent-[var(--accent)] cursor-pointer"
                     />
                   </div>
                 ))}
@@ -614,105 +629,104 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          {/* Navigation Controls */}
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => (step > 1 ? setStep(step - 1) : onCancel())}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] text-xs font-semibold border border-[var(--border-color)] transition"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 ws-button-secondary text-xs"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               <span>{step > 1 ? 'Previous Step' : 'Cancel'}</span>
             </button>
 
             {step < 6 ? (
               <button
                 onClick={() => setStep(step + 1)}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition"
+                className="flex items-center gap-1.5 px-4 py-1.5 ws-button-primary text-xs"
               >
                 <span>Next Step</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={handleValidateFairness}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono border border-[var(--border-color)] transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs font-mono"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <span>Verify Fairness Protocol</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-[var(--success)]" />
+                  <span>Verify Fairness</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting || !isWeightValid || formData.selected_algorithms.length === 0}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition"
+                  className="flex items-center gap-1.5 px-5 py-2 ws-button-primary text-xs font-semibold disabled:opacity-50"
                 >
                   <PlayCircle className="w-4 h-4" />
-                  <span>Launch Benchmark</span>
+                  <span>Start Benchmark</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right 1 Col: Persistent Experiment Configuration Summary */}
+        {/* Right 1 Col: Live Experiment Manifest */}
         <div className="space-y-4">
-          <div className="lab-card p-5 space-y-4 sticky top-4">
-            <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">
+          <div className="ws-panel p-5 space-y-4 sticky top-4 font-mono text-xs">
+            <h3 className="ws-section-title border-b border-[var(--border)] pb-2 font-sans">
               Experiment Manifest
             </h3>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
                 <span className="text-[var(--text-muted)]">Dataset:</span>
-                <span className="font-mono font-bold text-[var(--text-primary)]">{formData.dataset_name}</span>
+                <span className="font-semibold text-[var(--text-primary)]">{formData.dataset_name}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
                 <span className="text-[var(--text-muted)]">Resolution:</span>
-                <span className="font-mono text-[var(--text-secondary)]">{formData.input_resolution}</span>
+                <span className="text-[var(--text-secondary)]">{formData.input_resolution}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
                 <span className="text-[var(--text-muted)]">CNN Model:</span>
-                <span className="font-mono font-bold text-blue-500">{formData.cnn_model_name}</span>
+                <span className="font-semibold text-[var(--accent)]">{formData.cnn_model_name}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
                 <span className="text-[var(--text-muted)]">Quantization:</span>
-                <span className="font-mono text-cyan-500">{formData.quantization_type}</span>
+                <span className="text-[var(--text-primary)]">{formData.quantization_type}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)]">Pruning Sparsity:</span>
-                <span className="font-mono text-emerald-500">{(formData.pruning_ratio * 100).toFixed(0)}%</span>
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
+                <span className="text-[var(--text-muted)]">Pruning:</span>
+                <span className="text-[var(--success)] font-medium">{(formData.pruning_ratio * 100).toFixed(0)}% L1</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)]">Algorithms:</span>
-                <span className="font-mono font-bold text-indigo-400">
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
+                <span className="text-[var(--text-muted)]">Optimizers:</span>
+                <span className="font-semibold text-[var(--accent)]">
                   {formData.selected_algorithms.length} / {algorithms.length}
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-[var(--border-color)]">
-                <span className="text-[var(--text-muted)]">Runs &bull; Population:</span>
-                <span className="font-mono text-[var(--text-secondary)]">
-                  {formData.number_of_runs} runs &bull; pop {formData.population_size}
+              <div className="flex justify-between py-1 border-b border-[var(--border)]">
+                <span className="text-[var(--text-muted)]">Runs &bull; Budget:</span>
+                <span className="text-[var(--text-secondary)]">
+                  {formData.number_of_runs} runs &bull; {formData.population_size} pop &bull; {formData.max_iterations} iters
                 </span>
               </div>
             </div>
 
-            {/* Fairness verification results if tested */}
             {fairnessStatus && (
-              <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-emerald-500 text-xs font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
+              <div className="mt-3 p-3 rounded bg-[var(--success)]/10 border border-[var(--success)]/30 space-y-1">
+                <div className="flex items-center gap-1.5 text-[var(--success)] font-semibold font-sans">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Fairness Protocol Verified</span>
                 </div>
-                <p className="text-[11px] text-[var(--text-secondary)]">{fairnessStatus.message}</p>
+                <p className="text-[11px] text-[var(--text-secondary)] font-sans">{fairnessStatus.message}</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Registration Modals */}
       <DatasetUploadModal
         isOpen={isDatasetModalOpen}
         onClose={() => setIsDatasetModalOpen(false)}

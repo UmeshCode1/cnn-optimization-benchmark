@@ -165,6 +165,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           completedExperimentsCount={experiments.filter((e) => e.status === 'COMPLETED').length}
+          activeExperimentId={experimentDetails?.experiment?.id}
         />
 
         {/* Main Content Area */}
@@ -174,6 +175,7 @@ export const App: React.FC = () => {
               experiments={experiments}
               latestExperiment={experimentDetails?.experiment}
               rankedAlgorithms={experimentDetails?.ranked_algorithms || []}
+              paretoPoints={experimentDetails?.pareto_points || []}
               onNewBenchmark={() => setActiveTab('wizard')}
               onOpenExperiment={handleSelectExperiment}
               onViewResults={() => setActiveTab('results')}

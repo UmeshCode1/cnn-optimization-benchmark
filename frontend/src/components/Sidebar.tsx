@@ -31,72 +31,94 @@ interface SidebarProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   completedExperimentsCount: number;
+  activeExperimentId?: string | null;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   completedExperimentsCount,
+  activeExperimentId,
 }) => {
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'wizard', label: 'New Benchmark', icon: PlayCircle, highlight: true },
-    { id: 'datasets', label: 'Datasets & Upload', icon: Layers },
-    { id: 'results', label: 'Benchmark Results', icon: BarChart3, badge: completedExperimentsCount > 0 ? String(completedExperimentsCount) : undefined },
-    { id: 'pareto', label: 'Pareto Front', icon: GitFork },
-    { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
-    { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
-    { id: 'ablation', label: 'Ablation Study', icon: Layers },
-    { id: 'history', label: 'Experiment History', icon: History },
-    { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },
-    { id: 'documentation', label: '10 Optimizers & Docs', icon: BookOpen },
-    { id: 'reports', label: 'Research Reports', icon: FileText },
+  const navGroups = [
+    {
+      title: 'RESEARCH',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'wizard', label: 'New Benchmark', icon: PlayCircle },
+        { id: 'results', label: 'Benchmark Results', icon: BarChart3, badge: completedExperimentsCount > 0 ? String(completedExperimentsCount) : undefined },
+        { id: 'history', label: 'Experiment History', icon: History },
+      ],
+    },
+    {
+      title: 'ANALYSIS',
+      items: [
+        { id: 'pareto', label: 'Pareto Front', icon: GitFork },
+        { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
+        { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
+        { id: 'ablation', label: 'Ablation Study', icon: Layers },
+      ],
+    },
+    {
+      title: 'RESOURCES',
+      items: [
+        { id: 'datasets', label: 'Dataset Repository', icon: Layers },
+        { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },
+        { id: 'documentation', label: 'Optimizers & Docs', icon: BookOpen },
+        { id: 'reports', label: 'Research Reports', icon: FileText },
+      ],
+    },
   ];
 
   return (
-    <aside className="w-60 lab-sidebar flex flex-col justify-between h-[calc(100vh-3.5rem)] sticky top-14 select-none">
-      <div className="py-3 px-2">
-        <div className="px-3 py-1 mb-2 text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
-          Research Navigation
-        </div>
-        <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as NavTab)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                  isActive
-                    ? 'bg-blue-600/15 text-blue-500 font-semibold border border-blue-500/30'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-[var(--text-muted)]'}`} />
-                  <span>{item.label}</span>
-                </div>
-                {item.badge && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-color)]">
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+    <aside className="w-56 ws-sidebar flex flex-col justify-between h-[calc(100vh-3.5rem)] sticky top-14 select-none shrink-0">
+      <div className="py-3 px-2 space-y-4 overflow-y-auto">
+        {navGroups.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+              {group.title}
+            </div>
+            <nav className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id as NavTab)}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      isActive
+                        ? 'bg-[var(--surface-elevated)] text-[var(--accent)] font-semibold border-l-2 border-[var(--accent)] rounded-l-none'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
       </div>
 
-      {/* Bottom info panel */}
-      <div className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)] text-[11px] text-[var(--text-muted)]">
-        <div className="flex items-center justify-between font-mono text-[10px] mb-1">
-          <span className="font-semibold">OPTIMIZERS</span>
-          <span className="text-emerald-500 font-bold">10 / 10 ACTIVE</span>
+      {/* Compact Research Footer */}
+      <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-muted)] font-mono space-y-1">
+        <div className="flex items-center justify-between text-[10px]">
+          <span>ACTIVE EXP:</span>
+          <span className="font-semibold text-[var(--text-primary)]">{activeExperimentId || 'NONE'}</span>
         </div>
-        <p className="text-[10px] text-[var(--text-muted)] leading-tight">
-          GWO, WOA, ALO, MFO, GOA, MVO, SCA, AOA, MGO, GMO
-        </p>
+        <div className="flex items-center justify-between text-[10px]">
+          <span>OPTIMIZERS:</span>
+          <span className="text-[var(--success)] font-medium">10 / 10 LOADED</span>
+        </div>
       </div>
     </aside>
   );

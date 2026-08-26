@@ -2,182 +2,227 @@
 
 @layer base {
   :root {
-    --bg-main: #0a0e17;
-    --bg-header: #0f1523;
-    --bg-sidebar: #0d121e;
-    --bg-card: #131929;
-    --bg-card-hover: #182236;
-    --bg-surface: #1e293b;
-    --border-color: #243048;
-    --border-light: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --accent-blue: #3b82f6;
-    --accent-cyan: #06b6d4;
-    --accent-emerald: #10b981;
-    --accent-amber: #f59e0b;
-    --accent-purple: #8b5cf6;
-    --accent-rose: #f43f5e;
+    --background: #0B0F14;
+    --surface: #111720;
+    --surface-secondary: #151C26;
+    --surface-elevated: #1A2230;
+    --border: #273142;
+    --border-strong: #344154;
+    --text-primary: #E7ECF2;
+    --text-secondary: #A8B2C0;
+    --text-muted: #718096;
+    --accent: #3B82F6;
+    --accent-hover: #60A5FA;
+    --success: #19A974;
+    --warning: #D9A441;
+    --danger: #D95C5C;
+    --info: #5B8DEF;
+    --chart-grid: rgba(255, 255, 255, 0.07);
+    --chart-axis: rgba(255, 255, 255, 0.3);
+
+    /* Backwards-compatible aliases */
+    --bg-main: var(--background);
+    --bg-header: var(--surface);
+    --bg-sidebar: var(--surface-secondary);
+    --bg-card: var(--surface);
+    --bg-card-hover: var(--surface-elevated);
+    --bg-surface: var(--surface-secondary);
+    --border-color: var(--border);
   }
 
   html.light-theme, :root[data-theme='light'] {
-    --bg-main: #f8fafc;
-    --bg-header: #ffffff;
-    --bg-sidebar: #f1f5f9;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f8fafc;
-    --bg-surface: #e2e8f0;
-    --border-color: #cbd5e1;
-    --border-light: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-secondary: #334155;
-    --text-muted: #64748b;
-    --accent-blue: #2563eb;
-    --accent-cyan: #0891b2;
-    --accent-emerald: #059669;
-    --accent-amber: #d97706;
-    --accent-purple: #7c3aed;
-    --accent-rose: #e11d48;
+    --background: #F4F6F8;
+    --surface: #FFFFFF;
+    --surface-secondary: #F8FAFC;
+    --surface-elevated: #FFFFFF;
+    --border: #D8DEE6;
+    --border-strong: #CBD5E1;
+    --text-primary: #17202B;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
+    --accent: #2563EB;
+    --accent-hover: #1D4ED8;
+    --success: #0D8050;
+    --warning: #B87B14;
+    --danger: #C53030;
+    --info: #2563EB;
+    --chart-grid: rgba(0, 0, 0, 0.06);
+    --chart-axis: rgba(0, 0, 0, 0.3);
+
+    /* Backwards-compatible aliases */
+    --bg-main: var(--background);
+    --bg-header: var(--surface);
+    --bg-sidebar: var(--surface-secondary);
+    --bg-card: var(--surface);
+    --bg-card-hover: #F1F5F9;
+    --bg-surface: #F1F5F9;
+    --border-color: var(--border);
   }
 
   body {
-    background-color: var(--bg-main);
+    background-color: var(--background);
     color: var(--text-primary);
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'IBM Plex Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', 'Inter', sans-serif;
+    font-weight: 600;
     letter-spacing: -0.01em;
   }
 
-  code, pre, .font-mono {
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  code, pre, .font-mono, td.font-mono, th.font-mono {
+    font-family: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Light Theme Automatic Contrast Adaptations */
-html.light-theme .text-slate-100,
-html.light-theme .text-slate-200,
-html.light-theme .text-slate-300 {
-  color: #0f172a !important;
+/* Structural Scientific Components */
+.ws-header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
-html.light-theme .text-slate-400 {
-  color: #475569 !important;
+.ws-sidebar {
+  background-color: var(--surface-secondary);
+  border-right: 1px solid var(--border);
 }
 
-html.light-theme .text-slate-500 {
-  color: #64748b !important;
+.ws-panel {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-html.light-theme .bg-slate-900,
-html.light-theme .bg-slate-950 {
-  background-color: #ffffff !important;
+.ws-panel-elevated {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
 }
 
-html.light-theme .bg-slate-800 {
-  background-color: #f1f5f9 !important;
-}
-
-html.light-theme .border-slate-800,
-html.light-theme .border-slate-700 {
-  border-color: #cbd5e1 !important;
-}
-
-html.light-theme .bg-blue-950\/40,
-html.light-theme .bg-blue-950\/50 {
-  background-color: rgba(219, 234, 254, 0.6) !important;
-}
-
-html.light-theme .bg-emerald-950,
-html.light-theme .bg-emerald-950\/40 {
-  background-color: #ecfdf5 !important;
-  color: #047857 !important;
-}
-
-html.light-theme .bg-purple-900\/50,
-html.light-theme .bg-purple-900\/60 {
-  background-color: #f3e8ff !important;
-  color: #6b21a8 !important;
-}
-
-/* Professional Scientific UI & Theme Compatibility */
-.lab-header {
-  background-color: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.lab-sidebar {
-  background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-}
-
+/* Alias for legacy .lab-card */
 .lab-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 0.65rem;
-  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.08);
-  transition: all 0.15s ease-in-out;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease;
 }
 
 .lab-card:hover {
-  border-color: var(--accent-blue);
+  border-color: var(--border-strong);
 }
 
-.lab-input {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
+.ws-input {
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border);
   color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  transition: border-color 0.15s ease;
 }
-.lab-input:focus {
+.ws-input:focus {
   outline: none;
-  border-color: var(--accent-blue);
+  border-color: var(--accent);
 }
 
-.lab-table {
+.ws-button-primary {
+  background-color: var(--accent);
+  color: #FFFFFF;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  transition: background-color 0.15s ease;
+}
+.ws-button-primary:hover {
+  background-color: var(--accent-hover);
+}
+
+.ws-button-secondary {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  transition: all 0.15s ease;
+}
+.ws-button-secondary:hover {
+  background-color: var(--surface-elevated);
+  border-color: var(--border-strong);
+}
+
+/* Scientific Data Tables */
+.ws-table, .lab-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.8125rem;
 }
 
-.lab-table th {
-  background-color: var(--bg-surface);
-  color: var(--text-secondary);
-  font-size: 0.72rem;
+.ws-table th, .lab-table th {
+  background-color: var(--surface-secondary);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.65rem 0.85rem;
+  letter-spacing: 0.04em;
+  padding: 0.5rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
-.lab-table td {
-  padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.85rem;
+.ws-table td, .lab-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
-.lab-table tr:hover td {
-  background-color: var(--bg-card-hover);
+.ws-table tr:hover td, .lab-table tr:hover td {
+  background-color: var(--surface-secondary);
 }
 
-/* Custom Scrollbars */
+/* Section Header Typography */
+.ws-page-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.ws-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.ws-meta-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 9999px;
+  background: var(--border);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--border-strong);
 }
