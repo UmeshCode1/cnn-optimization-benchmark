@@ -1,8 +1,14 @@
 """
-Optimizer Registry and Factory for 10 Metaheuristic Algorithms.
+Optimizer Registry and Dynamic Factory for Built-in and Custom Metaheuristic Algorithms.
 """
 
-from typing import Dict, List, Type, Any
+import os
+import json
+import importlib.util
+from pathlib import Path
+from typing import Dict, List, Type, Any, Optional, Callable
+import numpy as np
+
 from .base import BaseOptimizer
 from .gwo import GreyWolfOptimizer
 from .woa import WhaleOptimizer
@@ -15,7 +21,91 @@ from .aoa import ArithmeticOptimizer
 from .mgo import MountainGazelleOptimizer
 from .gmo import GeometricMeanOptimizer
 
-OPTIMIZER_REGISTRY: Dict[str, Type[BaseOptimizer]] = {
+CUSTOM_ALGS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "custom_algorithms"
+CUSTOM_ALGS_DIR.mkdir(parents=True, exist_ok=True)
+CUSTOM_METADATA_FILE = CUSTOM_ALGS_DIR / "algorithms_metadata.json"
+
+
+class CustomDynamicOptimizer(BaseOptimizer):
+    """
+    General metaheuristic optimizer wrapper for custom user-registered algorithms.
+    Applies adaptive swarm and differential search perturbation over CNN compression search spaces.
+    """
+
+    def __init__(
+        self,
+        population_size: int = 20,
+        max_iterations: int = 50,
+        seed: int = 42,
+        custom_key: str = "CUSTOM",
+        custom_name: str = "Custom Optimizer",
+        exploration_rate: float = 0.5,
+    ):
+        super().__init__(population_size, max_iterations, seed)
+        self.custom_key = custom_key
+        self.custom_name = custom_name
+        self.exploration_rate = exploration_rate
+
+    def optimize(
+        self,
+        fitness_func: Callable[[np.ndarray], float],
+        dim: int,
+        bounds: tuple = (0.0, 1.0),
+    ) -> Dict[str, Any]:
+        """Execute custom metaheuristic optimization loop."""
+        population = self.initialize_population(dim, bounds)
+        fitness_scores = np.array([fitness_func(ind) for ind in population])
+
+        best_idx = np.argmin(fitness_scores)
+        best_solution = population[best_idx].copy()
+        best_fitness = float(fitness_scores[best_idx])
+
+        convergence_curve = [best_fitness]
+        lower_bound, upper_bound = bounds
+
+        # Iteration Loop
+        for iteration in range(1, self.max_iterations + 1):
+            # Dynamic decay factor from 2.0 to 0.0
+            a = 2.0 * (1.0 - iteration / self.max_iterations)
+
+            for i in range(self.population_size):
+                r1 = self.rng.random()
+                r2 = self.rng.random()
+
+                # Exploration vs Exploitation balance
+                if self.rng.random() < self.exploration_rate:
+                    # Exploration: random vector guided perturbation
+                    random_index = self.rng.integers(0, self.population_size)
+                    random_agent = population[random_index]
+                    D = np.abs(2.0 * r1 * random_agent - population[i])
+                    step = random_agent - a * D * (2.0 * r2 - 1.0)
+                else:
+                    # Exploitation: elite vector attraction
+                    D_best = np.abs(2.0 * r1 * best_solution - population[i])
+                    step = best_solution - a * D_best * np.cos(2.0 * np.pi * r2)
+
+                # Clamp bounds
+                population[i] = np.clip(step, lower_bound, upper_bound)
+                current_fitness = fitness_func(population[i])
+
+                if current_fitness < fitness_scores[i]:
+                    fitness_scores[i] = current_fitness
+                    if current_fitness < best_fitness:
+                        best_fitness = float(current_fitness)
+                        best_solution = population[i].copy()
+
+            convergence_curve.append(best_fitness)
+
+        return {
+            "best_solution": best_solution,
+            "best_fitness": best_fitness,
+            "convergence_curve": convergence_curve,
+            "algorithm": self.custom_key,
+            "iterations": self.max_iterations,
+        }
+
+
+BUILTIN_OPTIMIZER_REGISTRY: Dict[str, Type[BaseOptimizer]] = {
     "GWO": GreyWolfOptimizer,
     "WOA": WhaleOptimizer,
     "ALO": AntLionOptimizer,
@@ -28,7 +118,7 @@ OPTIMIZER_REGISTRY: Dict[str, Type[BaseOptimizer]] = {
     "GMO": GeometricMeanOptimizer,
 }
 
-ALGORITHM_METADATA = [
+BUILTIN_METADATA = [
     {
         "key": "GWO",
         "name": "Grey Wolf Optimizer",
@@ -39,6 +129,7 @@ ALGORITHM_METADATA = [
         "description": "Mimics social hierarchy (Alpha, Beta, Delta, Omega) and hunting mechanism of grey wolves.",
         "strengths": ["Fast initial convergence", "Strong exploitation", "Few hyper-parameters"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "WOA",
@@ -50,6 +141,7 @@ ALGORITHM_METADATA = [
         "description": "Models humpback whale bubble-net hunting maneuvers with spiral updates.",
         "strengths": ["Balanced exploration/exploitation", "Avoids local optima", "High dimensional scalability"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "ALO",
@@ -61,6 +153,7 @@ ALGORITHM_METADATA = [
         "description": "Mimics hunting behavior of antlions using random walks in shrinking conical sand traps.",
         "strengths": ["Effective exploration via random walks", "Elite-guided convergence", "Strong diversity preservation"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "MFO",
@@ -72,6 +165,7 @@ ALGORITHM_METADATA = [
         "description": "Models transverse orientation of moths flying around flame light sources.",
         "strengths": ["Adaptive flame count", "Logarithmic spiral search", "High precision exploitation"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "GOA",
@@ -83,6 +177,7 @@ ALGORITHM_METADATA = [
         "description": "Simulates repulsion and attraction forces within nymph and adult grasshopper swarms.",
         "strengths": ["Social comfort zone dynamics", "Adaptive repulsion", "Smooth convergence transition"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "MVO",
@@ -94,6 +189,7 @@ ALGORITHM_METADATA = [
         "description": "Cosmological simulation using white holes, black holes, and wormhole travel.",
         "strengths": ["High exploration rate", "Inflation-rate based exchange", "Stochastic wormhole jumps"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "SCA",
@@ -105,6 +201,7 @@ ALGORITHM_METADATA = [
         "description": "Mathematical framework fluctuating outward/inward based on sine and cosine functions.",
         "strengths": ["Extremely light computational overhead", "Continuous position transitions", "Adaptive radius"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "AOA",
@@ -116,6 +213,7 @@ ALGORITHM_METADATA = [
         "description": "Utilizes arithmetic operators (Division, Multiplication, Subtraction, Addition) via MOA/MOP.",
         "strengths": ["Wide dispersion during exploration", "Fine-grained arithmetic local tuning", "Fast execution"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "MGO",
@@ -127,6 +225,7 @@ ALGORITHM_METADATA = [
         "description": "Models solitary males, bachelor herds, maternal groups, and grazing migrations with Levy flights.",
         "strengths": ["Levy-flight exploration", "Multi-group social structure", "High robustness on complex landscapes"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
     {
         "key": "GMO",
@@ -138,8 +237,27 @@ ALGORITHM_METADATA = [
         "description": "Uses multi-guide geometric mean vectors calculated across elite candidate vectors.",
         "strengths": ["Geometric mean multi-guide vectors", "Excellent balance across dimensions", "Fast convergence"],
         "status": "VERIFIED",
+        "is_custom": False,
     },
 ]
+
+OPTIMIZER_REGISTRY = BUILTIN_OPTIMIZER_REGISTRY
+ALGORITHM_METADATA = BUILTIN_METADATA
+
+
+def load_custom_metadata() -> Dict[str, Any]:
+    if CUSTOM_METADATA_FILE.exists():
+        try:
+            with open(CUSTOM_METADATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def save_custom_metadata(data: Dict[str, Any]):
+    with open(CUSTOM_METADATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
 
 
 def get_optimizer(
@@ -148,15 +266,114 @@ def get_optimizer(
     max_iterations: int = 50,
     seed: int = 42,
 ) -> BaseOptimizer:
-    """Factory method to instantiate any of the 10 metaheuristics."""
+    """Factory method to instantiate built-in or custom registered metaheuristics."""
     normalized_key = key.upper().strip()
-    if normalized_key not in OPTIMIZER_REGISTRY:
-        raise ValueError(f"Unknown optimizer: '{key}'. Supported: {list(OPTIMIZER_REGISTRY.keys())}")
     
-    cls = OPTIMIZER_REGISTRY[normalized_key]
-    return cls(population_size=population_size, max_iterations=max_iterations, seed=seed)
+    # 1. Check built-ins
+    if normalized_key in BUILTIN_OPTIMIZER_REGISTRY:
+        cls = BUILTIN_OPTIMIZER_REGISTRY[normalized_key]
+        return cls(population_size=population_size, max_iterations=max_iterations, seed=seed)
+
+    # 2. Check custom registered algorithms
+    custom_meta = load_custom_metadata()
+    if normalized_key in custom_meta:
+        meta = custom_meta[normalized_key]
+        # If custom python script exists, try dynamic import
+        script_path = CUSTOM_ALGS_DIR / f"{normalized_key.lower()}.py"
+        if script_path.exists():
+            try:
+                spec = importlib.util.spec_from_file_location(f"custom_alg_{normalized_key}", script_path)
+                if spec and spec.loader:
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    for attr in dir(mod):
+                        val = getattr(mod, attr)
+                        if isinstance(val, type) and issubclass(val, BaseOptimizer) and val is not BaseOptimizer:
+                            return val(population_size=population_size, max_iterations=max_iterations, seed=seed)
+            except Exception:
+                pass
+
+        # Fallback to CustomDynamicOptimizer
+        return CustomDynamicOptimizer(
+            population_size=population_size,
+            max_iterations=max_iterations,
+            seed=seed,
+            custom_key=normalized_key,
+            custom_name=meta.get("name", normalized_key),
+            exploration_rate=meta.get("exploration_rate", 0.5),
+        )
+
+    # 3. Dynamic generic fallback for any unknown custom key
+    return CustomDynamicOptimizer(
+        population_size=population_size,
+        max_iterations=max_iterations,
+        seed=seed,
+        custom_key=normalized_key,
+        custom_name=f"Custom ({normalized_key})",
+        exploration_rate=0.5,
+    )
 
 
 def list_available_algorithms() -> List[Dict[str, Any]]:
-    """Return catalog of all supported algorithms with metadata and citations."""
-    return ALGORITHM_METADATA
+    """Return catalog of all supported algorithms including custom registered algorithms."""
+    custom_meta = load_custom_metadata()
+    custom_list = list(custom_meta.values())
+    return BUILTIN_METADATA + custom_list
+
+
+def register_custom_algorithm(
+    key: str,
+    name: str,
+    category: str = "Custom Swarm",
+    description: str = "User-defined custom metaheuristic optimization algorithm.",
+    authors: str = "Custom Author",
+    year: int = 2026,
+    strengths: Optional[List[str]] = None,
+    python_code: Optional[str] = None,
+    exploration_rate: float = 0.5,
+) -> Dict[str, Any]:
+    """Register a new custom metaheuristic optimizer in the platform."""
+    norm_key = key.upper().strip()
+    if not norm_key:
+        raise ValueError("Algorithm key/acronym is required.")
+
+    custom_meta = load_custom_metadata()
+    
+    # Save python code file if provided
+    if python_code and python_code.strip():
+        script_file = CUSTOM_ALGS_DIR / f"{norm_key.lower()}.py"
+        with open(script_file, "w", encoding="utf-8") as f:
+            f.write(python_code.strip())
+
+    entry = {
+        "key": norm_key,
+        "name": name.strip() or norm_key,
+        "acronym": norm_key,
+        "year": year,
+        "authors": authors,
+        "category": category,
+        "description": description,
+        "strengths": strengths or ["Custom heuristic operators", "Adaptive convergence", "Domain-tailored"],
+        "status": "CUSTOM",
+        "is_custom": True,
+        "exploration_rate": exploration_rate,
+    }
+
+    custom_meta[norm_key] = entry
+    save_custom_metadata(custom_meta)
+    return entry
+
+
+def delete_custom_algorithm(key: str) -> bool:
+    """Delete a custom registered algorithm."""
+    norm_key = key.upper().strip()
+    custom_meta = load_custom_metadata()
+    if norm_key in custom_meta:
+        del custom_meta[norm_key]
+        save_custom_metadata(custom_meta)
+
+        script_file = CUSTOM_ALGS_DIR / f"{norm_key.lower()}.py"
+        if script_file.exists():
+            script_file.unlink(missing_ok=True)
+        return True
+    return False

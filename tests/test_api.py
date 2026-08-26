@@ -1,5 +1,5 @@
 """
-Integration tests for FastAPI endpoints.
+Integration tests for FastAPI endpoints including custom algorithm and model registration.
 """
 
 import io
@@ -23,7 +23,60 @@ def test_get_algorithms():
     response = client.get("/api/algorithms")
     assert response.status_code == 200
     algs = response.json()
-    assert len(algs) == 10
+    assert len(algs) >= 10
+
+
+def test_register_and_delete_custom_algorithm():
+    # Register custom algorithm
+    payload = {
+        "key": "PSO_TEST",
+        "name": "Particle Swarm Optimization Test",
+        "category": "Swarm Intelligence",
+        "description": "Swarm velocity and position updates test",
+        "authors": "Kennedy & Eberhart",
+        "year": 1995,
+        "exploration_rate": 0.6,
+    }
+    reg_res = client.post("/api/algorithms/register", json=payload)
+    assert reg_res.status_code == 201
+    reg_data = reg_res.json()
+    assert reg_data["key"] == "PSO_TEST"
+    assert reg_data["is_custom"] is True
+
+    # Verify present in list
+    list_res = client.get("/api/algorithms")
+    assert list_res.status_code == 200
+    assert any(a["key"] == "PSO_TEST" for a in list_res.json())
+
+    # Delete custom algorithm
+    del_res = client.delete("/api/algorithms/PSO_TEST")
+    assert del_res.status_code == 204
+
+
+def test_list_and_register_custom_model():
+    # List models
+    list_res = client.get("/api/models")
+    assert list_res.status_code == 200
+    models = list_res.json()
+    assert len(models) >= 4
+
+    # Register custom model
+    payload = {
+        "name": "CustomViT-Tiny",
+        "parameters_m": 4.5,
+        "flops_m": 310.0,
+        "base_accuracy": 91.5,
+        "description": "Vision transformer tiny baseline",
+    }
+    reg_res = client.post("/api/models", json=payload)
+    assert reg_res.status_code == 201
+    model_data = reg_res.json()
+    assert model_data["name"] == "CustomViT-Tiny"
+    model_id = model_data["id"]
+
+    # Delete custom model
+    del_res = client.delete(f"/api/models/{model_id}")
+    assert del_res.status_code == 204
 
 
 def test_get_hardware():

@@ -17,7 +17,10 @@ import { api } from './services/api';
 import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats, AblationRecord, HardwareProfile } from './types';
 
 export const App: React.FC = () => {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('cnn_benchmark_theme');
+    return saved === 'light' ? 'light' : 'dark';
+  });
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
 
   // App Data State
@@ -35,20 +38,31 @@ export const App: React.FC = () => {
   const [hardware, setHardware] = useState<HardwareProfile | undefined>(undefined);
   const [runningExperimentId, setRunningExperimentId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.classList.remove('light-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    if (next === 'light') {
-      document.documentElement.classList.add('light-theme');
-    } else {
-      document.documentElement.classList.remove('light-theme');
-    }
+    localStorage.setItem('cnn_benchmark_theme', next);
   };
 
-  const loadData = async () => {
+  const loadData = async (isManualRefresh: boolean = false) => {
     try {
-      setIsLoading(true);
+      if (isManualRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       const [exps, hw] = await Promise.all([
         api.listExperiments(),
         api.getHardwareProfile().catch(() => undefined),
@@ -66,6 +80,7 @@ export const App: React.FC = () => {
       console.error('Error loading benchmark data:', err);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -132,7 +147,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b0f17] text-slate-100 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-primary)] selection:bg-blue-600 selection:text-white">
       {/* Top Navigation */}
       <Navbar
         hardware={hardware}
@@ -140,7 +155,8 @@ export const App: React.FC = () => {
         theme={theme}
         toggleTheme={toggleTheme}
         onNewBenchmark={() => setActiveTab('wizard')}
-        onRefresh={loadData}
+        onRefresh={() => loadData(true)}
+        isRefreshing={isRefreshing}
       />
 
       <div className="flex flex-1">

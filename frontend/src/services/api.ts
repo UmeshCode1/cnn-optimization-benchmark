@@ -116,6 +116,81 @@ export const api = {
     return res.json();
   },
 
+  async registerAlgorithm(payload: {
+    key: string;
+    name: string;
+    category?: string;
+    description?: string;
+    authors?: string;
+    year?: number;
+    strengths?: string[];
+    exploration_rate?: number;
+    python_code?: string;
+  }): Promise<AlgorithmMeta> {
+    const res = await fetch(`${API_BASE}/algorithms/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to register algorithm' }));
+      throw new Error(err.detail || 'Failed to register algorithm');
+    }
+    return res.json();
+  },
+
+  async uploadAlgorithmFile(formData: FormData): Promise<AlgorithmMeta> {
+    const res = await fetch(`${API_BASE}/algorithms/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to upload algorithm file' }));
+      throw new Error(err.detail || 'Failed to upload algorithm file');
+    }
+    return res.json();
+  },
+
+  async deleteAlgorithm(key: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/algorithms/${key}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Failed to delete algorithm ${key}`);
+  },
+
+  // Models
+  async listModels(): Promise<CNNModelInfo[]> {
+    const res = await fetch(`${API_BASE}/models`);
+    if (!res.ok) throw new Error('Failed to fetch CNN models');
+    return res.json();
+  },
+
+  async registerModel(payload: {
+    name: string;
+    parameters_m: number;
+    flops_m: number;
+    base_accuracy: number;
+    description?: string;
+  }): Promise<CNNModelInfo> {
+    const res = await fetch(`${API_BASE}/models`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to register model' }));
+      throw new Error(err.detail || 'Failed to register model');
+    }
+    return res.json();
+  },
+
+  async deleteModel(modelId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/models/${modelId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Failed to delete model ${modelId}`);
+  },
+
   // Hardware
   async getHardwareProfile(): Promise<HardwareProfile> {
     const res = await fetch(`${API_BASE}/hardware`);

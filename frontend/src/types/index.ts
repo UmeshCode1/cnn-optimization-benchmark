@@ -162,6 +162,18 @@ export interface AlgorithmMeta {
   description: string;
   strengths: string[];
   status: string;
+  is_custom?: boolean;
+  exploration_rate?: number;
+}
+
+export interface CNNModelInfo {
+  id: string;
+  name: string;
+  parameters_m: number;
+  flops_m: number;
+  base_accuracy: number;
+  is_custom: boolean;
+  description: string;
 }
 
 export interface DatasetInfo {

@@ -34,14 +34,14 @@ export const ParetoExplorerView: React.FC<ParetoExplorerViewProps> = ({
       </div>
 
       {/* Scientific explanation banner */}
-      <div className="lab-card p-4 bg-slate-900/60 border-emerald-800/40 flex items-start gap-3">
+      <div className="lab-card p-4 bg-slate-900/80 border-emerald-500/30 flex items-start gap-3">
         <Info className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
         <div className="text-xs text-slate-300 space-y-1">
           <div className="font-bold text-slate-100 font-mono text-xs">
-            Concept of Pareto Dominance in CNN Compression:
+            Concept of Pareto Dominance in Multi-Objective Optimization:
           </div>
           <p className="leading-relaxed">
-            A solution $A$ dominates solution $B$ if $A$ achieves equal or better values across Accuracy, Latency, Size, and Energy, and is strictly superior in at least one metric. Solutions on the Pareto frontier cannot improve any single objective without degrading another.
+            A compressed model <strong>A</strong> dominates model <strong>B</strong> if <strong>A</strong> achieves equal or superior performance across all metrics (Accuracy, Latency, Size, and Energy) and is strictly superior in at least one objective. Models on the Pareto frontier represent the optimal trade-off boundary.
           </p>
         </div>
       </div>

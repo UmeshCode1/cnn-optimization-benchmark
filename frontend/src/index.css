@@ -2,13 +2,14 @@
 
 @layer base {
   :root {
-    --bg-main: #070a12;
-    --bg-card: rgba(15, 23, 42, 0.75);
-    --bg-card-hover: rgba(30, 41, 59, 0.85);
+    --bg-main: #0a0e17;
+    --bg-header: #0f1523;
+    --bg-sidebar: #0d121e;
+    --bg-card: #131929;
+    --bg-card-hover: #182236;
     --bg-surface: #1e293b;
-    --border-color: rgba(51, 65, 85, 0.6);
-    --border-glow: rgba(56, 189, 248, 0.3);
-    --border-light: rgba(30, 41, 59, 0.8);
+    --border-color: #243048;
+    --border-light: #1e293b;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
@@ -20,14 +21,15 @@
     --accent-rose: #f43f5e;
   }
 
-  .light-theme {
+  html.light-theme, :root[data-theme='light'] {
     --bg-main: #f8fafc;
-    --bg-card: rgba(255, 255, 255, 0.85);
-    --bg-card-hover: #f1f5f9;
+    --bg-header: #ffffff;
+    --bg-sidebar: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
     --bg-surface: #e2e8f0;
-    --border-color: #cbd5e1;
-    --border-glow: rgba(59, 130, 246, 0.3);
-    --border-light: #e2e8f0;
+    --border-color: #e2e8f0;
+    --border-light: #cbd5e1;
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #64748b;
@@ -46,15 +48,12 @@
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-    background-attachment: fixed;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', 'Inter', sans-serif;
+    letter-spacing: -0.01em;
   }
 
   code, pre, .font-mono {
@@ -62,36 +61,37 @@
   }
 }
 
-/* Scientific Lab UI Styles & Glassmorphism */
+/* Professional Scientific UI & Theme Compatibility */
+.lab-header {
+  background-color: var(--bg-header);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.lab-sidebar {
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+}
+
 .lab-card {
   background-color: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0.65rem;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.08);
+  transition: all 0.15s ease-in-out;
 }
 
 .lab-card:hover {
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 8px 30px -4px rgba(56, 189, 248, 0.12);
+  border-color: var(--accent-blue);
 }
 
-.lab-card-glow {
-  position: relative;
+.lab-input {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
-.lab-card-glow::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 0.75rem;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.5), rgba(139, 92, 246, 0.5));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+.lab-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
 }
 
 .lab-table {
@@ -100,20 +100,20 @@
 }
 
 .lab-table th {
-  background-color: rgba(30, 41, 59, 0.85);
+  background-color: var(--bg-surface);
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.85rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 
 .lab-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-light);
-  font-size: 0.875rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
 }
 
 .lab-table tr:hover td {
@@ -133,5 +133,5 @@
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
+  background: var(--text-muted);
 }

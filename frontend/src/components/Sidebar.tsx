@@ -54,9 +54,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-60 bg-[#0e1422] border-r border-slate-800/80 flex flex-col justify-between h-[calc(100vh-3.5rem)] sticky top-14 select-none">
+    <aside className="w-60 lab-sidebar flex flex-col justify-between h-[calc(100vh-3.5rem)] sticky top-14 select-none">
       <div className="py-3 px-2">
-        <div className="px-3 py-1 mb-2 text-[10px] font-mono uppercase tracking-wider text-slate-400">
+        <div className="px-3 py-1 mb-2 text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)]">
           Research Navigation
         </div>
         <nav className="space-y-1">
@@ -67,18 +67,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id as NavTab)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 border border-transparent'
+                    ? 'bg-blue-600/15 text-blue-500 font-semibold border border-blue-500/30'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-transparent'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-blue-500' : 'text-[var(--text-muted)]'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-color)]">
                     {item.badge}
                   </span>
                 )}
@@ -89,12 +89,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom info panel */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-900/40 text-[11px] text-slate-400">
-        <div className="flex items-center justify-between font-mono text-[10px] text-slate-400 mb-1">
-          <span>ALGORITHMS</span>
-          <span className="text-emerald-400 font-bold">10 / 10 LOADED</span>
+      <div className="p-3 border-t border-[var(--border-color)] bg-[var(--bg-card)] text-[11px] text-[var(--text-muted)]">
+        <div className="flex items-center justify-between font-mono text-[10px] mb-1">
+          <span className="font-semibold">OPTIMIZERS</span>
+          <span className="text-emerald-500 font-bold">10 / 10 ACTIVE</span>
         </div>
-        <p className="text-[10px] text-slate-400 leading-tight">
+        <p className="text-[10px] text-[var(--text-muted)] leading-tight">
           GWO, WOA, ALO, MFO, GOA, MVO, SCA, AOA, MGO, GMO
         </p>
       </div>

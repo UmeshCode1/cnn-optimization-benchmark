@@ -30,6 +30,7 @@ checkpoints/
 backend/data/custom_datasets/custom-*
 backend/data/custom_datasets/*.zip
 backend/data/custom_datasets/*.tar.gz
+backend/data/custom_algorithms/*.py
 *.pth
 *.pt
 *.onnx
