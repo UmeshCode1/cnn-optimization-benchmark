@@ -2,23 +2,24 @@
 
 @layer base {
   :root {
-    --background: #0B0F14;
-    --surface: #111720;
-    --surface-secondary: #151C26;
-    --surface-elevated: #1A2230;
-    --border: #273142;
-    --border-strong: #344154;
-    --text-primary: #E7ECF2;
-    --text-secondary: #A8B2C0;
-    --text-muted: #718096;
-    --accent: #3B82F6;
-    --accent-hover: #60A5FA;
-    --success: #19A974;
-    --warning: #D9A441;
-    --danger: #D95C5C;
-    --info: #5B8DEF;
-    --chart-grid: rgba(255, 255, 255, 0.07);
-    --chart-axis: rgba(255, 255, 255, 0.3);
+    /* Color Hunt Top Curated Dark Palette: Deep Obsidian / High-Precision Research */
+    --background: #0D1117;
+    --surface: #161B22;
+    --surface-secondary: #21262D;
+    --surface-elevated: #30363D;
+    --border: #30363D;
+    --border-strong: #484F58;
+    --text-primary: #F0F6FC;
+    --text-secondary: #8B949E;
+    --text-muted: #6E7681;
+    --accent: #388BFD;
+    --accent-hover: #58A6FF;
+    --success: #3FB950;
+    --warning: #D29922;
+    --danger: #F85149;
+    --info: #A371F7;
+    --chart-grid: rgba(255, 255, 255, 0.08);
+    --chart-axis: rgba(255, 255, 255, 0.35);
 
     /* Backwards-compatible aliases */
     --bg-main: var(--background);
@@ -31,23 +32,24 @@
   }
 
   html.light-theme, :root[data-theme='light'] {
-    --background: #F4F6F8;
+    /* Color Hunt Top Curated Light Palette: Clean Studio Canvas / Sharp Contrast */
+    --background: #F6F8FA;
     --surface: #FFFFFF;
-    --surface-secondary: #F8FAFC;
-    --surface-elevated: #FFFFFF;
-    --border: #D8DEE6;
-    --border-strong: #CBD5E1;
-    --text-primary: #17202B;
-    --text-secondary: #4B5563;
-    --text-muted: #6B7280;
-    --accent: #2563EB;
-    --accent-hover: #1D4ED8;
-    --success: #0D8050;
-    --warning: #B87B14;
-    --danger: #C53030;
-    --info: #2563EB;
-    --chart-grid: rgba(0, 0, 0, 0.06);
-    --chart-axis: rgba(0, 0, 0, 0.3);
+    --surface-secondary: #F3F4F6;
+    --surface-elevated: #EAEEF2;
+    --border: #D0D7DE;
+    --border-strong: #AFB8C1;
+    --text-primary: #1F2328;
+    --text-secondary: #57606A;
+    --text-muted: #6E7781;
+    --accent: #0969DA;
+    --accent-hover: #0860CA;
+    --success: #1A7F37;
+    --warning: #9A6700;
+    --danger: #CF222E;
+    --info: #8250DF;
+    --chart-grid: rgba(0, 0, 0, 0.07);
+    --chart-axis: rgba(0, 0, 0, 0.35);
 
     /* Backwards-compatible aliases */
     --bg-main: var(--background);
@@ -62,26 +64,27 @@
   body {
     background-color: var(--background);
     color: var(--text-primary);
-    font-family: 'IBM Plex Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'IBM Plex Sans', 'Inter', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-weight: 600;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
 
   code, pre, .font-mono, td.font-mono, th.font-mono {
-    font-family: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+    font-family: 'IBM Plex Mono', Consolas, monospace;
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Structural Scientific Components */
+/* Scientific Workstation Panels & Elevation */
 .ws-header {
   background-color: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -96,7 +99,7 @@
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
 }
 
 .ws-panel-elevated {
@@ -106,12 +109,12 @@
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
 }
 
-/* Alias for legacy .lab-card */
+/* Backwards-compatible .lab-card */
 .lab-card {
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
   transition: border-color 0.15s ease;
 }
 
@@ -119,6 +122,7 @@
   border-color: var(--border-strong);
 }
 
+/* Scientific Interactive Inputs & Controls */
 .ws-input {
   background-color: var(--surface-secondary);
   border: 1px solid var(--border);
@@ -158,7 +162,7 @@
   border-color: var(--border-strong);
 }
 
-/* Scientific Data Tables */
+/* Scientific Matrix Tables */
 .ws-table, .lab-table {
   width: 100%;
   border-collapse: collapse;
@@ -172,7 +176,7 @@
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -189,16 +193,16 @@
   background-color: var(--surface-secondary);
 }
 
-/* Section Header Typography */
+/* Typography Hierarchy */
 .ws-page-title {
-  font-size: 1.375rem;
+  font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.015em;
   color: var(--text-primary);
 }
 
 .ws-section-title {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
