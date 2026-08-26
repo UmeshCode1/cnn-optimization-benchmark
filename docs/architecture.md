@@ -61,7 +61,7 @@ sequenceDiagram
     actor Researcher as Researcher / Client UI
     participant API as FastAPI REST Router
     participant Worker as Async Runner Worker
-    participant Opt as Metaheuristic Optimizer
+    participant Optimizer as Metaheuristic Optimizer
     participant Eval as Evaluation Suite
     participant WS as WebSocket Broadcaster
     participant DB as SQLite Database
@@ -78,11 +78,11 @@ sequenceDiagram
     
     loop For Each Stochastic Run (r = 1 .. N)
         loop For Each Selected Optimizer (alg in Selected)
-            Worker->>Opt: Initialize Population X(0) ~ U(0, 1)^D with Seed(base + r)
+            Worker->>Optimizer: Initialize Population X(0) with Seed
             loop For Each Iteration (t = 1 .. T)
-                Opt->>Eval: Evaluate Multi-Objective Fitness f(x)
-                Opt->>Opt: Update Particle / Agent Positions
-                Opt-->>Worker: Best Fitness at Iteration t
+                Optimizer->>Eval: Evaluate Multi-Objective Fitness f(x)
+                Optimizer->>Optimizer: Update Particle / Agent Positions
+                Optimizer-->>Worker: Best Fitness at Iteration t
                 Worker->>WS: Broadcast ITERATION_UPDATE (alg, run, t, fitness)
             end
             Worker->>Eval: Final Evaluation on Hardware (Acc, Latency, Size, Energy)
