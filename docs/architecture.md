@@ -8,61 +8,45 @@ This document outlines the system architecture, component contracts, asynchronou
 
 ```mermaid
 graph TB
-    subgraph Client Layer ["Client Tier (React 19 + TypeScript + Tailwind CSS)"]
-        UI["Scientific Research Workstation UI"]
-        WB["Algorithm Comparison Workbench"]
-        Plots["Interactive SVG Visualizations (Pareto, Boxplot, Convergence)"]
-        WSClient["WebSocket Client (Live Telemetry & Iteration Broadcaster)"]
+    subgraph ClientLayer [Client Tier - React 19 / TypeScript]
+        UI[Scientific Workstation UI]
+        WB[Algorithm Comparison Workbench]
+        Plots[Interactive Visualizations]
+        WSClient[WebSocket Live Client]
     end
 
-    subgraph Backend Layer ["Backend Tier (FastAPI Asynchronous Engine)"]
-        Router["REST API Router (/api/experiments, /api/algorithms, /api/datasets)"]
-        WSServer["WebSocket Telemetry Broadcaster (/api/experiments/{id}/ws)"]
-        Worker["Async Experiment Runner & Task Queue"]
+    subgraph BackendLayer [Backend Tier - FastAPI Async Engine]
+        Router[REST API Router]
+        WSServer[WebSocket Broadcaster]
+        Worker[Async Runner Task Queue]
         
-        subgraph Core Services ["Analytical & Statistical Services"]
-            ScoringSvc["Scoring Service (WSM Multi-Objective Scoring)"]
-            ParetoSvc["Pareto Service (Non-Dominated Sorting Frontier)"]
-            StatsSvc["Statistics Service (95% CI, Variance, Median)"]
-            AblationSvc["Ablation Service (5-Stage Sequential Decomposition)"]
-            ExportSvc["Export Service (CSV, JSON, Markdown, LaTeX)"]
-        end
-
-        subgraph Evaluation Suite ["High-Precision Evaluation Engine"]
-            AccEval["Accuracy Evaluator (Standardized Test Split)"]
-            LatEval["Latency Evaluator (CUDA Sync + Warmup Cycles)"]
-            SizeEval["Model Size Evaluator (Serialized Weight Footprint)"]
-            EnergyEval["Energy Evaluator (NVML Power Sampling & TDP Calibrated Model)"]
-            FlopsEval["FLOPs & Parameter Counter"]
-            QuantMgr["Quantization Manager (FP32, FP16, INT8 PTQ)"]
-            PruneMgr["Pruning Manager (Structured L1-Channel & Unstructured)"]
-        end
-
-        subgraph Optimizers ["Metaheuristic Algorithm Registry"]
-            BaseOpt["BaseOptimizer Standard Contract"]
-            Algs["GWO, WOA, ALO, MFO, GOA, MVO, SCA, AOA, MGO, GMO + Custom Plugins"]
-        end
+        ScoringSvc[WSM Scoring Service]
+        ParetoSvc[Pareto Frontier Service]
+        StatsSvc[Multi-Run Stats Service]
+        
+        Eval[Evaluation Suite - Accuracy / Latency / Energy / Size]
+        Optimizers[10 Metaheuristic Optimizers]
     end
 
-    subgraph Storage Layer ["Persistence Tier (SQLite + SQLAlchemy ORM)"]
-        DB[(benchmark.db)]
-        ModelsTable["CNN Models Registry"]
-        DatasetsTable["Datasets & Custom Data Archives"]
-        ExperimentsTable["Experiments & Parameter Configurations"]
-        RunsTable["Experiment Runs & Iteration History"]
-        MetricsTable["Evaluation Metrics & Telemetry Records"]
-        AblationsTable["Ablation Decomposition Records"]
+    subgraph StorageLayer [Persistence Tier - SQLite / SQLAlchemy]
+        DB[(SQLite benchmark.db)]
     end
 
     UI --> Router
+    WB --> Router
+    Plots --> Router
     WSClient <--> WSServer
-    Router --> CoreServices
     Router --> Worker
     Worker --> Optimizers
-    Worker --> Evaluation Suite
+    Worker --> Eval
+    Eval --> ScoringSvc
+    Eval --> ParetoSvc
+    Eval --> StatsSvc
+    ScoringSvc --> DB
+    ParetoSvc --> DB
+    StatsSvc --> DB
     Worker --> WSServer
-    Worker --> StorageLayer
-    CoreServices --> StorageLayer
+    DB --> Router
 ```
 
 ---

@@ -62,29 +62,36 @@ All algorithms adhere to the standardized `BaseOptimizer` mathematical search co
 ## 🏗️ System Architecture & Workflow
 
 ```mermaid
-flowchart TD
-    subgraph Client ["Client Interface (React 19 + TypeScript + Vite)"]
-        A[Dashboard Command Center] --> B[New Benchmark Wizard]
-        A --> C[Algorithm Comparison Workbench]
-        A --> D[Pareto Frontier Explorer]
-        A --> E[Convergence & Boxplot Visualizations]
+graph TD
+    subgraph ClientLayer [Client Interface - React 19 & TypeScript]
+        UI[Dashboard Command Center]
+        WB[Algorithm Comparison Workbench]
+        Wiz[New Benchmark Wizard]
+        Plots[Pareto & Convergence Visualizers]
     end
 
-    subgraph Backend ["Backend Engine (FastAPI Asynchronous Worker)"]
-        F[REST Endpoints] <--> G[WebSocket Telemetry Broadcaster]
-        F --> H[Experiment Task Runner]
-        H --> I[Quantization & Pruning Managers]
-        H --> J[Metaheuristic Optimizer Registry]
-        H --> K[Evaluation Suite: Latency, Accuracy, Size, Energy]
-        K --> L[Scoring & Pareto Frontier Services]
+    subgraph BackendLayer [Backend Engine - FastAPI & Async Workers]
+        API[REST Endpoints & WebSocket Broadcaster]
+        Runner[Experiment Task Runner]
+        Optimizers[10 Metaheuristic Optimizers]
+        Eval[Hardware Evaluation Suite - Latency / Energy / Accuracy]
+        Analytics[Pareto Analysis & WSM Scoring]
     end
 
-    subgraph Database ["Persistence Layer (SQLite + SQLAlchemy)"]
-        M[(benchmark.db)]
+    subgraph StorageLayer [Persistence Layer - SQLite & SQLAlchemy]
+        DB[(benchmark.db - Models / Runs / Metrics)]
     end
 
-    Client <==>|HTTP / WebSockets| Backend
-    Backend <--> Database
+    UI --> API
+    WB --> API
+    Wiz --> API
+    Plots --> API
+    API --> Runner
+    Runner --> Optimizers
+    Runner --> Eval
+    Eval --> Analytics
+    Analytics --> DB
+    DB --> API
 ```
 
 ---
