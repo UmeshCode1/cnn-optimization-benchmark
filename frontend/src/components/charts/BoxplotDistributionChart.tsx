@@ -10,7 +10,7 @@ interface BoxplotDistributionChartProps {
 export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> = ({
   stats,
   metricKey,
-  height = 340,
+  height = 360,
 }) => {
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
 
@@ -39,19 +39,34 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
     globalMax = Math.max(globalMax, summary.max_val);
   });
 
-  const range = globalMax - globalMin || 1.0;
-  const plotMin = Math.max(0, globalMin - range * 0.1);
-  const plotMax = globalMax + range * 0.1;
+  const range = Math.max(0.01, globalMax - globalMin);
+  // Ensure we expand range so boxplots have vertical breathing room
+  const padDelta = Math.max(range * 0.25, metricKey === 'accuracy' ? 0.2 : 0.05);
+  const plotMin = Math.max(0, globalMin - padDelta);
+  const plotMax = globalMax + padDelta;
 
-  const svgWidth = 640;
+  const svgWidth = 720;
   const svgHeight = height;
-  const padding = { top: 20, right: 30, bottom: 45, left: 60 };
+  const padding = { top: 25, right: 30, bottom: 45, left: 65 };
 
   const plotWidth = svgWidth - padding.left - padding.right;
   const plotHeight = svgHeight - padding.top - padding.bottom;
 
   const getY = (val: number) => padding.top + plotHeight - ((val - plotMin) / (plotMax - plotMin || 1e-6)) * plotHeight;
   const colWidth = plotWidth / algKeys.length;
+
+  const algColors: Record<string, string> = {
+    GWO: '#388bfd',
+    WOA: '#2ea043',
+    ALO: '#8957e5',
+    MFO: '#d29922',
+    GOA: '#00d2ff',
+    MVO: '#3fb950',
+    SCA: '#22d3ee',
+    AOA: '#f97316',
+    MGO: '#ec4899',
+    GMO: '#10b981',
+  };
 
   return (
     <div className="ws-panel p-5 space-y-4">
@@ -65,7 +80,19 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
       </div>
 
       <div className="relative w-full flex justify-center">
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full max-w-[720px] overflow-visible font-mono">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full max-w-[850px] overflow-visible font-mono">
+          {/* Background Canvas Grid */}
+          <rect
+            x={padding.left}
+            y={padding.top}
+            width={plotWidth}
+            height={plotHeight}
+            fill="var(--surface-secondary)"
+            fillOpacity="0.35"
+            stroke="var(--border)"
+            rx="6"
+          />
+
           {/* Y Axis Guide Lines */}
           {[0, 0.25, 0.5, 0.75, 1.0].map((t) => {
             const val = plotMin + t * (plotMax - plotMin);
@@ -77,19 +104,18 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   y1={yPos}
                   x2={padding.left + plotWidth}
                   y2={yPos}
-                  stroke="currentColor"
-                  className="text-[var(--border)]"
+                  stroke="var(--border)"
+                  strokeOpacity="0.6"
                   strokeDasharray="3 3"
                 />
                 <text
                   x={padding.left - 8}
-                  y={yPos + 4}
+                  y={yPos + 3.5}
                   textAnchor="end"
-                  fill="currentColor"
-                  className="text-[var(--text-muted)]"
+                  fill="var(--text-muted)"
                   fontSize="10"
                 >
-                  {val.toFixed(metricKey === 'energy_j' ? 4 : 2)}
+                  {val.toFixed(metricKey === 'energy_j' ? 4 : range < 0.5 ? 2 : 1)}
                 </text>
               </g>
             );
@@ -100,6 +126,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
             const summary = stats[alg][metricKey];
             const centerX = padding.left + idx * colWidth + colWidth / 2;
             const boxWidth = Math.min(26, colWidth * 0.65);
+            const color = algColors[alg] || 'var(--accent)';
 
             const yMin = getY(summary.min_val);
             const yMax = getY(summary.max_val);
@@ -123,14 +150,14 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   y1={yMin}
                   x2={centerX}
                   y2={yMax}
-                  stroke="#3b82f6"
+                  stroke={color}
                   strokeWidth="1.5"
                   strokeDasharray="2 2"
                 />
 
                 {/* Min / Max Caps */}
-                <line x1={centerX - boxWidth / 3} y1={yMin} x2={centerX + boxWidth / 3} y2={yMin} stroke="#3b82f6" strokeWidth="1.5" />
-                <line x1={centerX - boxWidth / 3} y1={yMax} x2={centerX + boxWidth / 3} y2={yMax} stroke="#3b82f6" strokeWidth="1.5" />
+                <line x1={centerX - boxWidth / 3} y1={yMin} x2={centerX + boxWidth / 3} y2={yMin} stroke={color} strokeWidth="1.5" />
+                <line x1={centerX - boxWidth / 3} y1={yMax} x2={centerX + boxWidth / 3} y2={yMax} stroke={color} strokeWidth="1.5" />
 
                 {/* 95% Confidence Interval Box */}
                 <rect
@@ -138,8 +165,8 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   y={Math.min(yCiLower, yCiUpper)}
                   width={boxWidth}
                   height={Math.max(4, Math.abs(yCiLower - yCiUpper))}
-                  fill={isHovered ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.12)'}
-                  stroke="#3b82f6"
+                  fill={isHovered ? `${color}40` : `${color}20`}
+                  stroke={color}
                   strokeWidth="1.5"
                   rx="3"
                   className="transition-colors"
@@ -151,14 +178,16 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   y1={yMedian}
                   x2={centerX + boxWidth / 2}
                   y2={yMedian}
-                  stroke="#38bdf8"
+                  stroke="#FFFFFF"
                   strokeWidth="2.5"
                 />
 
                 {/* Mean Diamond */}
                 <polygon
                   points={`${centerX},${yMean - 3.5} ${centerX + 3.5},${yMean} ${centerX},${yMean + 3.5} ${centerX - 3.5},${yMean}`}
-                  fill="#f59e0b"
+                  fill="#F59E0B"
+                  stroke="#FFFFFF"
+                  strokeWidth="0.5"
                 />
 
                 {/* X Axis Algorithm Label */}
@@ -166,8 +195,8 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   x={centerX}
                   y={padding.top + plotHeight + 18}
                   textAnchor="middle"
-                  fill="currentColor"
-                  className={isHovered ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-muted)]'}
+                  fill={isHovered ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                  fontWeight={isHovered ? '700' : '500'}
                   fontSize="10"
                 >
                   {alg}
@@ -179,15 +208,15 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
         {/* Hover Details */}
         {hoveredAlg && (
-          <div className="absolute top-2 right-2 bg-[var(--surface-elevated)] border border-[var(--border-strong)] rounded-md p-2.5 text-xs font-mono shadow-md z-20 space-y-0.5 text-[var(--text-secondary)]">
+          <div className="absolute top-2 right-2 ws-panel-elevated p-3 text-xs font-mono shadow-md z-20 space-y-1 text-[var(--text-secondary)]">
             <div className="font-semibold text-[var(--text-primary)] border-b border-[var(--border)] pb-1">
               {hoveredAlg} ({stats[hoveredAlg].runs_count} runs)
             </div>
-            <div>Mean: <strong className="text-amber-500">{stats[hoveredAlg][metricKey].mean.toFixed(2)}</strong></div>
-            <div>Median: <strong className="text-cyan-500">{stats[hoveredAlg][metricKey].median.toFixed(2)}</strong></div>
-            <div>Std Dev: <strong>{stats[hoveredAlg][metricKey].std.toFixed(2)}</strong></div>
-            <div>Min / Max: <strong>{stats[hoveredAlg][metricKey].min_val.toFixed(2)} &ndash; {stats[hoveredAlg][metricKey].max_val.toFixed(2)}</strong></div>
-            <div>95% CI: <strong>[{stats[hoveredAlg][metricKey].ci_95_lower.toFixed(2)}, {stats[hoveredAlg][metricKey].ci_95_upper.toFixed(2)}]</strong></div>
+            <div>Mean: <strong className="text-amber-500">{stats[hoveredAlg][metricKey].mean.toFixed(metricKey === 'energy_j' ? 4 : 2)}</strong></div>
+            <div>Median: <strong className="text-cyan-500">{stats[hoveredAlg][metricKey].median.toFixed(metricKey === 'energy_j' ? 4 : 2)}</strong></div>
+            <div>Std Dev: <strong>&plusmn;{stats[hoveredAlg][metricKey].std.toFixed(metricKey === 'energy_j' ? 4 : 2)}</strong></div>
+            <div>Min / Max: <strong>{stats[hoveredAlg][metricKey].min_val.toFixed(metricKey === 'energy_j' ? 4 : 2)} &ndash; {stats[hoveredAlg][metricKey].max_val.toFixed(metricKey === 'energy_j' ? 4 : 2)}</strong></div>
+            <div>95% CI: <strong>[{stats[hoveredAlg][metricKey].ci_95_lower.toFixed(metricKey === 'energy_j' ? 4 : 2)}, {stats[hoveredAlg][metricKey].ci_95_upper.toFixed(metricKey === 'energy_j' ? 4 : 2)}]</strong></div>
           </div>
         )}
       </div>
