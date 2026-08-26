@@ -152,6 +152,8 @@ export const App: React.FC = () => {
       <Navbar
         hardware={hardware}
         activeExperiment={experimentDetails?.experiment}
+        experiments={experiments}
+        onSelectExperiment={handleSelectExperiment}
         theme={theme}
         toggleTheme={toggleTheme}
         onNewBenchmark={() => setActiveTab('wizard')}
