@@ -135,12 +135,12 @@ def seed_initial_experiments(session: Session, hw_id: int):
         hardware_id=hw_id,
         baseline_accuracy=93.4,
         baseline_latency_ms=14.2,
-        baseline_model_size_mb=44.7,
+        baseline_size_mb=44.7,
         baseline_energy_j=0.38,
         baseline_flops_m=556.0,
-        baseline_parameters_m=11.17,
+        baseline_params_m=11.17,
         best_algorithm="GWO",
-        best_overall_score=95.2,
+        best_algorithm_reason="Highest composite trade-off score across 5 runs.",
         created_at=datetime.utcnow(),
     )
     session.add(exp1)
@@ -249,12 +249,12 @@ def seed_initial_experiments(session: Session, hw_id: int):
         hardware_id=hw_id,
         baseline_accuracy=91.8,
         baseline_latency_ms=8.6,
-        baseline_model_size_mb=8.9,
+        baseline_size_mb=8.9,
         baseline_energy_j=0.21,
         baseline_flops_m=314.0,
-        baseline_parameters_m=2.23,
+        baseline_params_m=2.23,
         best_algorithm="WOA",
-        best_overall_score=94.1,
+        best_algorithm_reason="Optimized edge latency on mobile inverted bottleneck layers.",
         created_at=datetime.utcnow(),
     )
     session.add(exp2)
