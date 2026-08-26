@@ -21,11 +21,35 @@ import { DatasetUploadModal } from '../common/DatasetUploadModal';
 import { ModelRegisterModal } from '../common/ModelRegisterModal';
 import { AlgorithmUploadModal } from '../common/AlgorithmUploadModal';
 
-interface NewBenchmarkWizardProps {
-  hardware?: HardwareProfile;
-  onSubmitBenchmark: (config: any) => void;
-  onCancel: () => void;
-}
+const DEFAULT_DATASETS: DatasetInfo[] = [
+  { id: 'cifar-10', name: 'CIFAR-10', is_custom: false, classes_count: 10, classes: [], train_samples: 50000, test_samples: 10000, resolution: '32x32x3', channels: 3, description: 'Standard 10-class benchmark dataset', created_at: '' },
+  { id: 'cifar-100', name: 'CIFAR-100', is_custom: false, classes_count: 100, classes: [], train_samples: 50000, test_samples: 10000, resolution: '32x32x3', channels: 3, description: 'Fine-grained 100-class benchmark dataset', created_at: '' },
+  { id: 'mnist', name: 'MNIST', is_custom: false, classes_count: 10, classes: [], train_samples: 60000, test_samples: 10000, resolution: '28x28x1', channels: 1, description: 'Handwritten digits dataset', created_at: '' },
+  { id: 'fashion-mnist', name: 'Fashion-MNIST', is_custom: false, classes_count: 10, classes: [], train_samples: 60000, test_samples: 10000, resolution: '28x28x1', channels: 1, description: 'Zalando fashion benchmark dataset', created_at: '' },
+  { id: 'imagenet-subset', name: 'ImageNet-1k Subset', is_custom: false, classes_count: 100, classes: [], train_samples: 50000, test_samples: 5000, resolution: '224x224x3', channels: 3, description: 'ImageNet 100-class subset', created_at: '' },
+];
+
+const DEFAULT_MODELS: CNNModelInfo[] = [
+  { id: 'resnet-18', name: 'ResNet-18', parameters_m: 11.17, flops_m: 556.0, base_accuracy: 93.4, is_custom: false, description: '18-layer Residual Network standard baseline' },
+  { id: 'mobilenet-v2', name: 'MobileNetV2', parameters_m: 2.23, flops_m: 314.0, base_accuracy: 91.8, is_custom: false, description: 'Inverted residual bottleneck architecture' },
+  { id: 'shufflenet-v2', name: 'ShuffleNetV2', parameters_m: 1.36, flops_m: 149.0, base_accuracy: 89.4, is_custom: false, description: 'Channel shuffle architecture' },
+  { id: 'simple-cnn', name: 'SimpleCNN', parameters_m: 0.85, flops_m: 88.0, base_accuracy: 86.2, is_custom: false, description: 'Compact 4-layer CNN' },
+  { id: 'vgg-16', name: 'VGG-16', parameters_m: 14.72, flops_m: 313.0, base_accuracy: 92.6, is_custom: false, description: 'Classic 16-layer network' },
+  { id: 'efficientnet-b0', name: 'EfficientNet-B0', parameters_m: 4.02, flops_m: 390.0, base_accuracy: 92.9, is_custom: false, description: 'Compound scaling baseline CNN' },
+];
+
+const DEFAULT_ALGORITHMS: AlgorithmMeta[] = [
+  { key: 'GWO', name: 'Grey Wolf Optimizer', acronym: 'GWO', year: 2014, authors: 'Mirjalili et al.', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'WOA', name: 'Whale Optimization Algorithm', acronym: 'WOA', year: 2016, authors: 'Mirjalili et al.', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'ALO', name: 'Ant Lion Optimizer', acronym: 'ALO', year: 2015, authors: 'Mirjalili', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'MFO', name: 'Moth-Flame Optimization', acronym: 'MFO', year: 2015, authors: 'Mirjalili', category: 'Physics', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'GOA', name: 'Grasshopper Optimization Algorithm', acronym: 'GOA', year: 2017, authors: 'Saremi et al.', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'MVO', name: 'Multi-Verse Optimizer', acronym: 'MVO', year: 2016, authors: 'Mirjalili et al.', category: 'Physics', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'SCA', name: 'Sine Cosine Algorithm', acronym: 'SCA', year: 2016, authors: 'Mirjalili', category: 'Mathematical', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'AOA', name: 'Arithmetic Optimization Algorithm', acronym: 'AOA', year: 2021, authors: 'Abualigah et al.', category: 'Mathematical', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'MGO', name: 'Mountain Gazelle Optimizer', acronym: 'MGO', year: 2022, authors: 'Abdollahzadeh et al.', category: 'Swarm Intelligence', description: '', strengths: [], status: 'VERIFIED' },
+  { key: 'GMO', name: 'Geometric Mean Optimizer', acronym: 'GMO', year: 2023, authors: 'Mirrashid et al.', category: 'Mathematical', description: '', strengths: [], status: 'VERIFIED' },
+];
 
 export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
   hardware,
@@ -36,10 +60,10 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [fairnessStatus, setFairnessStatus] = useState<any>(null);
 
-  // Dynamic Data
-  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
-  const [models, setModels] = useState<CNNModelInfo[]>([]);
-  const [algorithms, setAlgorithms] = useState<AlgorithmMeta[]>([]);
+  // Dynamic Data with safe defaults
+  const [datasets, setDatasets] = useState<DatasetInfo[]>(DEFAULT_DATASETS);
+  const [models, setModels] = useState<CNNModelInfo[]>(DEFAULT_MODELS);
+  const [algorithms, setAlgorithms] = useState<AlgorithmMeta[]>(DEFAULT_ALGORITHMS);
 
   // Modals
   const [isDatasetModalOpen, setIsDatasetModalOpen] = useState<boolean>(false);
@@ -93,14 +117,14 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
 
   const loadResources = async () => {
     try {
-      const [dss, mds, algs] = await Promise.all([
+      const [dss, mds, algs] = await Promise.allSettled([
         api.listDatasets(),
         api.listModels(),
         api.getAlgorithms(),
       ]);
-      setDatasets(dss);
-      setModels(mds);
-      setAlgorithms(algs);
+      if (dss.status === 'fulfilled' && dss.value.length > 0) setDatasets(dss.value);
+      if (mds.status === 'fulfilled' && mds.value.length > 0) setModels(mds.value);
+      if (algs.status === 'fulfilled' && algs.value.length > 0) setAlgorithms(algs.value);
     } catch (err) {
       console.error('Failed to load benchmark wizard resources:', err);
     }
