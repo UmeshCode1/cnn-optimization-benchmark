@@ -200,7 +200,7 @@ python -m pytest tests -v
 
 <div align="left">
 
-### **Umesh**
+### **Umesh Patel**
 *AI & Deep Learning Systems Researcher / Software Engineer*
 
 - **GitHub**: [@UmeshCode1](https://github.com/UmeshCode1)
@@ -218,8 +218,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 If you utilize this benchmark workstation in academic or industrial research, please cite:
 
 ```bibtex
-@software{umesh_cnn_benchmark_2026,
-  author = {Umesh},
+@software{umesh_patel_cnn_benchmark_2026,
+  author = {Umesh Patel},
   title = {CNN Optimization Benchmark: A Scientific Research Platform for Metaheuristics in Deep Convolutional Neural Network Compression},
   year = {2026},
   publisher = {GitHub},

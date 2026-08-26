@@ -366,7 +366,7 @@ export const DocumentationView: React.FC = () => {
               <div>
                 <h3 className="text-base font-bold text-[var(--text-primary)]">CNN Optimization Benchmark Platform</h3>
                 <span className="text-xs text-[var(--text-muted)] font-mono">
-                  Created &amp; Maintained by <strong>Umesh</strong> (@UmeshCode1)
+                  Created &amp; Maintained by <strong>Umesh Patel</strong> (@UmeshCode1)
                 </span>
               </div>
             </div>
