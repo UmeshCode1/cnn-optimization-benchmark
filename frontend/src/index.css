@@ -2,23 +2,28 @@
 
 @layer base {
   :root {
-    /* Color Hunt Top Curated Dark Palette: Deep Obsidian / High-Precision Research */
-    --background: #0D1117;
-    --surface: #161B22;
-    --surface-secondary: #21262D;
-    --surface-elevated: #30363D;
-    --border: #30363D;
-    --border-strong: #484F58;
-    --text-primary: #F0F6FC;
-    --text-secondary: #8B949E;
-    --text-muted: #6E7681;
-    --accent: #388BFD;
-    --accent-hover: #58A6FF;
-    --success: #3FB950;
-    --warning: #D29922;
-    --danger: #F85149;
-    --info: #A371F7;
-    --chart-grid: rgba(255, 255, 255, 0.08);
+    /* UIverse Distinctive Bespoke Dark Palette: Deep Space Titanium & Electric Cyan/Cobalt */
+    --background: #080C10;
+    --surface: #0E151D;
+    --surface-secondary: #151F2B;
+    --surface-elevated: #1D2A3A;
+    --border: #223142;
+    --border-strong: #334860;
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    
+    /* Non-Generic Distinctive Accents */
+    --accent: #00D2FF;
+    --accent-dark: #0088CC;
+    --accent-hover: #38E1FF;
+    --accent-gradient: linear-gradient(135deg, #00D2FF 0%, #3A7BD5 100%);
+    --success: #10B981;
+    --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    --warning: #F59E0B;
+    --danger: #F43F5E;
+    --info: #8B5CF6;
+    --chart-grid: rgba(255, 255, 255, 0.06);
     --chart-axis: rgba(255, 255, 255, 0.35);
 
     /* Backwards-compatible aliases */
@@ -32,23 +37,28 @@
   }
 
   html.light-theme, :root[data-theme='light'] {
-    /* Color Hunt Top Curated Light Palette: Clean Studio Canvas / Sharp Contrast */
-    --background: #F6F8FA;
+    /* UIverse Distinctive Bespoke Light Palette: Polar Snow & Deep Ocean Cobalt */
+    --background: #F1F5F9;
     --surface: #FFFFFF;
-    --surface-secondary: #F3F4F6;
-    --surface-elevated: #EAEEF2;
-    --border: #D0D7DE;
-    --border-strong: #AFB8C1;
-    --text-primary: #1F2328;
-    --text-secondary: #57606A;
-    --text-muted: #6E7781;
-    --accent: #0969DA;
-    --accent-hover: #0860CA;
-    --success: #1A7F37;
-    --warning: #9A6700;
-    --danger: #CF222E;
-    --info: #8250DF;
-    --chart-grid: rgba(0, 0, 0, 0.07);
+    --surface-secondary: #E8EEF5;
+    --surface-elevated: #DDE6F0;
+    --border: #CBD5E1;
+    --border-strong: #94A3B8;
+    --text-primary: #0F172A;
+    --text-secondary: #475569;
+    --text-muted: #64748B;
+    
+    /* Non-Generic Distinctive Accents */
+    --accent: #0284C7;
+    --accent-dark: #0369A1;
+    --accent-hover: #0EA5E9;
+    --accent-gradient: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+    --success: #059669;
+    --success-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+    --warning: #D97706;
+    --danger: #E11D48;
+    --info: #7C3AED;
+    --chart-grid: rgba(0, 0, 0, 0.06);
     --chart-axis: rgba(0, 0, 0, 0.35);
 
     /* Backwards-compatible aliases */
@@ -69,7 +79,7 @@
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.18s ease, color 0.18s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -84,10 +94,11 @@
   }
 }
 
-/* Scientific Workstation Panels & Elevation */
+/* UIverse-Inspired Tactile Glass & Metal Panels */
 .ws-header {
   background-color: var(--surface);
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .ws-sidebar {
@@ -99,14 +110,15 @@
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ws-panel-elevated {
   background-color: var(--surface-elevated);
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 20px -3px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Backwards-compatible .lab-card */
@@ -114,38 +126,33 @@
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  transition: border-color 0.15s ease;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
 .lab-card:hover {
   border-color: var(--border-strong);
 }
 
-/* Scientific Interactive Inputs & Controls */
-.ws-input {
-  background-color: var(--surface-secondary);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  transition: border-color 0.15s ease;
-}
-.ws-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
+/* UIverse Tactile Buttons with Micro-Shadows & Active Press */
 .ws-button-primary {
-  background-color: var(--accent);
+  background: var(--accent-gradient);
   color: #FFFFFF;
   border-radius: 6px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.8125rem;
-  transition: background-color 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px -1px rgba(0, 210, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.15s ease;
+  cursor: pointer;
 }
 .ws-button-primary:hover {
-  background-color: var(--accent-hover);
+  box-shadow: 0 4px 14px -1px rgba(0, 210, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+.ws-button-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px -1px rgba(0, 210, 255, 0.2);
 }
 
 .ws-button-secondary {
@@ -155,11 +162,59 @@
   border-radius: 6px;
   font-weight: 500;
   font-size: 0.8125rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.15s ease;
+  cursor: pointer;
 }
 .ws-button-secondary:hover {
   background-color: var(--surface-elevated);
   border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.ws-button-secondary:active {
+  transform: translateY(1px);
+}
+
+/* UIverse Input Fields */
+.ws-input {
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ws-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
+}
+
+/* UIverse-Style Custom Range Sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--surface-secondary);
+  height: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 210, 255, 0.6);
+  border: 2px solid #FFFFFF;
+  transition: transform 0.12s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 /* Scientific Matrix Tables */
@@ -176,7 +231,7 @@
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.55rem 0.75rem;
+  padding: 0.6rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
