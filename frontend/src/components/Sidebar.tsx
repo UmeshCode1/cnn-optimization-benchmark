@@ -11,6 +11,7 @@ import {
   BookOpen,
   FileText,
   History,
+  X,
 } from 'lucide-react';
 
 export type NavTab =
@@ -32,6 +33,8 @@ interface SidebarProps {
   setActiveTab: (tab: NavTab) => void;
   completedExperimentsCount: number;
   activeExperimentId?: string | null;
+  isOpenMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -39,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   completedExperimentsCount,
   activeExperimentId,
+  isOpenMobile = false,
+  onCloseMobile = () => {},
 }) => {
   const navGroups = [
     {
@@ -47,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'wizard', label: 'New Benchmark', icon: PlayCircle },
         { id: 'results', label: 'Benchmark Results', icon: BarChart3, badge: completedExperimentsCount > 0 ? String(completedExperimentsCount) : undefined },
-        { id: 'history', label: 'Experiment History', icon: History },
+        { id: 'history', label: 'Experiment Archive', icon: History },
       ],
     },
     {
@@ -70,56 +75,95 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  return (
-    <aside className="w-56 ws-sidebar flex flex-col justify-between h-[calc(100vh-3.5rem)] sticky top-14 select-none shrink-0">
-      <div className="py-3 px-2 space-y-4 overflow-y-auto">
-        {navGroups.map((group) => (
-          <div key={group.title} className="space-y-1">
-            <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-              {group.title}
-            </div>
-            <nav className="space-y-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id as NavTab)}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                      isActive
-                        ? 'bg-[var(--surface-elevated)] text-[var(--accent)] font-semibold border-l-2 border-[var(--accent)] rounded-l-none'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
-                      <span>{item.label}</span>
-                    </div>
-                    {item.badge && (
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-        ))}
-      </div>
+  const handleSelectTab = (tabId: NavTab) => {
+    setActiveTab(tabId);
+    onCloseMobile();
+  };
 
-      {/* Compact Research Footer */}
-      <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-muted)] font-mono space-y-1">
-        <div className="flex items-center justify-between text-[10px]">
-          <span>ACTIVE EXP:</span>
-          <span className="font-semibold text-[var(--text-primary)]">{activeExperimentId || 'NONE'}</span>
+  return (
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpenMobile && (
+        <div
+          onClick={onCloseMobile}
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden transition-opacity"
+        />
+      )}
+
+      {/* Main Sidebar Container (Desktop Sticky + Mobile Off-canvas Drawer) */}
+      <aside
+        className={`w-60 ws-sidebar flex flex-col justify-between select-none shrink-0 transition-transform duration-200 z-50 ${
+          isOpenMobile
+            ? 'fixed inset-y-0 left-0 top-0 h-full shadow-2xl translate-x-0'
+            : 'hidden md:flex md:h-[calc(100vh-3.5rem)] md:sticky md:top-14 -translate-x-full md:translate-x-0'
+        }`}
+      >
+        {/* Mobile Header with Close Button */}
+        <div className="p-3 border-b border-[var(--border)] flex items-center justify-between md:hidden">
+          <div className="flex items-center gap-2 font-semibold text-xs text-[var(--text-primary)]">
+            <div className="w-6 h-6 rounded bg-[var(--accent)] flex items-center justify-center text-white text-[10px] font-bold">
+              CNN
+            </div>
+            <span>Benchmark Platform</span>
+          </div>
+          <button
+            onClick={onCloseMobile}
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <div className="flex items-center justify-between text-[10px]">
-          <span>OPTIMIZERS:</span>
-          <span className="text-[var(--success)] font-medium">10 / 10 LOADED</span>
+
+        {/* Nav Links */}
+        <div className="py-3 px-2 space-y-4 overflow-y-auto flex-1">
+          {navGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <div className="px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                {group.title}
+              </div>
+              <nav className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelectTab(item.id as NavTab)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all ${
+                        isActive
+                          ? 'bg-[var(--surface-elevated)] text-[var(--accent)] font-semibold border-l-2 border-[var(--accent)] rounded-l-none'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]">
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
-      </div>
-    </aside>
+
+        {/* Compact Research Footer */}
+        <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-muted)] font-mono space-y-1">
+          <div className="flex items-center justify-between text-[10px]">
+            <span>ACTIVE EXP:</span>
+            <span className="font-semibold text-[var(--text-primary)] truncate max-w-[100px]">{activeExperimentId || 'NONE'}</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px]">
+            <span>OPTIMIZERS:</span>
+            <span className="text-[var(--success)] font-medium">10 / 10 LOADED</span>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };

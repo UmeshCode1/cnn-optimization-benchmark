@@ -12,6 +12,7 @@ import { HardwareView } from './components/views/HardwareView';
 import { DocumentationView } from './components/views/DocumentationView';
 import { ReportsView } from './components/views/ReportsView';
 import { DatasetsView } from './components/views/DatasetsView';
+import { HistoryView } from './components/views/HistoryView';
 import { LiveRunModal } from './components/views/LiveRunModal';
 import { api } from './services/api';
 import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats, AblationRecord, HardwareProfile } from './types';
@@ -22,6 +23,7 @@ export const App: React.FC = () => {
     return saved === 'light' ? 'light' : 'dark';
   });
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // App Data State
   const [experiments, setExperiments] = useState<Experiment[]>([]);
@@ -73,14 +75,22 @@ export const App: React.FC = () => {
       if (exps.length > 0) {
         const targetId = activeExperimentId || exps[0].id;
         setActiveExperimentId(targetId);
-        const details = await api.getExperimentDetails(targetId);
-        setExperimentDetails(details);
+        await loadExperimentDetails(targetId);
       }
     } catch (err) {
-      console.error('Error loading benchmark data:', err);
+      console.error('Failed to load benchmark data:', err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+    }
+  };
+
+  const loadExperimentDetails = async (expId: string) => {
+    try {
+      const details = await api.getExperiment(expId);
+      setExperimentDetails(details);
+    } catch (err) {
+      console.error(`Failed to load experiment ${expId}:`, err);
     }
   };
 
@@ -89,66 +99,43 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSelectExperiment = async (expId: string) => {
-    try {
-      setActiveExperimentId(expId);
-      const details = await api.getExperimentDetails(expId);
-      setExperimentDetails(details);
-      setActiveTab('results');
-    } catch (err) {
-      console.error('Failed to load experiment:', err);
-    }
+    setActiveExperimentId(expId);
+    await loadExperimentDetails(expId);
   };
 
   const handleStartBenchmark = async (config: any) => {
     try {
-      const created = await api.createExperiment(config, true);
+      const created = await api.createExperiment(config);
       setRunningExperimentId(created.id);
       setActiveExperimentId(created.id);
-    } catch (err: any) {
-      alert(`Benchmark launch failed: ${err.message}`);
+      setActiveTab('dashboard');
+    } catch (err) {
+      console.error('Failed to launch benchmark:', err);
     }
   };
 
-  const handleRecalculateWeights = async (weights: any, statMode: string) => {
+  const handleRecalculateWeights = async (weights: {
+    accuracy: number;
+    latency: number;
+    model_size: number;
+    energy: number;
+  }) => {
     if (!activeExperimentId) return;
     try {
-      const res = await api.recalculateWeights(activeExperimentId, weights, statMode);
-      if (experimentDetails) {
-        setExperimentDetails({
-          ...experimentDetails,
-          ranked_algorithms: res.ranked_algorithms,
-          experiment: {
-            ...experimentDetails.experiment,
-            best_algorithm: res.winner_info.best_overall?.algorithm,
-            best_algorithm_reason: res.winner_info.rationale,
-          },
-        });
-      }
+      const updated = await api.recalculateScores(activeExperimentId, weights);
+      setExperimentDetails(updated);
     } catch (err) {
       console.error('Failed to recalculate weights:', err);
     }
   };
 
-  const handleCompareSelected = async (selectedAlgs: string[]) => {
-    if (!activeExperimentId) return;
-    try {
-      const res = await api.compareSelected(activeExperimentId, selectedAlgs, 'MEAN');
-      if (experimentDetails) {
-        setExperimentDetails({
-          ...experimentDetails,
-          ranked_algorithms: res.ranked_algorithms,
-          pareto_points: res.pareto_points,
-        });
-        setActiveTab('results');
-      }
-    } catch (err) {
-      console.error('Failed to compare selected:', err);
-    }
+  const handleCompareSelected = (algs: string[]) => {
+    setActiveTab('results');
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-main)] text-[var(--text-primary)] selection:bg-blue-600 selection:text-white">
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white">
+      {/* Top Navigation Control Bar */}
       <Navbar
         hardware={hardware}
         activeExperiment={experimentDetails?.experiment}
@@ -159,19 +146,22 @@ export const App: React.FC = () => {
         onNewBenchmark={() => setActiveTab('wizard')}
         onRefresh={() => loadData(true)}
         isRefreshing={isRefreshing}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       />
 
-      <div className="flex flex-1">
-        {/* Sidebar */}
+      <div className="flex flex-1 relative">
+        {/* Responsive Sidebar (Sticky on Desktop, Off-Canvas Drawer on Mobile) */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           completedExperimentsCount={experiments.filter((e) => e.status === 'COMPLETED').length}
           activeExperimentId={experimentDetails?.experiment?.id}
+          isOpenMobile={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-3.5rem)]">
+        {/* Main Content Viewport */}
+        <main className="flex-1 p-3 sm:p-6 overflow-y-auto max-h-[calc(100vh-3.5rem)] animate-fade-in w-full">
           {activeTab === 'dashboard' && (
             <DashboardView
               experiments={experiments}
@@ -255,48 +245,15 @@ export const App: React.FC = () => {
           )}
 
           {activeTab === 'history' && (
-            <div className="space-y-4 max-w-7xl mx-auto">
-              <h2 className="text-lg font-bold text-slate-100">ALL BENCHMARK EXPERIMENTS</h2>
-              <div className="lab-card p-4">
-                <table className="lab-table font-mono text-xs">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Title</th>
-                      <th>Dataset / CNN</th>
-                      <th>Status</th>
-                      <th>Best Algorithm</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {experiments.map((exp) => (
-                      <tr key={exp.id}>
-                        <td className="text-blue-400 font-bold">{exp.id}</td>
-                        <td className="text-slate-200">{exp.title}</td>
-                        <td className="text-slate-300">{exp.dataset_name} &bull; {exp.cnn_model_name}</td>
-                        <td>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            exp.status === 'COMPLETED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-slate-800 text-slate-400'
-                          }`}>
-                            {exp.status}
-                          </span>
-                        </td>
-                        <td className="text-emerald-400 font-bold">{exp.best_algorithm || '--'}</td>
-                        <td>
-                          <button
-                            onClick={() => handleSelectExperiment(exp.id)}
-                            className="px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-sans font-medium"
-                          >
-                            Open Results
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <HistoryView
+              experiments={experiments}
+              activeExperimentId={activeExperimentId || undefined}
+              onSelectExperiment={(id) => {
+                handleSelectExperiment(id);
+                setActiveTab('results');
+              }}
+              onNewBenchmark={() => setActiveTab('wizard')}
+            />
           )}
         </main>
       </div>
