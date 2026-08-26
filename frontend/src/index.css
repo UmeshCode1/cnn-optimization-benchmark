@@ -28,10 +28,10 @@
     --bg-card: #ffffff;
     --bg-card-hover: #f8fafc;
     --bg-surface: #e2e8f0;
-    --border-color: #e2e8f0;
-    --border-light: #cbd5e1;
+    --border-color: #cbd5e1;
+    --border-light: #e2e8f0;
     --text-primary: #0f172a;
-    --text-secondary: #475569;
+    --text-secondary: #334155;
     --text-muted: #64748b;
     --accent-blue: #2563eb;
     --accent-cyan: #0891b2;
@@ -59,6 +59,52 @@
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
+}
+
+/* Light Theme Automatic Contrast Adaptations */
+html.light-theme .text-slate-100,
+html.light-theme .text-slate-200,
+html.light-theme .text-slate-300 {
+  color: #0f172a !important;
+}
+
+html.light-theme .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.light-theme .bg-slate-900,
+html.light-theme .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+html.light-theme .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+}
+
+html.light-theme .border-slate-800,
+html.light-theme .border-slate-700 {
+  border-color: #cbd5e1 !important;
+}
+
+html.light-theme .bg-blue-950\/40,
+html.light-theme .bg-blue-950\/50 {
+  background-color: rgba(219, 234, 254, 0.6) !important;
+}
+
+html.light-theme .bg-emerald-950,
+html.light-theme .bg-emerald-950\/40 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+html.light-theme .bg-purple-900\/50,
+html.light-theme .bg-purple-900\/60 {
+  background-color: #f3e8ff !important;
+  color: #6b21a8 !important;
 }
 
 /* Professional Scientific UI & Theme Compatibility */

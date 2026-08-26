@@ -13,13 +13,14 @@ export const AblationView: React.FC<AblationViewProps> = ({
 }) => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <Layers2 className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <Layers2 className="w-5 h-5 text-cyan-500" />
             ABLATION STUDY: SEQUENTIAL COMPRESSION DECOMPOSITION
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-muted)]">
             Deconstructs the cumulative contribution of baseline, quantization, pruning, and metaheuristic tuning.
           </p>
         </div>
@@ -30,32 +31,40 @@ export const AblationView: React.FC<AblationViewProps> = ({
         {ablations.map((a, idx) => (
           <div
             key={a.stage_name}
-            className={`lab-card p-3 flex flex-col justify-between ${
-              idx === ablations.length - 1 ? 'border-emerald-600 bg-emerald-950/20' : ''
+            className={`lab-card p-3.5 flex flex-col justify-between ${
+              idx === ablations.length - 1
+                ? 'border-emerald-500/60 bg-emerald-500/5'
+                : 'hover:border-blue-500/40'
             }`}
           >
             <div>
-              <div className="text-[10px] font-mono text-slate-400 uppercase">Stage {a.stage_order}</div>
-              <h4 className="text-xs font-bold text-slate-100 mt-0.5 leading-tight">{a.stage_name}</h4>
-              <p className="text-[11px] text-slate-400 mt-2">{a.description}</p>
+              <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
+                Stage {a.stage_order}
+              </div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)] mt-1 leading-tight">
+                {a.stage_name}
+              </h4>
+              <p className="text-[11px] text-[var(--text-secondary)] mt-2 leading-relaxed">
+                {a.description}
+              </p>
             </div>
 
-            <div className="mt-4 pt-2 border-t border-slate-800 space-y-1 font-mono text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Accuracy:</span>
-                <strong className="text-emerald-400">{a.accuracy.toFixed(2)}%</strong>
+            <div className="mt-4 pt-2.5 border-t border-[var(--border-color)] space-y-1.5 font-mono text-[11px]">
+              <div className="flex justify-between items-center">
+                <span className="text-[var(--text-muted)]">Accuracy:</span>
+                <strong className="text-emerald-500 font-bold">{a.accuracy.toFixed(2)}%</strong>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Latency:</span>
-                <strong className="text-cyan-400">{a.latency_ms.toFixed(2)} ms</strong>
+              <div className="flex justify-between items-center">
+                <span className="text-[var(--text-muted)]">Latency:</span>
+                <strong className="text-cyan-500 font-bold">{a.latency_ms.toFixed(2)} ms</strong>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Size:</span>
-                <strong className="text-purple-400">{a.model_size_mb.toFixed(2)} MB</strong>
+              <div className="flex justify-between items-center">
+                <span className="text-[var(--text-muted)]">Size:</span>
+                <strong className="text-purple-500 font-bold">{a.model_size_mb.toFixed(2)} MB</strong>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Energy:</span>
-                <strong className="text-amber-400">{a.energy_j.toFixed(4)} J</strong>
+              <div className="flex justify-between items-center">
+                <span className="text-[var(--text-muted)]">Energy:</span>
+                <strong className="text-amber-500 font-bold">{a.energy_j.toFixed(4)} J</strong>
               </div>
             </div>
           </div>
@@ -63,8 +72,8 @@ export const AblationView: React.FC<AblationViewProps> = ({
       </div>
 
       {/* Comparative Table */}
-      <div className="lab-card p-4 space-y-3">
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+      <div className="lab-card p-5 space-y-3">
+        <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
           Ablation Stage Metrics Table
         </h4>
 
@@ -85,14 +94,14 @@ export const AblationView: React.FC<AblationViewProps> = ({
             <tbody>
               {ablations.map((a) => (
                 <tr key={a.stage_order}>
-                  <td className="text-slate-400">#{a.stage_order}</td>
-                  <td className="font-bold text-slate-100">{a.stage_name}</td>
-                  <td className="text-right text-emerald-400 font-semibold">{a.accuracy.toFixed(2)}%</td>
-                  <td className="text-right text-cyan-400">{a.latency_ms.toFixed(2)} ms</td>
-                  <td className="text-right text-purple-400">{a.model_size_mb.toFixed(2)} MB</td>
-                  <td className="text-right text-amber-400">{a.energy_j.toFixed(4)} J</td>
-                  <td className="text-right text-slate-300">{a.parameters_m.toFixed(2)} M</td>
-                  <td className="text-right text-slate-300">{a.flops_m.toFixed(1)} M</td>
+                  <td className="text-[var(--text-muted)] font-semibold">#{a.stage_order}</td>
+                  <td className="font-bold text-[var(--text-primary)]">{a.stage_name}</td>
+                  <td className="text-right text-emerald-500 font-bold">{a.accuracy.toFixed(2)}%</td>
+                  <td className="text-right text-cyan-500 font-semibold">{a.latency_ms.toFixed(2)} ms</td>
+                  <td className="text-right text-purple-500 font-semibold">{a.model_size_mb.toFixed(2)} MB</td>
+                  <td className="text-right text-amber-500 font-semibold">{a.energy_j.toFixed(4)} J</td>
+                  <td className="text-right text-[var(--text-secondary)]">{a.parameters_m.toFixed(2)} M</td>
+                  <td className="text-right text-[var(--text-secondary)]">{a.flops_m.toFixed(1)} M</td>
                 </tr>
               ))}
             </tbody>
