@@ -20,19 +20,19 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-color)] pb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-purple-400" />
+          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <Layers className="w-5 h-5 text-purple-500" />
             MULTI-RUN STOCHASTIC STATISTICAL ANALYSIS &bull; {experiment.id}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-muted)]">
             Evaluating distribution across {experiment.number_of_runs} stochastic runs with seed policy: {experiment.random_seed_policy}.
           </p>
         </div>
 
         {/* Metric Selector Tab */}
-        <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <div className="flex items-center gap-1 bg-[var(--bg-surface)] p-1 rounded-lg border border-[var(--border-color)] text-xs font-mono">
           {[
             { key: 'accuracy', label: 'Accuracy (%)' },
             { key: 'latency_ms', label: 'Latency (ms)' },
@@ -43,10 +43,10 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
             <button
               key={m.key}
               onClick={() => setSelectedMetric(m.key as any)}
-              className={`px-3 py-1.5 rounded transition ${
+              className={`px-3 py-1.5 rounded-md transition ${
                 selectedMetric === m.key
-                  ? 'bg-blue-600 text-white font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               {m.label}
@@ -63,8 +63,8 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
       />
 
       {/* Detailed Statistical Table */}
-      <div className="lab-card p-4 space-y-3">
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+      <div className="lab-card p-5 space-y-3">
+        <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
           Statistical Summary Table ({experiment.number_of_runs} Repetitions Per Algorithm)
         </h4>
 
@@ -87,24 +87,24 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
                 const summary = statistics[alg][selectedMetric];
                 return (
                   <tr key={alg}>
-                    <td className="font-bold text-slate-100">{alg}</td>
-                    <td className="text-right text-slate-400">{statistics[alg].runs_count}</td>
-                    <td className="text-right font-bold text-amber-400">
+                    <td className="font-bold text-[var(--text-primary)]">{alg}</td>
+                    <td className="text-right text-[var(--text-muted)]">{statistics[alg].runs_count}</td>
+                    <td className="text-right font-bold text-amber-500">
                       {summary.mean.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
                     </td>
-                    <td className="text-right text-slate-300">
+                    <td className="text-right text-[var(--text-secondary)]">
                       &plusmn;{summary.std.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
                     </td>
-                    <td className="text-right text-cyan-400 font-semibold">
+                    <td className="text-right text-cyan-500 font-semibold">
                       {summary.median.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
                     </td>
-                    <td className="text-right text-slate-400">
+                    <td className="text-right text-[var(--text-muted)]">
                       {summary.min_val.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
                     </td>
-                    <td className="text-right text-slate-400">
+                    <td className="text-right text-[var(--text-muted)]">
                       {summary.max_val.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
                     </td>
-                    <td className="text-right text-emerald-400">
+                    <td className="text-right text-emerald-500 font-medium">
                       [{summary.ci_95_lower.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}, {summary.ci_95_upper.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}]
                     </td>
                   </tr>

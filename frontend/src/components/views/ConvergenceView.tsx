@@ -23,22 +23,22 @@ export const ConvergenceView: React.FC<ConvergenceViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <TrendingDown className="w-5 h-5 text-blue-400" />
+          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <TrendingDown className="w-5 h-5 text-blue-500" />
             CONVERGENCE SPEED &amp; BEHAVIOR &bull; {experiment.id}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-muted)]">
             Evolution of multi-objective cost fitness over {experiment.max_iterations} iterations.
           </p>
         </div>
       </div>
 
-      <div className="lab-card p-4 bg-slate-900/60 border-blue-800/40 flex items-start gap-3">
-        <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-300 space-y-1">
-          <div className="font-bold text-slate-100 font-mono text-xs">
+      <div className="lab-card p-4 bg-blue-500/5 border-blue-500/30 flex items-start gap-3">
+        <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+        <div className="text-xs text-[var(--text-secondary)] space-y-1">
+          <div className="font-bold text-[var(--text-primary)] font-mono text-xs">
             Understanding Metaheuristic Convergence Trajectories:
           </div>
           <p className="leading-relaxed">
@@ -50,8 +50,8 @@ export const ConvergenceView: React.FC<ConvergenceViewProps> = ({
       <ConvergenceLineChart algorithmCurves={curvesByAlg} height={380} />
 
       {/* Iteration metrics table */}
-      <div className="lab-card p-4 space-y-3">
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+      <div className="lab-card p-5 space-y-3">
+        <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
           Optimization Efficiency Metrics
         </h4>
 
@@ -69,11 +69,11 @@ export const ConvergenceView: React.FC<ConvergenceViewProps> = ({
             <tbody>
               {runs.slice(0, 10).map((r) => (
                 <tr key={r.algorithm + r.run_index}>
-                  <td className="font-bold text-slate-100">{r.algorithm}</td>
-                  <td className="text-right text-slate-300">{experiment.max_iterations}</td>
-                  <td className="text-right text-slate-300">{r.candidate_evaluations}</td>
-                  <td className="text-right text-slate-300">{r.optimization_time_seconds.toFixed(2)} s</td>
-                  <td className="text-right text-emerald-400 font-bold">{r.best_fitness.toFixed(4)}</td>
+                  <td className="font-bold text-[var(--text-primary)]">{r.algorithm}</td>
+                  <td className="text-right text-[var(--text-secondary)]">{experiment.max_iterations}</td>
+                  <td className="text-right text-[var(--text-secondary)]">{r.candidate_evaluations}</td>
+                  <td className="text-right text-[var(--text-secondary)]">{r.optimization_time_seconds.toFixed(2)} s</td>
+                  <td className="text-right text-emerald-500 font-bold">{r.best_fitness.toFixed(4)}</td>
                 </tr>
               ))}
             </tbody>

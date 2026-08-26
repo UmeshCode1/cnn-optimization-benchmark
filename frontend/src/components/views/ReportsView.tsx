@@ -10,13 +10,13 @@ interface ReportsViewProps {
 export const ReportsView: React.FC<ReportsViewProps> = ({ experiment }) => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-400" />
+          <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <FileText className="w-5 h-5 text-blue-500" />
             RESEARCH REPORT EXPORT CENTER &bull; {experiment.id}
           </h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-muted)]">
             Export experimental benchmarks in publication-ready formats with full provenance audit trail.
           </p>
         </div>
@@ -24,20 +24,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ experiment }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Markdown Report Card */}
-        <div className="lab-card p-4 space-y-3 flex flex-col justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
-              <FileText className="w-4 h-4 text-blue-400" />
+        <div className="lab-card p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              <FileText className="w-4 h-4 text-blue-500" />
               <span>Scientific Markdown Report</span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Complete research paper style markdown report with methodology, baseline comparisons, rankings, winner rationale, and disclosures.
             </p>
           </div>
           <a
             href={api.getExportUrl(experiment.id, 'markdown')}
             download
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded transition"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg shadow-sm transition"
           >
             <Download className="w-4 h-4" />
             <span>Download .MD Report</span>
@@ -45,20 +45,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ experiment }) => {
         </div>
 
         {/* CSV Data Card */}
-        <div className="lab-card p-4 space-y-3 flex flex-col justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+        <div className="lab-card p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
               <span>Raw Results CSV Data</span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Tabular spreadsheet of all 10 algorithms, accuracy, latency, size, energy, FLOPs, parameters, and Pareto classification.
             </p>
           </div>
           <a
             href={api.getExportUrl(experiment.id, 'csv')}
             download
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded transition"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg shadow-sm transition"
           >
             <Download className="w-4 h-4" />
             <span>Download .CSV Spreadsheet</span>
@@ -66,20 +66,20 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ experiment }) => {
         </div>
 
         {/* Raw JSON Card */}
-        <div className="lab-card p-4 space-y-3 flex flex-col justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-200 uppercase tracking-wider">
-              <Code className="w-4 h-4 text-purple-400" />
+        <div className="lab-card p-5 space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              <Code className="w-4 h-4 text-purple-500" />
               <span>Complete JSON Payload</span>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Machine-readable structured JSON document containing full experiment configuration, all individual run logs, convergence curves, and hardware telemetry.
             </p>
           </div>
           <a
             href={api.getExportUrl(experiment.id, 'json')}
             download
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs rounded transition"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs rounded-lg shadow-sm transition"
           >
             <Download className="w-4 h-4" />
             <span>Download .JSON Data</span>
@@ -89,11 +89,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ experiment }) => {
 
       {/* Research Disclosures & Scientific Limitations */}
       <div className="lab-card p-5 space-y-3">
-        <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-amber-400" />
+        <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-amber-500" />
           Mandatory Research Limitations &amp; Disclosures
         </h4>
-        <div className="space-y-2 text-xs text-slate-300 leading-relaxed font-sans">
+        <div className="space-y-2 text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
           <p>
             1. <strong>Hardware Scope</strong>: Latency (ms) and Energy (J) are measured on the tested host device ({experiment.hardware?.device_name || 'System GPU/CPU'}). Results may vary on edge microcontrollers or differing GPU microarchitectures.
           </p>
