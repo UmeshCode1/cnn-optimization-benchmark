@@ -101,6 +101,10 @@ export const App: React.FC = () => {
   const handleSelectExperiment = async (expId: string) => {
     setActiveExperimentId(expId);
     await loadExperimentDetails(expId);
+    // If user is on dashboard, wizard, history, documentation, or datasets, open the experiment results view
+    if (['dashboard', 'wizard', 'history', 'documentation', 'datasets'].includes(activeTab)) {
+      setActiveTab('results');
+    }
   };
 
   const handleStartBenchmark = async (config: any) => {

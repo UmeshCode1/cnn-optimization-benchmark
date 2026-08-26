@@ -268,6 +268,34 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Step Wizard */}
         <div className="lg:col-span-2 space-y-5">
+          {/* Experiment Title & Research Name Input Card */}
+          <div className="ws-panel p-4 space-y-2.5 border-l-4 border-l-[var(--accent)] bg-[var(--surface-elevated)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="text-xs font-mono font-bold text-[var(--text-primary)] flex items-center gap-1.5 uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Experiment Name &amp; Title</span>
+              </label>
+              <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                Required for tracking &amp; archive
+              </span>
+            </div>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g. ResNet-18 Multi-Objective Compression on CIFAR-10"
+              className="w-full ws-input px-3 py-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface)] border border-[var(--border-strong)] rounded-md focus:border-[var(--accent)]"
+              required
+            />
+            <input
+              type="text"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Optional research description, hypothesis, or hardware notes..."
+              className="w-full ws-input px-3 py-1.5 text-[11px] text-[var(--text-secondary)] bg-[var(--surface)] border border-[var(--border)] rounded-md"
+            />
+          </div>
+
           {/* Step Progress Bar */}
           <div className="flex items-center justify-between ws-panel p-1.5 overflow-x-auto text-xs font-mono">
             {wizardSteps.map((s) => {

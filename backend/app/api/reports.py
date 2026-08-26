@@ -1,6 +1,6 @@
 """
 Reports and Export API Endpoints.
-Supports CSV, JSON, and Markdown formatted research reports.
+Supports CSV, JSON, Markdown, Plain Text (TXT), and Microsoft Word DOCS (.doc) formatted research reports.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -37,6 +37,100 @@ def export_csv(exp_id: str, db: Session = Depends(get_db)):
         content=csv_content,
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={exp.id}_results.csv"},
+    )
+
+
+@router.get("/{exp_id}/txt")
+def export_txt(exp_id: str, db: Session = Depends(get_db)):
+    """Export comprehensive scientific research report in formatted Plain Text (TXT)."""
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    runs = [r.to_dict() for r in exp.runs]
+    stats = StatisticsService.aggregate_algorithm_runs(runs)
+    ranked = ScoringService.recalculate_overall_scores(
+        aggregated_stats=stats,
+        weight_accuracy=exp.weight_accuracy,
+        weight_latency=exp.weight_latency,
+        weight_model_size=exp.weight_model_size,
+        weight_energy=exp.weight_energy,
+        stat_mode="MEAN",
+    )
+
+    hw_name = exp.hardware.device_name if exp.hardware else "Host System"
+    winner_info = ScoringService.identify_winners_and_rationale(
+        ranked_results=ranked,
+        baseline={
+            "accuracy": exp.baseline_accuracy,
+            "latency_ms": exp.baseline_latency_ms,
+            "model_size_mb": exp.baseline_size_mb,
+            "energy_j": exp.baseline_energy_j,
+        },
+        weights={
+            "weight_accuracy": exp.weight_accuracy,
+            "weight_latency": exp.weight_latency,
+            "weight_model_size": exp.weight_model_size,
+            "weight_energy": exp.weight_energy,
+        },
+        dataset=exp.dataset_name,
+        cnn_model=exp.cnn_model_name,
+        hardware=hw_name,
+    )
+
+    ablations = [a.to_dict() for a in exp.ablations]
+    txt_content = ExportService.generate_txt_report(exp.to_dict(), ranked, winner_info, ablations)
+    return Response(
+        content=txt_content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={exp.id}_report.txt"},
+    )
+
+
+@router.get("/{exp_id}/doc")
+def export_doc(exp_id: str, db: Session = Depends(get_db)):
+    """Export comprehensive scientific research report in Microsoft Word / Docs (.doc) format."""
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    runs = [r.to_dict() for r in exp.runs]
+    stats = StatisticsService.aggregate_algorithm_runs(runs)
+    ranked = ScoringService.recalculate_overall_scores(
+        aggregated_stats=stats,
+        weight_accuracy=exp.weight_accuracy,
+        weight_latency=exp.weight_latency,
+        weight_model_size=exp.weight_model_size,
+        weight_energy=exp.weight_energy,
+        stat_mode="MEAN",
+    )
+
+    hw_name = exp.hardware.device_name if exp.hardware else "Host System"
+    winner_info = ScoringService.identify_winners_and_rationale(
+        ranked_results=ranked,
+        baseline={
+            "accuracy": exp.baseline_accuracy,
+            "latency_ms": exp.baseline_latency_ms,
+            "model_size_mb": exp.baseline_size_mb,
+            "energy_j": exp.baseline_energy_j,
+        },
+        weights={
+            "weight_accuracy": exp.weight_accuracy,
+            "weight_latency": exp.weight_latency,
+            "weight_model_size": exp.weight_model_size,
+            "weight_energy": exp.weight_energy,
+        },
+        dataset=exp.dataset_name,
+        cnn_model=exp.cnn_model_name,
+        hardware=hw_name,
+    )
+
+    ablations = [a.to_dict() for a in exp.ablations]
+    doc_content = ExportService.generate_doc_report(exp.to_dict(), ranked, winner_info, ablations)
+    return Response(
+        content=doc_content,
+        media_type="application/msword; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={exp.id}_report.doc"},
     )
 
 
@@ -112,3 +206,4 @@ def export_json(exp_id: str, db: Session = Depends(get_db)):
         "runs": runs,
         "ablations": [a.to_dict() for a in exp.ablations],
     }
+

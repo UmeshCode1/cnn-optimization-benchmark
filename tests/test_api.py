@@ -152,3 +152,46 @@ def test_list_and_upload_datasets():
     # 4. Delete custom dataset
     del_res = client.delete(f"/api/datasets/{custom_id}")
     assert del_res.status_code == 204
+
+
+def test_export_reports_formats():
+    # 1. Fetch existing experiment or create test one
+    exps_res = client.get("/api/experiments")
+    assert exps_res.status_code == 200
+    exps = exps_res.json()
+    if not exps:
+        return  # No experiments to export
+
+    target_id = exps[0]["id"]
+
+    # Test CSV export
+    csv_res = client.get(f"/api/reports/{target_id}/csv")
+    assert csv_res.status_code == 200
+    assert "text/csv" in csv_res.headers["content-type"]
+    assert len(csv_res.text) > 0
+
+    # Test Markdown export
+    md_res = client.get(f"/api/reports/{target_id}/markdown")
+    assert md_res.status_code == 200
+    assert "text/markdown" in md_res.headers["content-type"]
+    assert "Scientific Benchmark Report" in md_res.text
+
+    # Test TXT export
+    txt_res = client.get(f"/api/reports/{target_id}/txt")
+    assert txt_res.status_code == 200
+    assert "text/plain" in txt_res.headers["content-type"]
+    assert "CNN OPTIMIZATION BENCHMARK" in txt_res.text
+
+    # Test DOC export
+    doc_res = client.get(f"/api/reports/{target_id}/doc")
+    assert doc_res.status_code == 200
+    assert "application/msword" in doc_res.headers["content-type"]
+    assert "<html" in doc_res.text
+
+    # Test JSON export
+    json_res = client.get(f"/api/reports/{target_id}/json")
+    assert json_res.status_code == 200
+    data = json_res.json()
+    assert "experiment" in data
+    assert "ranked_algorithms" in data
+

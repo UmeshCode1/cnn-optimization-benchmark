@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'datasets', label: 'Dataset Repository', icon: Layers },
         { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },
-        { id: 'documentation', label: 'Optimizers & Docs', icon: BookOpen },
+        { id: 'documentation', label: 'Documentation & Report', icon: BookOpen },
         { id: 'reports', label: 'Research Reports', icon: FileText },
       ],
     },

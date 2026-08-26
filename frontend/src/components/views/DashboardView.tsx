@@ -241,10 +241,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </thead>
             <tbody>
               {experiments.map((exp) => (
-                <tr key={exp.id}>
+                <tr
+                  key={exp.id}
+                  onClick={() => onOpenExperiment(exp.id)}
+                  className="cursor-pointer hover:bg-[var(--surface-elevated)] transition-colors"
+                  title="Click to open experiment analysis & results"
+                >
                   <td className="font-semibold text-[var(--accent)] font-mono">{exp.id}</td>
                   <td className="font-sans text-[var(--text-primary)] font-medium">
-                    {exp.dataset_name} &bull; {exp.cnn_model_name}
+                    <span className="block">{exp.title || `${exp.dataset_name} • ${exp.cnn_model_name}`}</span>
+                    <span className="text-[11px] text-[var(--text-muted)] font-mono">{exp.dataset_name} &bull; {exp.cnn_model_name}</span>
                   </td>
                   <td className="text-[var(--text-secondary)]">
                     {exp.selected_algorithms?.length || 10} Algorithms
@@ -263,11 +269,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <span>{exp.status}</span>
                     </span>
                   </td>
-                  <td className="font-bold text-[var(--text-primary)]">{exp.best_algorithm || '--'}</td>
-                  <td className="text-[var(--text-muted)]">{exp.created_at ? exp.created_at.slice(0, 19) : 'Recent'}</td>
+                  <td className="font-bold text-[var(--text-primary)] font-sans">
+                    {exp.best_algorithm ? (
+                      <span className="flex items-center gap-1 text-[var(--accent)]">
+                        <span>★</span>
+                        <span>{exp.best_algorithm}</span>
+                      </span>
+                    ) : (
+                      '--'
+                    )}
+                  </td>
+                  <td className="text-[var(--text-muted)] text-[11px]">
+                    {exp.created_at ? exp.created_at.slice(0, 19).replace('T', ' ') : 'Recent'}
+                  </td>
                   <td className="text-right">
                     <button
-                      onClick={() => onOpenExperiment(exp.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenExperiment(exp.id);
+                      }}
                       className="text-xs text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium font-sans cursor-pointer"
                     >
                       <span>Open Analysis</span>

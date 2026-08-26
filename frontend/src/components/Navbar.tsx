@@ -184,11 +184,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="text-[11px] text-[var(--text-muted)] mt-1 font-sans">
                         {exp.dataset_name} &bull; <strong className="text-[var(--text-primary)]">{exp.cnn_model_name}</strong>
                       </div>
-                      {exp.best_algorithm && (
-                        <div className="text-[10px] text-[var(--accent)] mt-0.5 font-mono">
-                          Winner: {exp.best_algorithm}
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] mt-1 font-mono">
+                        {exp.best_algorithm ? (
+                          <span className="text-[var(--accent)] font-semibold">Winner: {exp.best_algorithm}</span>
+                        ) : (
+                          <span>--</span>
+                        )}
+                        <span>{exp.created_at ? exp.created_at.slice(0, 10) : ''}</span>
+                      </div>
                     </div>
                   );
                 })}

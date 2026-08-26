@@ -30,30 +30,50 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'RUNNING'>('ALL');
   const [selectedDataset, setSelectedDataset] = useState<string>('ALL');
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'title_asc' | 'title_desc' | 'status'>('date_desc');
 
   // Unique datasets for filter
   const uniqueDatasets = Array.from(new Set(experiments.map((e) => e.dataset_name).filter(Boolean)));
 
-  // Filter experiments
-  const filteredExperiments = experiments.filter((exp) => {
-    const query = searchQuery.toLowerCase().trim();
-    const matchesQuery =
-      !query ||
-      exp.id.toLowerCase().includes(query) ||
-      exp.title.toLowerCase().includes(query) ||
-      exp.dataset_name.toLowerCase().includes(query) ||
-      exp.cnn_model_name.toLowerCase().includes(query) ||
-      (exp.best_algorithm && exp.best_algorithm.toLowerCase().includes(query));
+  // Filter & Sort experiments
+  const filteredExperiments = experiments
+    .filter((exp) => {
+      const query = searchQuery.toLowerCase().trim();
+      const matchesQuery =
+        !query ||
+        exp.id.toLowerCase().includes(query) ||
+        exp.title.toLowerCase().includes(query) ||
+        exp.dataset_name.toLowerCase().includes(query) ||
+        exp.cnn_model_name.toLowerCase().includes(query) ||
+        (exp.best_algorithm && exp.best_algorithm.toLowerCase().includes(query));
 
-    const matchesStatus =
-      statusFilter === 'ALL' ||
-      (statusFilter === 'COMPLETED' && exp.status === 'COMPLETED') ||
-      (statusFilter === 'RUNNING' && (exp.status === 'RUNNING' || exp.status === 'QUEUED'));
+      const matchesStatus =
+        statusFilter === 'ALL' ||
+        (statusFilter === 'COMPLETED' && exp.status === 'COMPLETED') ||
+        (statusFilter === 'RUNNING' && (exp.status === 'RUNNING' || exp.status === 'QUEUED'));
 
-    const matchesDataset = selectedDataset === 'ALL' || exp.dataset_name === selectedDataset;
+      const matchesDataset = selectedDataset === 'ALL' || exp.dataset_name === selectedDataset;
 
-    return matchesQuery && matchesStatus && matchesDataset;
-  });
+      return matchesQuery && matchesStatus && matchesDataset;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date_desc') {
+        return (b.created_at || b.id).localeCompare(a.created_at || a.id);
+      }
+      if (sortBy === 'date_asc') {
+        return (a.created_at || a.id).localeCompare(b.created_at || b.id);
+      }
+      if (sortBy === 'title_asc') {
+        return (a.title || a.id).localeCompare(b.title || b.id);
+      }
+      if (sortBy === 'title_desc') {
+        return (b.title || b.id).localeCompare(a.title || a.id);
+      }
+      if (sortBy === 'status') {
+        return a.status.localeCompare(b.status);
+      }
+      return 0;
+    });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -138,6 +158,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               </select>
             </div>
           )}
+
+          {/* Sort Selector */}
+          <div className="flex items-center gap-1.5 text-xs font-mono">
+            <span className="text-[var(--text-muted)] text-[11px]">Sort By:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="ws-input px-2.5 py-1 text-xs font-mono"
+            >
+              <option value="date_desc">Date: Newest First</option>
+              <option value="date_asc">Date: Oldest First</option>
+              <option value="title_asc">Name: A &rarr; Z</option>
+              <option value="title_desc">Name: Z &rarr; A</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
         </div>
 
         {/* Results Counter & Search Status */}
