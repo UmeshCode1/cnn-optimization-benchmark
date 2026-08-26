@@ -29,8 +29,10 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run Pytest Test Suite
+      env:
+        PYTHONPATH: .
       run: |
-        pytest
+        python -m pytest -v
 
   frontend-build:
     name: Frontend Vite Production Build
