@@ -10,7 +10,7 @@ interface BoxplotDistributionChartProps {
 export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> = ({
   stats,
   metricKey,
-  height = 320,
+  height = 340,
 }) => {
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
   const algKeys = Object.keys(stats);
 
   if (algKeys.length === 0) {
-    return <div className="lab-card p-6 text-center text-xs text-slate-500">No multi-run statistical data available</div>;
+    return <div className="ws-panel p-6 text-center text-xs text-[var(--text-muted)] font-mono">No multi-run statistical data available</div>;
   }
 
   // Find min and max across all algorithms for this metric
@@ -54,13 +54,13 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
   const colWidth = plotWidth / algKeys.length;
 
   return (
-    <div className="lab-card p-4 flex flex-col justify-between">
-      <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
-        <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+    <div className="ws-panel p-5 space-y-4">
+      <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+        <h4 className="ws-section-title">
           Multi-Run Statistical Boxplot: {currentMetric.label}
         </h4>
-        <span className="text-[11px] font-mono text-slate-400">
-          Showing Min &bull; Median &bull; Mean &bull; Max &bull; 95% Confidence Interval
+        <span className="text-[11px] font-mono text-[var(--text-muted)]">
+          Min &bull; Median &bull; Mean &bull; Max &bull; 95% CI
         </span>
       </div>
 
@@ -72,8 +72,23 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
             const yPos = getY(val);
             return (
               <g key={`y-${t}`}>
-                <line x1={padding.left} y1={yPos} x2={padding.left + plotWidth} y2={yPos} stroke="#1e293b" strokeDasharray="3 3" />
-                <text x={padding.left - 8} y={yPos + 4} textAnchor="end" fill="#64748b" fontSize="10">
+                <line
+                  x1={padding.left}
+                  y1={yPos}
+                  x2={padding.left + plotWidth}
+                  y2={yPos}
+                  stroke="currentColor"
+                  className="text-[var(--border)]"
+                  strokeDasharray="3 3"
+                />
+                <text
+                  x={padding.left - 8}
+                  y={yPos + 4}
+                  textAnchor="end"
+                  fill="currentColor"
+                  className="text-[var(--text-muted)]"
+                  fontSize="10"
+                >
                   {val.toFixed(metricKey === 'energy_j' ? 4 : 2)}
                 </text>
               </g>
@@ -84,7 +99,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
           {algKeys.map((alg, idx) => {
             const summary = stats[alg][metricKey];
             const centerX = padding.left + idx * colWidth + colWidth / 2;
-            const boxWidth = Math.min(28, colWidth * 0.65);
+            const boxWidth = Math.min(26, colWidth * 0.65);
 
             const yMin = getY(summary.min_val);
             const yMax = getY(summary.max_val);
@@ -123,10 +138,10 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   y={Math.min(yCiLower, yCiUpper)}
                   width={boxWidth}
                   height={Math.max(4, Math.abs(yCiLower - yCiUpper))}
-                  fill={isHovered ? '#1e3a8a' : '#172554'}
+                  fill={isHovered ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.12)'}
                   stroke="#3b82f6"
                   strokeWidth="1.5"
-                  rx="2"
+                  rx="3"
                   className="transition-colors"
                 />
 
@@ -142,7 +157,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
                 {/* Mean Diamond */}
                 <polygon
-                  points={`${centerX},${yMean - 4} ${centerX + 4},${yMean} ${centerX},${yMean + 4} ${centerX - 4},${yMean}`}
+                  points={`${centerX},${yMean - 3.5} ${centerX + 3.5},${yMean} ${centerX},${yMean + 3.5} ${centerX - 3.5},${yMean}`}
                   fill="#f59e0b"
                 />
 
@@ -151,9 +166,9 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   x={centerX}
                   y={padding.top + plotHeight + 18}
                   textAnchor="middle"
-                  fill={isHovered ? '#60a5fa' : '#94a3b8'}
+                  fill="currentColor"
+                  className={isHovered ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-muted)]'}
                   fontSize="10"
-                  fontWeight={isHovered ? 'bold' : 'normal'}
                 >
                   {alg}
                 </text>
@@ -164,10 +179,12 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
         {/* Hover Details */}
         {hoveredAlg && (
-          <div className="absolute top-2 right-2 bg-slate-900 border border-slate-700 rounded p-2 text-xs font-mono shadow-xl z-20 space-y-0.5">
-            <div className="font-bold text-blue-400 border-b border-slate-800 pb-1">{hoveredAlg} ({stats[hoveredAlg].runs_count} runs)</div>
-            <div>Mean: <strong className="text-amber-400">{stats[hoveredAlg][metricKey].mean.toFixed(2)}</strong></div>
-            <div>Median: <strong className="text-cyan-400">{stats[hoveredAlg][metricKey].median.toFixed(2)}</strong></div>
+          <div className="absolute top-2 right-2 bg-[var(--surface-elevated)] border border-[var(--border-strong)] rounded-md p-2.5 text-xs font-mono shadow-md z-20 space-y-0.5 text-[var(--text-secondary)]">
+            <div className="font-semibold text-[var(--text-primary)] border-b border-[var(--border)] pb-1">
+              {hoveredAlg} ({stats[hoveredAlg].runs_count} runs)
+            </div>
+            <div>Mean: <strong className="text-amber-500">{stats[hoveredAlg][metricKey].mean.toFixed(2)}</strong></div>
+            <div>Median: <strong className="text-cyan-500">{stats[hoveredAlg][metricKey].median.toFixed(2)}</strong></div>
             <div>Std Dev: <strong>{stats[hoveredAlg][metricKey].std.toFixed(2)}</strong></div>
             <div>Min / Max: <strong>{stats[hoveredAlg][metricKey].min_val.toFixed(2)} &ndash; {stats[hoveredAlg][metricKey].max_val.toFixed(2)}</strong></div>
             <div>95% CI: <strong>[{stats[hoveredAlg][metricKey].ci_95_lower.toFixed(2)}, {stats[hoveredAlg][metricKey].ci_95_upper.toFixed(2)}]</strong></div>

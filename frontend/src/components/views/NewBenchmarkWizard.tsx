@@ -561,7 +561,19 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
             <div className="ws-panel p-5 space-y-4">
               <h3 className="ws-section-title">Step 6: Evaluation Protocol &amp; Multi-Objective Weights</h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Compute Target:</label>
+                  <select
+                    value={formData.is_demo ? 'CPU' : (hardware?.device_type === 'GPU' ? 'GPU' : 'CPU')}
+                    onChange={() => {}}
+                    className="w-full ws-input p-2 text-xs font-mono"
+                  >
+                    <option value="AUTO">Auto (GPU CUDA if available)</option>
+                    <option value="GPU">GPU Accelerated (CUDA)</option>
+                    <option value="CPU">Host CPU Multi-Core</option>
+                  </select>
+                </div>
                 <div>
                   <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Repetitions (Runs):</label>
                   <select
@@ -576,7 +588,7 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Population &bull; Iterations:</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Pop &bull; Iterations:</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"

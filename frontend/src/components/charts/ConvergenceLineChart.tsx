@@ -20,14 +20,14 @@ const ALG_COLORS: Record<string, string> = {
 
 export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
   algorithmCurves,
-  height = 320,
+  height = 340,
 }) => {
   const [selectedAlgs, setSelectedAlgs] = useState<string[]>(Object.keys(algorithmCurves));
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
 
   const algorithms = Object.keys(algorithmCurves);
   if (algorithms.length === 0) {
-    return <div className="lab-card p-6 text-center text-xs text-slate-500">No convergence curves recorded</div>;
+    return <div className="ws-panel p-6 text-center text-xs text-[var(--text-muted)] font-mono">No convergence curves recorded</div>;
   }
 
   const toggleAlg = (alg: string) => {
@@ -68,13 +68,13 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
   const getY = (fit: number) => padding.top + plotHeight - ((fit - minFit) / (maxFit - minFit || 1e-6)) * plotHeight;
 
   return (
-    <div className="lab-card p-4 flex flex-col justify-between">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 border-b border-slate-800 pb-3">
+    <div className="ws-panel p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
         <div>
-          <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+          <h4 className="ws-section-title">
             Convergence Trajectory vs Iteration
           </h4>
-          <span className="text-[11px] font-mono text-slate-400">
+          <span className="text-[11px] font-mono text-[var(--text-muted)]">
             Fitness (Objective Cost) Minimization Curve
           </span>
         </div>
@@ -83,19 +83,19 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
         <div className="flex flex-wrap items-center gap-1.5">
           {algorithms.map((alg) => {
             const isSelected = selectedAlgs.includes(alg);
-            const color = ALG_COLORS[alg] || '#94a3b8';
+            const color = ALG_COLORS[alg] || 'var(--text-muted)';
             return (
               <button
                 key={alg}
                 onClick={() => toggleAlg(alg)}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold transition flex items-center gap-1 border ${
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors flex items-center gap-1 border ${
                   isSelected
-                    ? 'bg-slate-800 text-slate-100 border-slate-600'
-                    : 'bg-slate-900 text-slate-500 border-slate-800 opacity-60'
+                    ? 'bg-[var(--surface-elevated)] text-[var(--text-primary)] border-[var(--border-strong)]'
+                    : 'bg-[var(--surface-secondary)] text-[var(--text-muted)] border-[var(--border)] opacity-60'
                 }`}
                 style={{ borderColor: isSelected ? color : undefined }}
               >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
                 {alg}
               </button>
             );
@@ -115,7 +115,8 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
             y1={padding.top}
             x2={padding.left}
             y2={padding.top + plotHeight}
-            stroke="#334155"
+            stroke="currentColor"
+            className="text-[var(--border-strong)]"
             strokeWidth="1"
           />
           <line
@@ -123,7 +124,8 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
             y1={padding.top + plotHeight}
             x2={padding.left + plotWidth}
             y2={padding.top + plotHeight}
-            stroke="#334155"
+            stroke="currentColor"
+            className="text-[var(--border-strong)]"
             strokeWidth="1"
           />
 
@@ -138,14 +140,16 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
                   y1={yPos}
                   x2={padding.left + plotWidth}
                   y2={yPos}
-                  stroke="#1e293b"
+                  stroke="currentColor"
+                  className="text-[var(--border)]"
                   strokeDasharray="3 3"
                 />
                 <text
                   x={padding.left - 8}
                   y={yPos + 4}
                   textAnchor="end"
-                  fill="#64748b"
+                  fill="currentColor"
+                  className="text-[var(--text-muted)]"
                   fontSize="10"
                 >
                   {fitVal.toFixed(3)}
@@ -164,13 +168,15 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
                   y1={padding.top + plotHeight}
                   x2={xPos}
                   y2={padding.top + plotHeight + 5}
-                  stroke="#64748b"
+                  stroke="currentColor"
+                  className="text-[var(--border-strong)]"
                 />
                 <text
                   x={xPos}
                   y={padding.top + plotHeight + 18}
                   textAnchor="middle"
-                  fill="#64748b"
+                  fill="currentColor"
+                  className="text-[var(--text-muted)]"
                   fontSize="10"
                 >
                   Iter {iter}
@@ -202,10 +208,10 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
                   d={pathD}
                   fill="none"
                   stroke={color}
-                  strokeWidth={isHovered ? 3.5 : 2}
+                  strokeWidth={isHovered ? 3 : 1.75}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity={hoveredAlg && !isHovered ? 0.35 : 0.9}
+                  opacity={hoveredAlg && !isHovered ? 0.3 : 0.9}
                   className="transition-all duration-150"
                 />
               </g>
@@ -217,22 +223,22 @@ export const ConvergenceLineChart: React.FC<ConvergenceLineChartProps> = ({
             x={padding.left + plotWidth / 2}
             y={svgHeight - 6}
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="11"
-            fontWeight="bold"
+            fill="currentColor"
+            className="text-[var(--text-secondary)] font-semibold"
+            fontSize="10"
           >
-            Optimization Iterations &rarr;
+            Optimization Iterations (Search Progress &rarr;)
           </text>
           <text
             x={-svgHeight / 2}
-            y="16"
+            y="14"
             transform="rotate(-90)"
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="11"
-            fontWeight="bold"
+            fill="currentColor"
+            className="text-[var(--text-secondary)] font-semibold"
+            fontSize="10"
           >
-            Fitness Cost &rarr; Lower is Better
+            Objective Cost Fitness (Lower is Better &rarr;)
           </text>
         </svg>
       </div>
