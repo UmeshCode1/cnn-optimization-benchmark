@@ -9,6 +9,9 @@ import {
   Cpu,
   Layers,
   Sparkles,
+  ChevronRight,
+  Database,
+  Calendar,
 } from 'lucide-react';
 import { Experiment, RankedAlgorithm, ParetoPoint } from '../../types';
 import { MetricCard } from '../common/MetricCard';
@@ -36,7 +39,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const completedCount = experiments.filter((e) => e.status === 'COMPLETED').length;
   const runningCount = experiments.filter((e) => e.status === 'RUNNING' || e.status === 'QUEUED').length;
-  const failedCount = experiments.filter((e) => e.status === 'FAILED').length;
 
   const bestAccAlg = rankedAlgorithms.length > 0
     ? [...rankedAlgorithms].sort((a, b) => b.accuracy - a.accuracy)[0]
@@ -58,13 +60,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Zone A: Current Experiment Overview & Research Mission */}
+      {/* TailAdmin Breadcrumb Header & Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)] mb-1">
+            <span>Home</span>
+            <ChevronRight className="w-3 h-3 text-[var(--border-strong)]" />
+            <span>Research</span>
+            <ChevronRight className="w-3 h-3 text-[var(--border-strong)]" />
+            <span className="text-[var(--accent)] font-semibold">Dashboard</span>
+          </div>
+          <h1 className="ws-page-title">CNN Optimization Benchmark Command Center</h1>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onNewBenchmark}
+            className="flex items-center gap-1.5 px-3.5 py-2 ws-button-primary text-xs"
+          >
+            <PlayCircle className="w-4 h-4" />
+            <span>New Benchmark</span>
+          </button>
+          {latestExperiment && (
+            <button
+              onClick={onViewResults}
+              className="flex items-center gap-1.5 px-3.5 py-2 ws-button-secondary text-xs"
+            >
+              <BarChart3 className="w-4 h-4 text-[var(--accent)]" />
+              <span>View Results</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Zone A: Current Experiment Overview Card */}
       <div className="ws-panel p-5 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1.5 max-w-3xl">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-semibold text-[var(--accent)] uppercase tracking-wider">
-                Active Research Experiment
+              <span className="text-[10px] font-mono font-bold text-[var(--accent)] uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+                Active Benchmark Experiment
               </span>
               <span className="text-[var(--text-muted)] font-mono text-xs">&bull;</span>
               <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
@@ -79,61 +114,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Evaluating trade-offs between classification accuracy, hardware latency, model footprint, and energy consumption across 10 standardized metaheuristics.
             </p>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onNewBenchmark}
-              className="flex items-center gap-1.5 px-3 py-1.5 ws-button-primary text-xs"
-            >
-              <PlayCircle className="w-3.5 h-3.5" />
-              <span>New Benchmark</span>
-            </button>
-            {latestExperiment && (
-              <button
-                onClick={onViewResults}
-                className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-[var(--accent)]" />
-                <span>View Results</span>
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Experiment Parameters Strip */}
         {latestExperiment && (
-          <div className="pt-3 border-t border-[var(--border)] grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs font-mono">
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Dataset:</span>
+          <div className="pt-3 border-t border-[var(--border)] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-mono">
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Dataset</span>
               <span className="font-semibold text-[var(--text-primary)]">{latestExperiment.dataset_name}</span>
             </div>
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Model:</span>
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Model</span>
               <span className="font-semibold text-[var(--text-primary)]">{latestExperiment.cnn_model_name}</span>
             </div>
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Quantization:</span>
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Quantization</span>
               <span className="font-semibold text-[var(--text-primary)]">{latestExperiment.quantization_type}</span>
             </div>
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Pruning:</span>
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Pruning</span>
               <span className="font-semibold text-[var(--text-primary)]">
                 {(latestExperiment.pruning_ratio * 100).toFixed(0)}% L1 Channel
               </span>
             </div>
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Runs &bull; Seed:</span>
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Runs &bull; Seed</span>
               <span className="font-semibold text-[var(--text-primary)]">{latestExperiment.number_of_runs} runs &bull; #{latestExperiment.base_seed}</span>
             </div>
-            <div>
-              <span className="text-[var(--text-muted)] text-[11px] block">Execution Status:</span>
+            <div className="p-2 rounded bg-[var(--surface-secondary)]">
+              <span className="text-[var(--text-muted)] text-[10px] block uppercase">Status</span>
               <span className="font-semibold text-[var(--success)]">{latestExperiment.status}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Zone B: Analytical Performance Summary Champions */}
+      {/* Zone B: TailAdmin 4-Column KPI Champions Grid */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="ws-section-title">Performance Summary &bull; Objective Leaders</h3>
@@ -188,7 +204,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Zone C: Algorithm Comparison Workbench with Live Dynamic Reweighting */}
+      {/* Zone C: Algorithm Comparison Workbench with Dynamic Weight Sliders */}
       {rankedAlgorithms.length > 0 && (
         <AlgorithmComparisonWorkbench
           rankedAlgorithms={rankedAlgorithms}
@@ -196,12 +212,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         />
       )}
 
-      {/* Zone D: Experiment Activity Log */}
-      <div className="ws-panel p-5 space-y-3">
+      {/* Zone D: TailAdmin-Style Experiment Activity Table */}
+      <div className="ws-panel p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="ws-section-title">Experiment Activity Log</h3>
-          <span className="text-xs font-mono text-[var(--text-muted)]">
-            {experiments.length} Experiments Recorded
+          <div>
+            <h3 className="ws-section-title">Experiment Activity Log</h3>
+            <p className="text-[11px] font-mono text-[var(--text-muted)] mt-0.5">
+              Historical persistent benchmark runs recorded in SQLite database
+            </p>
+          </div>
+          <span className="text-xs font-mono px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-muted)] border border-[var(--border)]">
+            {experiments.length} Experiments
           </span>
         </div>
 
@@ -210,41 +231,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <thead>
               <tr>
                 <th>Experiment ID</th>
-                <th>Dataset &bull; Model</th>
-                <th>Algorithms</th>
+                <th>Dataset &bull; Architecture</th>
+                <th>Optimizers</th>
                 <th>Status</th>
-                <th>Top Performer</th>
-                <th>Date / Time</th>
+                <th>Rank #1 Winner</th>
+                <th>Timestamp</th>
                 <th className="text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {experiments.slice(0, 5).map((exp) => (
+              {experiments.map((exp) => (
                 <tr key={exp.id}>
-                  <td className="font-semibold text-[var(--accent)]">{exp.id}</td>
-                  <td className="font-sans text-[var(--text-primary)]">
+                  <td className="font-semibold text-[var(--accent)] font-mono">{exp.id}</td>
+                  <td className="font-sans text-[var(--text-primary)] font-medium">
                     {exp.dataset_name} &bull; {exp.cnn_model_name}
                   </td>
                   <td className="text-[var(--text-secondary)]">
-                    {exp.selected_algorithms?.length || 10} Optimizers
+                    {exp.selected_algorithms?.length || 10} Algorithms
                   </td>
                   <td>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                    <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                       exp.status === 'COMPLETED'
                         ? 'bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30'
                         : exp.status === 'RUNNING'
                         ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/30'
                         : 'bg-[var(--surface-secondary)] text-[var(--text-muted)]'
                     }`}>
-                      {exp.status}
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        exp.status === 'COMPLETED' ? 'bg-[var(--success)]' : 'bg-[var(--warning)] animate-pulse'
+                      }`} />
+                      <span>{exp.status}</span>
                     </span>
                   </td>
                   <td className="font-bold text-[var(--text-primary)]">{exp.best_algorithm || '--'}</td>
-                  <td className="text-[var(--text-muted)]">{exp.created_at || 'Recent'}</td>
+                  <td className="text-[var(--text-muted)]">{exp.created_at ? exp.created_at.slice(0, 19) : 'Recent'}</td>
                   <td className="text-right">
                     <button
                       onClick={() => onOpenExperiment(exp.id)}
-                      className="text-xs text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium font-sans"
+                      className="text-xs text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium font-sans cursor-pointer"
                     >
                       <span>Open Analysis</span>
                       <ArrowRight className="w-3 h-3" />
