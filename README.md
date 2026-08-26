@@ -10,10 +10,11 @@
 [![TailwindCSS](https://img.shields.io/badge/Styling-TailwindCSS%20v4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Pytest](https://img.shields.io/badge/Tests-25%20Passing-19A974?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/UmeshCode1/cnn-optimization-benchmark)
 
 **A Scientific Research Workstation & Laboratory Platform for Empirically Benchmarking Metaheuristic Optimization Algorithms on Deep CNN Compression**
 
-[Features](#-key-features) • [Architecture](#-system-architecture) • [Algorithms](#-benchmarked-metaheuristic-algorithms) • [Installation](#-quick-start--installation) • [API](#-rest--websocket-api) • [Wiki](docs/WIKI.md) • [Author](#-author--maintainer)
+[Deploy Live](#-cloud-deployment-on-render) • [Features](#-key-features) • [Architecture](#-system-architecture) • [Algorithms](#-benchmarked-metaheuristic-algorithms) • [Installation](#-quick-start--installation) • [API](#-rest--websocket-api) • [Wiki](docs/WIKI.md) • [Author](#-author--maintainer)
 
 </div>
 

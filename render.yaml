@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: cnn-optimization-benchmark
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8000
