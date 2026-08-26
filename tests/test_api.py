@@ -2,6 +2,8 @@
 Integration tests for FastAPI endpoints.
 """
 
+import io
+import zipfile
 import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
@@ -62,3 +64,38 @@ def test_validate_fairness():
     res = response.json()
     assert res["is_valid"] is True
     assert len(res["guarantees"]) >= 6
+
+
+def test_list_and_upload_datasets():
+    # 1. List datasets
+    response = client.get("/api/datasets")
+    assert response.status_code == 200
+    datasets = response.json()
+    assert len(datasets) >= 5
+    assert any(d["id"] == "cifar-10" for d in datasets)
+
+    # 2. Create in-memory zip dataset archive
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w") as zf:
+        zf.writestr("class_dogs/dog_001.jpg", b"fake_dog_image_bytes")
+        zf.writestr("class_dogs/dog_002.jpg", b"fake_dog_image_bytes")
+        zf.writestr("class_cats/cat_001.jpg", b"fake_cat_image_bytes")
+        zf.writestr("class_cats/cat_002.jpg", b"fake_cat_image_bytes")
+    zip_buffer.seek(0)
+
+    # 3. Upload dataset archive
+    upload_res = client.post(
+        "/api/datasets/upload",
+        files={"file": ("custom_pets.zip", zip_buffer, "application/zip")},
+        data={"dataset_name": "Custom Pets Test", "description": "Unit test dataset", "resolution": "64x64x3"},
+    )
+    assert upload_res.status_code == 201
+    uploaded_data = upload_res.json()
+    assert uploaded_data["name"] == "Custom Pets Test"
+    assert uploaded_data["is_custom"] is True
+    assert uploaded_data["classes_count"] >= 2
+    custom_id = uploaded_data["id"]
+
+    # 4. Delete custom dataset
+    del_res = client.delete(f"/api/datasets/{custom_id}")
+    assert del_res.status_code == 204

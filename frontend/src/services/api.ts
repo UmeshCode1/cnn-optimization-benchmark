@@ -135,6 +135,32 @@ export const api = {
     return `${API_BASE}/reports/${expId}/${format}`;
   },
 
+  // Datasets
+  async listDatasets(): Promise<DatasetInfo[]> {
+    const res = await fetch(`${API_BASE}/datasets`);
+    if (!res.ok) throw new Error('Failed to fetch datasets');
+    return res.json();
+  },
+
+  async uploadDataset(formData: FormData): Promise<DatasetInfo> {
+    const res = await fetch(`${API_BASE}/datasets/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to upload dataset' }));
+      throw new Error(err.detail || 'Failed to upload dataset');
+    }
+    return res.json();
+  },
+
+  async deleteDataset(datasetId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/datasets/${datasetId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete dataset');
+  },
+
   // WebSocket
   createProgressWebSocket(expId: string, onMessage: (data: any) => void): WebSocket {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

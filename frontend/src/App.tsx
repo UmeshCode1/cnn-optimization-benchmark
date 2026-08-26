@@ -11,6 +11,7 @@ import { AblationView } from './components/views/AblationView';
 import { HardwareView } from './components/views/HardwareView';
 import { DocumentationView } from './components/views/DocumentationView';
 import { ReportsView } from './components/views/ReportsView';
+import { DatasetsView } from './components/views/DatasetsView';
 import { LiveRunModal } from './components/views/LiveRunModal';
 import { api } from './services/api';
 import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats, AblationRecord, HardwareProfile } from './types';
@@ -168,6 +169,14 @@ export const App: React.FC = () => {
               hardware={hardware}
               onSubmitBenchmark={handleStartBenchmark}
               onCancel={() => setActiveTab('dashboard')}
+            />
+          )}
+
+          {activeTab === 'datasets' && (
+            <DatasetsView
+              onSelectDatasetForBenchmark={() => {
+                setActiveTab('wizard');
+              }}
             />
           )}
 

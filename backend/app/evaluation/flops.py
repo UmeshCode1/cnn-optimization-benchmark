@@ -27,6 +27,8 @@ class FlopsEvaluator:
         base_specs = {
             "ResNet-18": {"params_m": 11.17, "flops_m": 556.0},
             "MobileNetV2": {"params_m": 2.23, "flops_m": 314.0},
+            "ShuffleNetV2": {"params_m": 1.36, "flops_m": 149.0},
+            "SimpleCNN": {"params_m": 0.85, "flops_m": 88.0},
             "VGG-16": {"params_m": 14.72, "flops_m": 313.0},
             "EfficientNet-B0": {"params_m": 4.02, "flops_m": 390.0},
         }

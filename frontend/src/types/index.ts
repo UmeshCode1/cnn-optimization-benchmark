@@ -163,3 +163,18 @@ export interface AlgorithmMeta {
   strengths: string[];
   status: string;
 }
+
+export interface DatasetInfo {
+  id: string;
+  name: string;
+  is_custom: boolean;
+  classes_count: number;
+  classes: string[];
+  train_samples: number;
+  test_samples: number;
+  resolution: string;
+  channels: number;
+  description: string;
+  created_at: string;
+  file_size_bytes?: number;
+}

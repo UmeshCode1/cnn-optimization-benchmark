@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database.session import init_db
+from app.api.datasets import router as datasets_router
 from app.api.experiments import router as experiments_router
 from app.api.algorithms import router as algorithms_router
 from app.api.hardware import router as hardware_router
@@ -54,6 +55,7 @@ app.add_middleware(
 )
 
 # Include API Routers
+app.include_router(datasets_router)
 app.include_router(experiments_router)
 app.include_router(algorithms_router)
 app.include_router(hardware_router)

@@ -83,10 +83,25 @@ class ExperimentRunner:
                 quantization_type="FP32",
             )
             
-            baseline_accuracy = 93.4 if exp.dataset_name == "CIFAR-10" else (76.8 if exp.dataset_name == "CIFAR-100" else 88.5)
-            baseline_latency_ms = 14.2  # ms on host hardware
-            baseline_size_mb = base_specs["model_size_mb"]  # ~44.7 MB for ResNet-18 FP32
-            baseline_energy_j = 0.38
+            # Calibrate baseline accuracy and latency based on dataset and CNN model
+            ds_name = (exp.dataset_name or "").upper()
+            if "MNIST" in ds_name and "FASHION" not in ds_name:
+                baseline_accuracy = 99.1
+            elif "FASHION" in ds_name:
+                baseline_accuracy = 92.4
+            elif "CIFAR-100" in ds_name:
+                baseline_accuracy = 76.8
+            elif "CIFAR-10" in ds_name:
+                baseline_accuracy = 93.4
+            elif "IMAGENET" in ds_name:
+                baseline_accuracy = 81.2
+            else:
+                baseline_accuracy = 89.5
+
+            flops_scale = max(0.2, base_specs["flops_m"] / 556.0)
+            baseline_latency_ms = round(14.2 * flops_scale, 2)
+            baseline_size_mb = base_specs["model_size_mb"]
+            baseline_energy_j = round(0.38 * flops_scale, 3)
             baseline_params_m = base_specs["parameters_m"]
             baseline_flops_m = base_specs["flops_m"]
 

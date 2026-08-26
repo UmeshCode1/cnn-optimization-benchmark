@@ -16,6 +16,7 @@ import {
 export type NavTab =
   | 'dashboard'
   | 'wizard'
+  | 'datasets'
   | 'results'
   | 'pareto'
   | 'convergence'
@@ -40,11 +41,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'wizard', label: 'New Benchmark', icon: PlayCircle, highlight: true },
+    { id: 'datasets', label: 'Datasets & Upload', icon: Layers },
     { id: 'results', label: 'Benchmark Results', icon: BarChart3, badge: completedExperimentsCount > 0 ? String(completedExperimentsCount) : undefined },
     { id: 'pareto', label: 'Pareto Front', icon: GitFork },
     { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
-    { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers },
-    { id: 'ablation', label: 'Ablation Study', icon: Layers2 },
+    { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
+    { id: 'ablation', label: 'Ablation Study', icon: Layers },
     { id: 'history', label: 'Experiment History', icon: History },
     { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },
     { id: 'documentation', label: '10 Optimizers & Docs', icon: BookOpen },

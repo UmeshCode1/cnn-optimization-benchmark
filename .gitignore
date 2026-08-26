@@ -27,6 +27,9 @@ venv/
 # Large Datasets and Weights
 datasets/
 checkpoints/
+backend/data/custom_datasets/custom-*
+backend/data/custom_datasets/*.zip
+backend/data/custom_datasets/*.tar.gz
 *.pth
 *.pt
 *.onnx
