@@ -28,7 +28,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
   onlyPareto = false,
   onToggleOnlyPareto = () => {},
   onSelectPoint = () => {},
-  height = 360,
+  height = 380,
 }) => {
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
   const [selectedAlg, setSelectedAlg] = useState<string | null>(null);
@@ -46,32 +46,38 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
     ? points.filter((p) => p.is_pareto || p.is_pareto_optimal)
     : points;
 
-  // Compute bounding ranges
-  const minXRaw = Math.min(...filteredPoints.map((p) => p[xAxis]), 0);
-  const maxXRaw = Math.max(...filteredPoints.map((p) => p[xAxis]), 1);
-  const minYRaw = Math.min(...filteredPoints.map((p) => p.accuracy), 0);
-  const maxYRaw = Math.max(...filteredPoints.map((p) => p.accuracy), 100);
+  // Compute accurate data-driven bounding ranges (zooming into the actual data)
+  const xVals = filteredPoints.map((p) => p[xAxis]);
+  const yVals = filteredPoints.map((p) => p.accuracy);
 
-  const rangeX = Math.max(0.1, maxXRaw - minXRaw);
-  const rangeY = Math.max(0.2, maxYRaw - minYRaw);
+  const dataMinX = xVals.length > 0 ? Math.min(...xVals) : 0;
+  const dataMaxX = xVals.length > 0 ? Math.max(...xVals) : 10;
+  const dataMinY = yVals.length > 0 ? Math.min(...yVals) : 80;
+  const dataMaxY = yVals.length > 0 ? Math.max(...yVals) : 100;
 
-  const minX = Math.max(0, minXRaw - rangeX * 0.12 * zoomScale);
-  const maxX = maxXRaw + rangeX * 0.12 * zoomScale;
-  const minY = Math.max(0, minYRaw - rangeY * 0.15 * zoomScale);
-  const maxY = Math.min(100, maxYRaw + rangeY * 0.15 * zoomScale);
+  const spanX = Math.max(0.05, dataMaxX - dataMinX);
+  const spanY = Math.max(0.1, dataMaxY - dataMinY);
+
+  const padX = (spanX * 0.25) / zoomScale;
+  const padY = (spanY * 0.25) / zoomScale;
+
+  const minX = Math.max(0, dataMinX - padX);
+  const maxX = dataMaxX + padX;
+  const minY = Math.max(0, dataMinY - padY);
+  const maxY = Math.min(100, dataMaxY + padY);
 
   const ticksX = [0, 0.25, 0.5, 0.75, 1.0].map((t) => minX + t * (maxX - minX));
   const ticksY = [0, 0.25, 0.5, 0.75, 1.0].map((t) => minY + t * (maxY - minY));
 
   const svgWidth = 720;
   const svgHeight = height;
-  const padding = { top: 30, right: 30, bottom: 50, left: 65 };
+  const padding = { top: 35, right: 35, bottom: 55, left: 70 };
 
   const plotWidth = svgWidth - padding.left - padding.right;
   const plotHeight = svgHeight - padding.top - padding.bottom;
 
-  const getX = (val: number) => padding.left + ((val - minX) / (maxX - minX || 1)) * plotWidth;
-  const getY = (val: number) => padding.top + plotHeight - ((val - minY) / (maxY - minY || 1)) * plotHeight;
+  const getX = (val: number) => padding.left + ((val - minX) / (maxX - minX || 1e-6)) * plotWidth;
+  const getY = (val: number) => padding.top + plotHeight - ((val - minY) / (maxY - minY || 1e-6)) * plotHeight;
 
   // Pareto Frontier Path
   const paretoPointsSorted = [...points]
@@ -87,7 +93,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
 
   const activePoint = points.find((p) => p.algorithm === (hoveredAlg || selectedAlg)) || null;
 
-  // Algorithm Distinct Colors
+  // Distinct Premium Laboratory Algorithm Palette
   const algColors: Record<string, string> = {
     GWO: '#388bfd',
     WOA: '#2ea043',
@@ -148,16 +154,16 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
           {/* Zoom controls */}
           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-[var(--border)] bg-[var(--surface-secondary)] text-xs font-mono">
             <button
-              onClick={() => setZoomScale((z) => Math.min(2.5, z + 0.2))}
-              className="px-1.5 py-0.5 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-primary)] transition"
+              onClick={() => setZoomScale((z) => Math.min(3.0, z + 0.3))}
+              className="px-1.5 py-0.5 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-primary)] transition font-bold"
               title="Zoom In"
             >
               +
             </button>
             <span className="text-[10px] text-[var(--text-muted)] px-1">{zoomScale.toFixed(1)}x</span>
             <button
-              onClick={() => setZoomScale((z) => Math.max(0.6, z - 0.2))}
-              className="px-1.5 py-0.5 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-primary)] transition"
+              onClick={() => setZoomScale((z) => Math.max(0.6, z - 0.3))}
+              className="px-1.5 py-0.5 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-primary)] transition font-bold"
               title="Zoom Out"
             >
               -
@@ -175,7 +181,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
 
       {/* Algorithm Quick Selection Chips */}
       <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
-        <span className="text-[var(--text-muted)] text-[11px] mr-1">Highlight Algorithm:</span>
+        <span className="text-[var(--text-muted)] text-[11px] mr-1">Highlight:</span>
         {points.map((p) => {
           const isSelected = (hoveredAlg || selectedAlg) === p.algorithm;
           const isPareto = p.is_pareto || p.is_pareto_optimal;
@@ -214,8 +220,8 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
         >
           <defs>
             <linearGradient id="paretoGlow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8" />
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#00d2ff" stopOpacity="0.9" />
             </linearGradient>
           </defs>
 
@@ -226,7 +232,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
             width={plotWidth}
             height={plotHeight}
             fill="var(--surface-secondary)"
-            fillOpacity="0.35"
+            fillOpacity="0.3"
             stroke="var(--border)"
             rx="6"
           />
@@ -252,7 +258,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                   fill="var(--text-muted)"
                   fontSize="10"
                 >
-                  {yVal.toFixed(rangeY < 0.2 ? 2 : 1)}%
+                  {yVal.toFixed(spanY < 0.5 ? 2 : 1)}%
                 </text>
               </g>
             );
@@ -279,7 +285,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                   fill="var(--text-muted)"
                   fontSize="10"
                 >
-                  {xVal.toFixed(xAxis === 'energy_j' ? 4 : 2)}
+                  {xVal.toFixed(xAxis === 'energy_j' ? 4 : spanX < 0.5 ? 3 : 2)}
                 </text>
               </g>
             );
@@ -321,13 +327,16 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
           )}
 
           {/* Scatter Data Points */}
-          {filteredPoints.map((p) => {
+          {filteredPoints.map((p, idx) => {
             const cx = getX(p[xAxis]);
             const cy = getY(p.accuracy);
             const isPareto = p.is_pareto || p.is_pareto_optimal;
             const isHovered = hoveredAlg === p.algorithm;
             const isSelected = selectedAlg === p.algorithm;
             const pointColor = algColors[p.algorithm] || 'var(--accent)';
+
+            // Alternating label Y-offset to prevent overlapping
+            const labelOffsetY = (idx % 2 === 0) ? -12 : 18;
 
             return (
               <g
@@ -345,11 +354,11 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={isHovered ? 14 : 9}
+                    r={isHovered ? 15 : 10}
                     fill="none"
                     stroke="var(--success)"
-                    strokeWidth={isHovered ? '2' : '1.5'}
-                    strokeOpacity={isHovered ? 0.9 : 0.5}
+                    strokeWidth={isHovered ? '2.5' : '1.5'}
+                    strokeOpacity={isHovered ? 0.95 : 0.6}
                   />
                 )}
 
@@ -364,17 +373,19 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                   className="transition-all"
                 />
 
-                {/* Algorithm Label Tag */}
-                <text
-                  x={cx}
-                  y={cy - (isHovered ? 12 : 9)}
-                  textAnchor="middle"
-                  fill={isHovered || isSelected ? 'var(--text-primary)' : 'var(--text-secondary)'}
-                  fontSize="10"
-                  fontWeight={isHovered || isSelected || isPareto ? '700' : '500'}
-                >
-                  {p.algorithm}
-                </text>
+                {/* Clear Label Tag with Soft Background Pill */}
+                <g>
+                  <text
+                    x={cx}
+                    y={cy + labelOffsetY}
+                    textAnchor="middle"
+                    fill={isHovered || isSelected ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                    fontSize="10"
+                    fontWeight={isHovered || isSelected || isPareto ? '700' : '500'}
+                  >
+                    {p.algorithm}
+                  </text>
+                </g>
               </g>
             );
           })}
