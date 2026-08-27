@@ -344,6 +344,29 @@ def seed_initial_experiments(session: Session, hw_id: int):
             )
             session.add_all([m1, m2])
 
+    exp2_ablation_stages = [
+        (1, "Baseline FP32 (MobileNetV2)", "Uncompressed MobileNetV2 FP32 baseline on ImageNet-1k Subset", 91.80, 8.60, 8.90, 0.2100, 2.23, 314.0),
+        (2, "FP16 Half-Precision Quantization", "Static FP16 quantization of inverted bottleneck weights", 91.60, 5.80, 4.45, 0.1420, 2.23, 314.0),
+        (3, "Structured L1 Filter Pruning (30%)", "Pruning 30% inverted residual expansion filters", 89.90, 4.80, 3.10, 0.1050, 1.56, 219.8),
+        (4, "FP16 Quantization + Filter Pruning", "Combined FP16 precision and structured filter reduction", 89.50, 4.30, 3.10, 0.0920, 1.56, 219.8),
+        (5, "Metaheuristic Optimal Hyperparameter Tuning (WOA)", "Whale-optimized per-layer compression thresholds", 91.20, 4.20, 3.10, 0.0800, 1.56, 219.8),
+    ]
+
+    for order, name, desc, acc, lat, size, energy, params, flops in exp2_ablation_stages:
+        abl = AblationRecord(
+            experiment_id=exp2.id,
+            stage_order=order,
+            stage_name=name,
+            description=desc,
+            accuracy=acc,
+            latency_ms=lat,
+            model_size_mb=size,
+            energy_j=energy,
+            parameters_m=params,
+            flops_m=flops,
+        )
+        session.add(abl)
+
     session.commit()
 
 
