@@ -1,118 +1,257 @@
 # System Architecture & Technical Specifications
 
-This document outlines the system architecture, component contracts, asynchronous execution engine, database schema, and telemetry pipelines of the **CNN Optimization Benchmark Platform**.
+The **CNN Optimization Benchmark Platform** is an enterprise-grade scientific research workstation designed for multi-objective metaheuristic benchmarking, hardware telemetry profiling, and deep neural network compression.
 
 ---
 
-## 1. High-Level System Architecture
+## 1. High-Level 3-Tier System Architecture
 
 ```mermaid
 graph TB
-    subgraph ClientLayer [Client Tier - React 19 / TypeScript]
-        UI[Scientific Workstation UI]
-        WB[Algorithm Comparison Workbench]
-        Plots[Interactive Visualizations]
-        WSClient[WebSocket Live Client]
+    subgraph Tier1 [Tier 1: Client Workstation - React 19 / TypeScript / Vite]
+        UI[Scientific Workbench & Dashboard]
+        Viz[Interactive Visualizers: Pareto 2D/3D, Convergence, Ablation]
+        DocHub[Documentation Hub & Live Report Previewer]
+        ExpEngine[Multi-Format Exporter: PDF, Word DOCS, TXT, Markdown, CSV, JSON]
+        WSClient[WebSocket Real-Time Telemetry Client]
     end
 
-    subgraph BackendLayer [Backend Tier - FastAPI Async Engine]
-        Router[REST API Router]
-        WSServer[WebSocket Broadcaster]
-        Worker[Async Runner Task Queue]
+    subgraph Tier2 [Tier 2: Asynchronous Execution Engine - FastAPI / Python 3.10+]
+        Router[REST API Router / Swagger Docs]
+        WSServer[WebSocket Event Broadcaster]
+        RunnerWorker[Async Background Runner & Worker Pool]
         
-        ScoringSvc[WSM Scoring Service]
-        ParetoSvc[Pareto Frontier Service]
-        StatsSvc[Multi-Run Stats Service]
+        subgraph Services [Analytical Services]
+            WSMService[Weighted Sum Model Scoring Engine]
+            ParetoService[Pareto Non-Dominated Frontier Extractor]
+            StatsService[Multi-Run Statistical Aggregation Engine]
+            FairnessService[Benchmark Fairness Validation Engine]
+        end
         
-        Eval[Evaluation Suite - Accuracy / Latency / Energy / Size]
-        Optimizers[10 Metaheuristic Optimizers]
+        subgraph CompressionZoo [Compression & Metaheuristics Suite]
+            PTQEngine[Post-Training Quantization: FP16 / INT8 MinMax & Histogram]
+            PruneEngine[Structured L1-Norm Channel & Filter Pruning Engine]
+            MetaRegistry[10 Standardized Metaheuristic Optimizers + Custom Plugin API]
+        end
+        
+        subgraph TelemetrySuite [Hardware Telemetry & Profiling]
+            NVMLCapture[NVIDIA NVML High-Frequency GPU Power Sampler]
+            CUDATiming[CUDA Event Timer with torch.cuda.synchronize]
+            RAPLCapture[Intel/AMD CPU RAPL Energy Profiler]
+            MemoryProfiler[VRAM Peak & Disk Footprint Serializer]
+        end
     end
 
-    subgraph StorageLayer [Persistence Tier - SQLite / SQLAlchemy]
-        DB[(SQLite benchmark.db)]
+    subgraph Tier3 [Tier 3: Persistence & Audit Tier - SQLite / SQLAlchemy]
+        SQLiteDB[(SQLite Database: benchmark.db)]
+        ORMModels[SQLAlchemy ORM Data Models & Provenance Signatures]
     end
 
+    %% Client to Backend
     UI --> Router
-    WB --> Router
-    Plots --> Router
+    Viz --> Router
+    DocHub --> Router
     WSClient <--> WSServer
-    Router --> Worker
-    Worker --> Optimizers
-    Worker --> Eval
-    Eval --> ScoringSvc
-    Eval --> ParetoSvc
-    Eval --> StatsSvc
-    ScoringSvc --> DB
-    ParetoSvc --> DB
-    StatsSvc --> DB
-    Worker --> WSServer
-    DB --> Router
+
+    %% Backend Routing
+    Router --> RunnerWorker
+    Router --> Services
+    Router --> ORMModels
+
+    %% Worker Pipeline Execution
+    RunnerWorker --> PTQEngine
+    RunnerWorker --> PruneEngine
+    RunnerWorker --> MetaRegistry
+    RunnerWorker --> TelemetrySuite
+    
+    %% Telemetry to Analytics
+    TelemetrySuite --> StatsService
+    StatsService --> WSMService
+    StatsService --> ParetoService
+    
+    %% Analytics to Persistence
+    WSMService --> ORMModels
+    ParetoService --> ORMModels
+    StatsService --> ORMModels
+    ORMModels --> SQLiteDB
+    
+    %% Real-Time Telemetry Feed
+    RunnerWorker --> WSServer
 ```
 
 ---
 
-## 2. Asynchronous Execution Pipeline
+## 2. End-to-End Benchmark Data Flow
 
-Every benchmark execution follows a deterministic, 7-stage pipeline:
+The platform coordinates asynchronous background execution with non-blocking real-time UI telemetry streaming.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Researcher as Researcher / Client UI
+    actor Researcher as Researcher / Workstation UI
     participant API as FastAPI REST Router
     participant Worker as Async Runner Worker
-    participant Optimizer as Metaheuristic Optimizer
-    participant Eval as Evaluation Suite
+    participant Comp as Compression Engine (PTQ / Pruning)
+    participant Opt as Metaheuristic Optimizer
+    participant Hardware as GPU/CPU Hardware Telemetry
+    participant Stats as Analytics & Pareto Engine
     participant WS as WebSocket Broadcaster
     participant DB as SQLite Database
 
     Researcher->>API: POST /api/experiments (Benchmark Configuration)
     API->>DB: Persist Experiment (Status = QUEUED)
-    API->>Worker: Dispatch Background Task
+    API->>Worker: Dispatch Background Runner Task
     API-->>Researcher: Return Experiment ID (201 Created)
     
-    Researcher->>WS: Connect WebSocket /api/experiments/{id}/ws
+    Researcher->>WS: Connect WebSocket (/ws/experiment/{id})
     
     Worker->>DB: Update Status = RUNNING
-    Worker->>WS: Broadcast START Event
+    Worker->>WS: Broadcast START Event (Total steps, Selected algorithms)
     
-    loop For Each Stochastic Run (r = 1 .. N)
-        loop For Each Selected Optimizer (alg in Selected)
-            Worker->>Optimizer: Initialize Population X(0) with Seed
-            loop For Each Iteration (t = 1 .. T)
-                Optimizer->>Eval: Evaluate Multi-Objective Fitness f(x)
-                Optimizer->>Optimizer: Update Particle / Agent Positions
-                Optimizer-->>Worker: Best Fitness at Iteration t
-                Worker->>WS: Broadcast ITERATION_UPDATE (alg, run, t, fitness)
+    %% Baseline Stage
+    Worker->>Comp: Calibrate Uncompressed FP32 Baseline
+    Comp->>Hardware: Measure Baseline Top-1 Acc, Latency (ms), Footprint (MB), Energy (J)
+    Hardware-->>Worker: Baseline Metrics Vector
+    
+    %% Multi-Run Optimizer Execution Loop
+    loop For Each Stochastic Run (r = 1 .. Number_of_Runs)
+        loop For Each Selected Optimizer (alg in Selected_Algorithms)
+            Worker->>Opt: Initialize Population X(0) in [0, 1]^D with Deterministic Seed
+            
+            loop For Each Search Iteration (t = 1 .. Max_Iterations)
+                Opt->>Comp: Apply Candidate Compression Solution Vector X_i
+                Comp->>Hardware: Rapid Proxy Fitness Evaluation
+                Hardware-->>Opt: Fitness Value f(X_i)
+                Opt->>Opt: Update Search Vectors (Exploration / Exploitation)
+                Worker->>WS: Broadcast ITERATION_UPDATE (alg, run_index, iteration, best_fitness)
             end
-            Worker->>Eval: Final Evaluation on Hardware (Acc, Latency, Size, Energy)
-            Worker->>DB: Persist ExperimentRun Record
+            
+            %% Final Evaluation Stage
+            Worker->>Comp: Apply Global Best Solution Vector X*
+            Comp->>Hardware: 50 Warmup + 200 CUDA Synchronized Inferences + NVML Power Sampling
+            Hardware-->>Worker: Final Primary Metrics (Accuracy %, Latency ms, Size MB, Energy J)
+            Worker->>DB: Persist ExperimentRun Record & Provenance MetricRecords
+            Worker->>WS: Broadcast RUN_COMPLETED (alg, run_index, run_data)
         end
     end
 
-    Worker->>Worker: Aggregate Statistics (Mean, Median, Std, 95% CI)
-    Worker->>Worker: Compute Multi-Objective Weighted Scores & Rankings
-    Worker->>Worker: Extract Pareto Non-Dominated Frontier
-    Worker->>Worker: Compute 5-Stage Ablation Sequence
-    Worker->>DB: Update Status = COMPLETED
-    Worker->>WS: Broadcast BENCHMARK_COMPLETE
-    Researcher->>API: GET /api/experiments/{id} (Fetch Final Matrix)
+    %% Aggregation & Pareto Stage
+    Worker->>Stats: Aggregate Multi-Run Statistics (Mean, Median, StdDev, 95% CI)
+    Worker->>Stats: Compute WSM Multi-Objective Scores & Composite Rankings
+    Worker->>Stats: Extract Pareto Non-Dominated 2D/3D Frontier
+    Worker->>Stats: Generate 5-Stage Stepwise Ablation Trajectory
+    
+    Worker->>DB: Persist Aggregated Analytics & Update Status = COMPLETED
+    Worker->>WS: Broadcast BENCHMARK_COMPLETE (Experiment Summary)
+    Researcher->>API: GET /api/experiments/{id} (Fetch Full Audit State)
 ```
 
 ---
 
-## 3. Database Schema Entity Relationship Diagram
+## 3. 7-Stage Deterministic Benchmark Pipeline
+
+To prevent hardware cache contamination, asynchronous thread latency bias, and stochastic noise, every benchmark strictly executes the following 7-stage deterministic state machine:
+
+```
+[ Stage 1: Baseline Calibration ]
+   │  Dense FP32 evaluation on uncompressed CNN checkpoint.
+   ▼
+[ Stage 2: Quantization Stage ]
+   │  Post-Training Quantization (FP16 or INT8 MinMax/Histogram calibration).
+   ▼
+[ Stage 3: Structured Pruning ]
+   │  Layer-wise L1-norm filter importance scoring and channel removal.
+   ▼
+[ Stage 4: Metaheuristic Search ]
+   │  Population-based exploration/exploitation over continuous space [0, 1]^D.
+   ▼
+[ Stage 5: Hardware Telemetry ]
+   │  50 warmup passes + 200 CUDA event synchronized passes with NVML power draw.
+   ▼
+[ Stage 6: Statistical Aggregation ]
+   │  Stochastic aggregation (Mean, Median, Std, 95% CI) across N runs.
+   ▼
+[ Stage 7: Multi-Objective Decision & Pareto ]
+      WSM composite scoring (0-100), non-dominated frontier extraction, ablation sequence.
+```
+
+---
+
+## 4. Hardware Telemetry Profiling Sub-System
+
+### 4.1 Synchronized Latency Measurement Protocol
+GPU kernel launches in PyTorch are asynchronous by default. To capture true hardware execution times without host CPU thread scheduling jitter, the platform uses explicit CUDA stream event synchronization:
+
+```python
+# Hardware Synchronized Latency Protocol
+import torch
+import numpy as np
+
+def measure_synchronized_latency(model, input_tensor, warmup_runs=50, measured_runs=200):
+    device = next(model.parameters()).device
+    input_tensor = input_tensor.to(device)
+    model.eval()
+
+    # 1. Warm-up Phase: Prime GPU Tensor Cores, JIT caches, and memory controllers
+    with torch.no_grad():
+        for _ in range(warmup_runs):
+            _ = model(input_tensor)
+    
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+        start_events = [torch.cuda.Event(enable_timing=True) for _ in range(measured_runs)]
+        end_events = [torch.cuda.Event(enable_timing=True) for _ in range(measured_runs)]
+        
+        with torch.no_grad():
+            for i in range(measured_runs):
+                start_events[i].record()
+                _ = model(input_tensor)
+                end_events[i].record()
+        
+        torch.cuda.synchronize()
+        latencies_ms = [s.elapsed_time(e) for s, e in zip(start_events, end_events)]
+    else:
+        # High-resolution monotonic CPU clock
+        import time
+        latencies_ms = []
+        with torch.no_grad():
+            for _ in range(measured_runs):
+                t0 = time.perf_counter()
+                _ = model(input_tensor)
+                t1 = time.perf_counter()
+                latencies_ms.append((t1 - t0) * 1000.0)
+
+    return {
+        "mean_latency_ms": float(np.mean(latencies_ms)),
+        "std_latency_ms": float(np.std(latencies_ms)),
+        "p95_latency_ms": float(np.percentile(latencies_ms, 95)),
+        "min_latency_ms": float(np.min(latencies_ms)),
+        "max_latency_ms": float(np.max(latencies_ms))
+    }
+```
+
+### 4.2 NVIDIA NVML Energy Capture Subsystem
+Energy consumption (in Joules) is measured by polling the GPU power draw at high frequency using the NVIDIA Management Library (`pynvml`):
+
+$$E_{\text{Joules}} = \int_{0}^{T} P(t) \, dt \approx \sum_{k=1}^{M} P(t_k) \cdot \Delta t_k$$
+
+Where $P(t_k)$ is instantaneous board power in Watts and $\Delta t_k$ is the sampling interval ($\le 10\,\text{ms}$).
+
+---
+
+## 5. Database Schema (Entity-Relationship Diagram)
+
+The SQLite database (`benchmark.db`) is structured with strict foreign keys, cascade rules, and cryptographic audit signatures:
 
 ```mermaid
 erDiagram
-    HARDWARE_PROFILE ||--o{ EXPERIMENT : executes
-    DATASET ||--o{ EXPERIMENT : benchmarked_on
-    CNN_MODEL ||--o{ EXPERIMENT : evaluates
-    EXPERIMENT ||--|{ EXPERIMENT_RUN : contains
-    EXPERIMENT ||--o{ ABLATION_RECORD : decomposes
-    EXPERIMENT_RUN ||--|{ METRIC_RECORD : produces
+    HARDWARE_PROFILES ||--o{ EXPERIMENTS : "executes_on"
+    EXPERIMENTS ||--|{ EXPERIMENT_RUNS : "contains"
+    EXPERIMENTS ||--|{ METRIC_RECORDS : "records"
+    EXPERIMENTS ||--o{ ABLATION_RECORDS : "decomposes"
+    CUSTOM_MODELS ||--o{ EXPERIMENTS : "evaluated_in"
 
-    HARDWARE_PROFILE {
+    HARDWARE_PROFILES {
         string id PK
         string device_name
         string device_type
@@ -126,56 +265,86 @@ erDiagram
         string torch_version
     }
 
-    EXPERIMENT {
-        string id PK
+    EXPERIMENTS {
+        string id PK "e.g. EXP-20260827-0001"
         string title
-        string dataset_name FK
-        string cnn_model_name FK
-        string quantization_type
-        string pruning_method
+        string description
+        string status "QUEUED, RUNNING, COMPLETED, FAILED"
+        boolean is_demo
+        string dataset_name
+        string cnn_model_name
+        string quantization_type "NONE, FP16, INT8"
+        string pruning_method "STRUCTURED_FILTER, UNSTRUCTURED"
         float pruning_ratio
+        string selected_algorithms_json
         int population_size
         int max_iterations
         int number_of_runs
-        string random_seed_policy
+        string random_seed_policy "FIXED_PER_RUN, STRICT_IDENTICAL"
         int base_seed
+        int warmup_runs
+        int measured_runs
         float weight_accuracy
         float weight_latency
         float weight_model_size
         float weight_energy
-        string status
-        datetime started_at
+        string hardware_id FK
+        float baseline_accuracy
+        float baseline_latency_ms
+        float baseline_size_mb
+        float baseline_energy_j
+        float baseline_flops_m
+        float baseline_params_m
+        string best_algorithm
+        text best_algorithm_reason
+        datetime created_at
         datetime completed_at
     }
 
-    EXPERIMENT_RUN {
-        string id PK
+    EXPERIMENT_RUNS {
+        int id PK
         string experiment_id FK
-        string algorithm
+        string algorithm_acronym
         int run_index
         int seed
+        string status
         float accuracy
+        float accuracy_drop
         float latency_ms
+        float latency_p95_ms
         float model_size_mb
         float energy_j
-        float optimization_time_s
-        json iteration_history
+        string energy_source
+        float parameters_m
+        float flops_m
+        float compression_ratio
+        float speedup
+        float size_reduction_pct
+        float energy_reduction_pct
+        float best_fitness
         float overall_score
-        boolean is_pareto
+        float optimization_time_seconds
+        int candidate_evaluations
+        text convergence_curve_json
+        text best_candidate_config_json
+        datetime created_at
     }
 
-    METRIC_RECORD {
-        string id PK
-        string run_id FK
+    METRIC_RECORDS {
+        int id PK
+        string experiment_id FK
+        string algorithm_acronym
         string metric_name
-        float value
+        float metric_value
         string unit
         string provenance
+        text measurement_method
         string source
+        datetime timestamp
     }
 
-    ABLATION_RECORD {
-        string id PK
+    ABLATION_RECORDS {
+        int id PK
         string experiment_id FK
         string stage_name
         int stage_order
@@ -183,46 +352,100 @@ erDiagram
         float latency_ms
         float model_size_mb
         float energy_j
+        float parameters_m
+        float flops_m
+        text description
+    }
+
+    CUSTOM_MODELS {
+        string id PK
+        string name
+        string architecture_type
+        int input_channels
+        string input_resolution
+        int num_classes
+        float base_parameters_m
+        float base_flops_m
+        float base_size_mb
+        datetime created_at
     }
 ```
 
 ---
 
-## 4. Analytical Evaluation Formulation
+## 6. WebSocket Telemetry Protocol Specification
 
-### A. Multi-Objective Fitness Evaluation Function
-During metaheuristic search, each candidate solution vector $\mathbf{x} \in [0.0, 1.0]^D$ encodes layer-wise compression parameters (e.g., pruning sparsity ratio per convolutional block). The scalar objective cost $f(\mathbf{x})$ is minimized:
+The WebSocket endpoint (`/ws/experiment/{id}`) broadcasts strongly-typed JSON packets during benchmark execution:
 
-$$f(\mathbf{x}) = w_{\text{acc}} \cdot \left(\frac{\Delta \text{Acc}(\mathbf{x})}{\text{Acc}_{\text{baseline}}}\right) + w_{\text{lat}} \cdot \left(\frac{\text{Lat}(\mathbf{x})}{\text{Lat}_{\text{baseline}}}\right) + w_{\text{size}} \cdot \left(\frac{\text{Size}(\mathbf{x})}{\text{Size}_{\text{baseline}}}\right) + w_{\text{energy}} \cdot \left(\frac{\text{Energy}(\mathbf{x})}{\text{Energy}_{\text{baseline}}}\right)$$
+### 6.1 `START` Event
+Sent immediately when background execution starts:
+```json
+{
+  "event": "START",
+  "experiment_id": "EXP-20260827-0001",
+  "total_algorithms": 10,
+  "number_of_runs": 5,
+  "max_iterations": 30,
+  "total_steps": 1500
+}
+```
 
-subject to:
-$$w_{\text{acc}} + w_{\text{lat}} + w_{\text{size}} + w_{\text{energy}} = 1.0, \quad w_i \ge 0$$
+### 6.2 `ITERATION_UPDATE` Event
+Sent at each optimizer search iteration $t \in [1, T]$:
+```json
+{
+  "event": "ITERATION_UPDATE",
+  "experiment_id": "EXP-20260827-0001",
+  "algorithm": "GWO",
+  "run_index": 1,
+  "iteration": 14,
+  "max_iterations": 30,
+  "current_best_fitness": 0.0412,
+  "step": 14,
+  "total_steps": 1500,
+  "progress_pct": 0.93
+}
+```
 
-### B. Weighted Sum Model (WSM) Scoring (0 – 100 Scale)
-To rank algorithms post-experiment, min-max normalization is applied across all competing optimizers $\mathcal{A}$:
+### 6.3 `RUN_COMPLETED` Event
+Sent when a single stochastic run completes:
+```json
+{
+  "event": "RUN_COMPLETED",
+  "experiment_id": "EXP-20260827-0001",
+  "algorithm": "GWO",
+  "run_index": 1,
+  "progress_pct": 6.67,
+  "run_data": {
+    "algorithm": "GWO",
+    "run_index": 1,
+    "accuracy": 92.84,
+    "latency_ms": 2.99,
+    "model_size_mb": 6.70,
+    "energy_j": 0.1220,
+    "best_fitness": 0.0385,
+    "overall_score": 95.20
+  }
+}
+```
 
-$$\tilde{A}_i = \frac{A_i - \min_{k \in \mathcal{A}} A_k}{\max_{k \in \mathcal{A}} A_k - \min_{k \in \mathcal{A}} A_k + \epsilon}$$
+### 6.4 `BENCHMARK_COMPLETE` Event
+Sent when all runs, statistics, Pareto extractions, and ablations have finished:
+```json
+{
+  "event": "BENCHMARK_COMPLETE",
+  "experiment_id": "EXP-20260827-0001",
+  "best_algorithm": "GWO",
+  "total_runs_completed": 50,
+  "execution_time_seconds": 142.8
+}
+```
 
-$$\tilde{L}_i = \frac{\max_{k \in \mathcal{A}} L_k - L_i}{\max_{k \in \mathcal{A}} L_k - \min_{k \in \mathcal{A}} L_k + \epsilon} \quad (\text{Inverted for minimization})$$
+---
 
-$$\tilde{S}_i = \frac{\max_{k \in \mathcal{A}} S_k - S_i}{\max_{k \in \mathcal{A}} S_k - \min_{k \in \mathcal{A}} S_k + \epsilon} \quad (\text{Inverted for minimization})$$
+## 7. Scalability & Fault Tolerance Guarantees
 
-$$\tilde{E}_i = \frac{\max_{k \in \mathcal{A}} E_k - E_i}{\max_{k \in \mathcal{A}} E_k - \min_{k \in \mathcal{A}} E_k + \epsilon} \quad (\text{Inverted for minimization})$$
-
-$$\text{Composite Score}_i = \left( w_{\text{acc}} \tilde{A}_i + w_{\text{lat}} \tilde{L}_i + w_{\text{size}} \tilde{S}_i + w_{\text{energy}} \tilde{E}_i \right) \times 100$$
-
-### C. Pareto Non-Dominance Criterion
-A solution $\mathbf{u} = (A_u, L_u, S_u, E_u)$ dominates $\mathbf{v} = (A_v, L_v, S_v, E_v)$ (denoted $\mathbf{u} \succ \mathbf{v}$) if and only if:
-
-$$\begin{cases}
-A_u \ge A_v \\
-L_u \le L_v \\
-S_u \le S_v \\
-E_u \le E_v
-\end{cases}
-\quad \text{and} \quad
-(A_u > A_v) \lor (L_u < L_v) \lor (S_u < S_v) \lor (E_u < E_v)$$
-
-The non-dominated front $\mathcal{P}^*$ is the set of all algorithms not dominated by any other algorithm in the benchmark:
-
-$$\mathcal{P}^* = \{ \mathbf{u} \in \mathcal{A} \mid \nexists \mathbf{v} \in \mathcal{A} : \mathbf{v} \succ \mathbf{u} \}$$
+1. **Non-Blocking Asynchronous Concurrency**: FastAPI async coroutines decouple client HTTP requests from heavy PyTorch execution workers running in thread pools.
+2. **Deterministic Process Isolation**: Heavy model evaluations are protected by exception barriers ensuring single-run failures gracefully log without corrupting the experiment batch.
+3. **Zero Cache Leakage**: `torch.cuda.empty_cache()` and garbage collection are invoked between algorithm switches to eliminate cross-algorithm VRAM fragmentation.
+4. **Audit Immutability**: Historical experiments are immutable once transitioned to `COMPLETED` status, ensuring scientific citations remain permanent.

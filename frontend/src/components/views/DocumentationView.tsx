@@ -32,6 +32,14 @@ import {
   BarChart4,
   HardDrive,
   Boxes,
+  Eye,
+  X,
+  Maximize2,
+  Minimize2,
+  Share2,
+  CheckCheck,
+  RefreshCw,
+  Terminal,
 } from 'lucide-react';
 import { AlgorithmMeta } from '../../types';
 import { api } from '../../services/api';
@@ -53,8 +61,11 @@ export const DocumentationView: React.FC = () => {
   const [algorithms, setAlgorithms] = useState<AlgorithmMeta[]>([]);
   const [selectedAlg, setSelectedAlg] = useState<AlgorithmMeta | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPipelineStep, setSelectedPipelineStep] = useState<number>(1);
+  const [selectedArchitectureTier, setSelectedArchitectureTier] = useState<'client' | 'backend' | 'persistence'>('backend');
 
   const fetchAlgorithms = async () => {
     try {
@@ -93,7 +104,7 @@ export const DocumentationView: React.FC = () => {
     }
   };
 
-  // Full platform project documentation structured document for export
+  // Full platform project documentation structured document for export and live preview
   const getFullPlatformDocData = (): DocumentExportData => {
     return {
       title: 'CNN Optimization Benchmark Platform — Comprehensive Project Report & Research Manual',
@@ -105,12 +116,12 @@ export const DocumentationView: React.FC = () => {
         {
           title: 'Executive Summary & Project Overview',
           content:
-            'Deep Convolutional Neural Networks (CNNs) have revolutionized computer vision but impose unsustainable computational, latency, footprint, and power demands on edge and embedded hardware. Traditional compression heuristics optimize either weights or channels in isolation. The CNN Optimization Benchmark Platform provides a mathematically rigorous, reproducible, multi-objective testbed comparing 10 standardized metaheuristic algorithms (GWO, WOA, ALO, MFO, GOA, MVO, SCA, AOA, MGO, GMO) under identical datasets, architectures, quantization schemes, and pruning constraints.',
+            'Deep Convolutional Neural Networks (CNNs) achieve state-of-the-art visual recognition but impose unsustainable latency, storage, memory-bandwidth, and power demands on edge devices. The CNN Optimization Benchmark Platform provides a mathematically rigorous, reproducible, multi-objective testbed comparing 10 standardized metaheuristic algorithms (GWO, WOA, ALO, MFO, GOA, MVO, SCA, AOA, MGO, GMO) under identical datasets, architectures, quantization schemes, and pruning constraints.',
         },
         {
           title: 'System Architecture & 7-Stage Deterministic Pipeline',
           content:
-            'The system is architected in three tiers: (1) Client Tier in React 19/TypeScript with WebSockets for real-time iteration telemetry; (2) Backend Tier in FastAPI featuring asynchronous multi-threaded execution workers, WSM composite scoring, and Pareto non-dominated frontier extraction; (3) Persistence Tier in SQLite using SQLAlchemy ORM with provenance auditing.',
+            'The system is architected into 3 tiers: (1) Client Workstation in React 19/TypeScript with WebSockets for real-time iteration telemetry; (2) Asynchronous Backend Engine in FastAPI featuring multi-threaded execution workers, WSM composite scoring, and Pareto non-dominated frontier extraction; (3) Persistence & Audit Tier in SQLite using SQLAlchemy ORM with provenance auditing.',
           table: {
             headers: ['Pipeline Stage', 'Primary Operations', 'Telemetry Outputs'],
             rows: [
@@ -145,27 +156,27 @@ export const DocumentationView: React.FC = () => {
           },
         },
         {
-          title: 'Evaluation Metrics & Telemetry Derivations',
+          title: 'Compression & Telemetry Mathematical Formulations',
           subsections: [
             {
-              title: '1. Top-1 Classification Accuracy (%)',
-              content: 'Ratio of correct top-1 vision predictions over total validation set test instances.',
-              codeSnippet: 'Accuracy (%) = (Correct_Predictions / Total_Samples) * 100',
+              title: '1. Post-Training Quantization (PTQ) Scale & Zero-Point Mapping',
+              content: 'Uniform affine quantization maps real float values X in [min(X), max(X)] to unsigned integer range [q_min, q_max]:',
+              codeSnippet: 'Scale S = (max(X) - min(X)) / (q_max - q_min)\nZero-Point Z = round((-min(X) / S) + q_min)\nQuantized q = clamp(round(X / S + Z), q_min, q_max)',
             },
             {
-              title: '2. Synchronized Hardware Latency (ms)',
+              title: '2. Structured L1-Norm Filter Importance Scoring',
+              content: 'Computes total magnitude sum across all input channels and spatial kernel windows for filter j in layer l:',
+              codeSnippet: 'Importance I_j = sum_{c=1}^{C} sum_{k1=1}^{K} sum_{k2=1}^{K} |W(j, c, k1, k2)|\nPruning Mask M_j = 1 if I_j >= Percentile(I, pruning_ratio) else 0',
+            },
+            {
+              title: '3. Synchronized Hardware Latency Protocol',
               content: '50 warm-up iterations followed by 200 timed forward passes synchronized on GPU via torch.cuda.synchronize().',
               codeSnippet: 'Latency_ms = Mean_Time_Per_Batch (200 passes with CUDA synchronization)',
             },
             {
-              title: '3. Serialized Model Footprint (MB)',
-              content: 'Exact byte measurement of compressed PyTorch state dictionary persisted on disk.',
-              codeSnippet: 'Size_MB = State_Dictionary_Bytes / (1024 * 1024)',
-            },
-            {
-              title: '4. Energy Consumption (Joules)',
-              content: 'Captured via high-frequency NVIDIA NVML power sampling (pynvml) on GPU, or calibrated TDP models on CPU.',
-              codeSnippet: 'Energy (J) = Average_Power_Draw (Watts) * Inference_Time (Seconds)',
+              title: '4. NVIDIA NVML Integral Energy Capture',
+              content: 'Sampled at 100Hz frequency across GPU board rails via NVIDIA Management Library (pynvml):',
+              codeSnippet: 'Energy (Joules) = Integral_0^T Power(t) dt ~= Sum_{k=1}^M Power(t_k) * delta_t_k',
             },
           ],
         },
@@ -221,7 +232,17 @@ export const DocumentationView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Live Preview Button */}
+          <button
+            onClick={() => setIsPreviewOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm"
+            title="Open Interactive Full Report Live Preview"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Preview Full Report</span>
+          </button>
+
           <button
             onClick={() => exportToPdf(getFullPlatformDocData())}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-red-600 hover:bg-red-500 text-white transition shadow-sm"
@@ -258,6 +279,107 @@ export const DocumentationView: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* GitHub Wiki & Official Docs Master Banner */}
+      <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-2">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[var(--accent)]">
+            <BookOpen className="w-4 h-4" />
+            <span>Complete Documentation &amp; GitHub Wiki Master Blueprint</span>
+          </div>
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/wiki"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[11px] font-mono text-[var(--accent)] hover:underline"
+          >
+            <span>Open GitHub Wiki</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs font-mono">
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/blob/master/docs/architecture.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-sky-500/50 transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🏛️</span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-[var(--text-primary)] block group-hover:text-sky-400">System Architecture</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">Data flows &amp; Tiers</span>
+              </div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] group-hover:text-sky-400" />
+          </a>
+
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/blob/master/docs/algorithms.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-purple-500/50 transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🧮</span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-[var(--text-primary)] block group-hover:text-purple-400">10 Metaheuristics</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">Math &amp; Equations</span>
+              </div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] group-hover:text-purple-400" />
+          </a>
+
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/blob/master/docs/WIKI.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-emerald-500/50 transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">📑</span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-[var(--text-primary)] block group-hover:text-emerald-400">Wiki Blueprint</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">Complete Sitemap</span>
+              </div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] group-hover:text-emerald-400" />
+          </a>
+
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/blob/master/docs/reproducibility.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-amber-500/50 transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">⚙️</span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-[var(--text-primary)] block group-hover:text-amber-400">Reproducibility</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">CUDA &amp; Seeds</span>
+              </div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] group-hover:text-amber-400" />
+          </a>
+
+          <a
+            href="https://github.com/UmeshCode1/cnn-optimization-benchmark/blob/master/docs/api.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 rounded bg-[var(--surface)] hover:bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-cyan-500/50 transition flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🔌</span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold text-[var(--text-primary)] block group-hover:text-cyan-400">REST &amp; WebSocket</span>
+                <span className="text-[10px] text-[var(--text-muted)] font-sans">API Reference</span>
+              </div>
+            </div>
+            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] group-hover:text-cyan-400" />
+          </a>
+        </div>
+      </div>
 
       {/* Primary Sub-Navigation Bar */}
       <nav aria-label="Documentation Sections" className="flex items-center gap-1.5 border-b border-[var(--border)] pb-2 overflow-x-auto text-xs font-mono">
@@ -407,102 +529,326 @@ export const DocumentationView: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 2. SYSTEM ARCHITECTURE & PIPELINE */}
+      {/* 2. SYSTEM ARCHITECTURE & INTERACTIVE PIPELINE DIAGRAMS */}
       {/* ========================================================================= */}
       {activeTab === 'architecture' && (
         <section className="space-y-6 animate-fade-in" id="system-architecture">
-          {/* Architecture Diagram Card */}
-          <div className="ws-panel p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
-              <h3 className="ws-section-title flex items-center gap-2">
-                <Workflow className="w-4 h-4 text-[var(--accent)]" />
-                <span>3-Tier Scientific System Architecture</span>
-              </h3>
-              <span className="text-[11px] font-mono text-[var(--text-muted)]">Client &bull; Backend &bull; Persistence</span>
+          {/* Interactive 3-Tier Architecture Visual Diagram */}
+          <div className="ws-panel p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+              <div>
+                <h3 className="ws-section-title flex items-center gap-2">
+                  <Workflow className="w-4 h-4 text-[var(--accent)]" />
+                  <span>3-Tier Scientific System Architecture &amp; Data Flows</span>
+                </h3>
+                <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                  Click any tier below to inspect components, contracts, and data communications.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                {(['client', 'backend', 'persistence'] as const).map((tier) => (
+                  <button
+                    key={tier}
+                    onClick={() => setSelectedArchitectureTier(tier)}
+                    className={`px-2.5 py-1 rounded capitalize transition ${
+                      selectedArchitectureTier === tier
+                        ? 'bg-[var(--accent)] text-white font-bold'
+                        : 'bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    Tier {tier === 'client' ? '1: Client' : tier === 'backend' ? '2: Backend' : '3: DB'}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-              {/* Tier 1: Client */}
-              <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
-                <div className="flex items-center gap-2 text-sky-400 font-bold">
-                  <Server className="w-4 h-4" />
-                  <span>Tier 1: Client UI</span>
+            {/* Visual SVG Diagram Canvas */}
+            <div className="p-5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
+                {/* Tier 1 Box */}
+                <div
+                  onClick={() => setSelectedArchitectureTier('client')}
+                  className={`p-4 rounded-lg border transition-all cursor-pointer space-y-3 ${
+                    selectedArchitectureTier === 'client'
+                      ? 'bg-sky-500/10 border-sky-500 ring-1 ring-sky-500 shadow-md'
+                      : 'bg-[var(--surface)] border-[var(--border)] hover:border-sky-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sky-400 font-bold">
+                      <Server className="w-4 h-4" />
+                      <span>Tier 1: Client UI</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">React 19</span>
+                  </div>
+                  <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-sky-400 shrink-0" />
+                      <span><strong>React 19 &amp; Vite</strong>: Fast reactive SPA.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-sky-400 shrink-0" />
+                      <span><strong>WebSocket Client</strong>: Real-time telemetry feed.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-sky-400 shrink-0" />
+                      <span><strong>Interactive Visualizers</strong>: Pareto &amp; Convergence.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-sky-400 shrink-0" />
+                      <span><strong>Multi-Format Exporter</strong>: PDF, Word, TXT, MD.</span>
+                    </li>
+                  </ul>
                 </div>
-                <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
-                  <li>&bull; <strong>React 19 &amp; Vite</strong>: Fast reactive SPA.</li>
-                  <li>&bull; <strong>WebSocket Client</strong>: Live iteration telemetry stream.</li>
-                  <li>&bull; <strong>Interactive Visualizers</strong>: Pareto Frontier, Convergence Curves, Ablation Bars.</li>
-                  <li>&bull; <strong>Document Exporter</strong>: TXT, PDF, DOCS, CSV, JSON generators.</li>
-                </ul>
+
+                {/* Tier 2 Box */}
+                <div
+                  onClick={() => setSelectedArchitectureTier('backend')}
+                  className={`p-4 rounded-lg border transition-all cursor-pointer space-y-3 ${
+                    selectedArchitectureTier === 'backend'
+                      ? 'bg-purple-500/10 border-purple-500 ring-1 ring-purple-500 shadow-md'
+                      : 'bg-[var(--surface)] border-[var(--border)] hover:border-purple-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-purple-400 font-bold">
+                      <Cpu className="w-4 h-4" />
+                      <span>Tier 2: Async Engine</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">FastAPI</span>
+                  </div>
+                  <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-purple-400 shrink-0" />
+                      <span><strong>FastAPI Async Routers</strong>: Non-blocking REST endpoints.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-purple-400 shrink-0" />
+                      <span><strong>Background Runner</strong>: Multi-threaded queue.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-purple-400 shrink-0" />
+                      <span><strong>WSM &amp; Pareto Service</strong>: Dominance matrix.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-purple-400 shrink-0" />
+                      <span><strong>NVML &amp; PyTorch Suite</strong>: Hardware telemetry.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Tier 3 Box */}
+                <div
+                  onClick={() => setSelectedArchitectureTier('persistence')}
+                  className={`p-4 rounded-lg border transition-all cursor-pointer space-y-3 ${
+                    selectedArchitectureTier === 'persistence'
+                      ? 'bg-emerald-500/10 border-emerald-500 ring-1 ring-emerald-500 shadow-md'
+                      : 'bg-[var(--surface)] border-[var(--border)] hover:border-emerald-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                      <Database className="w-4 h-4" />
+                      <span>Tier 3: Persistence</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">SQLite</span>
+                  </div>
+                  <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span><strong>SQLite Database</strong>: Embedded <code className="text-[10px]">benchmark.db</code>.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span><strong>SQLAlchemy ORM</strong>: Strongly typed models.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span><strong>Audited Tables</strong>: Experiments, Runs, Metrics.</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <ChevronRight className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span><strong>Provenance Signatures</strong>: Immutable trail.</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              {/* Tier 2: Backend */}
-              <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
-                <div className="flex items-center gap-2 text-purple-400 font-bold">
-                  <Cpu className="w-4 h-4" />
-                  <span>Tier 2: Async FastAPI Engine</span>
+              {/* Dynamic Tier Inspector Details */}
+              <div className="p-4 rounded bg-[var(--surface)] border border-[var(--border)] text-xs font-mono space-y-2">
+                <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                  <span className="font-bold text-[var(--text-primary)]">
+                    {selectedArchitectureTier === 'client' && 'Tier 1 Specification: Client Workstation SPA'}
+                    {selectedArchitectureTier === 'backend' && 'Tier 2 Specification: Asynchronous FastAPI Engine & Telemetry Workers'}
+                    {selectedArchitectureTier === 'persistence' && 'Tier 3 Specification: SQLite Persistence & SQLAlchemy Data Models'}
+                  </span>
+                  <span className="text-[10px] text-[var(--accent)] font-semibold">Active Inspector</span>
                 </div>
-                <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
-                  <li>&bull; <strong>FastAPI Async Routers</strong>: Non-blocking REST endpoints.</li>
-                  <li>&bull; <strong>Background Runner Workers</strong>: Multi-threaded benchmark queue.</li>
-                  <li>&bull; <strong>WSM Scoring &amp; Pareto Service</strong>: Dominance matrix calculation.</li>
-                  <li>&bull; <strong>NVML &amp; PyTorch Suite</strong>: Hardware telemetry capture.</li>
-                </ul>
-              </div>
-
-              {/* Tier 3: Persistence */}
-              <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                  <Database className="w-4 h-4" />
-                  <span>Tier 3: Persistence Tier</span>
-                </div>
-                <ul className="space-y-1.5 text-[11px] text-[var(--text-secondary)] font-sans">
-                  <li>&bull; <strong>SQLite (<code className="font-mono text-[10px]">benchmark.db</code>)</strong>: Fast embedded storage.</li>
-                  <li>&bull; <strong>SQLAlchemy ORM</strong>: Strongly typed data models.</li>
-                  <li>&bull; <strong>Audited Tables</strong>: Experiments, Runs, Metrics, Ablations, Custom Models.</li>
-                  <li>&bull; <strong>Provenance Signatures</strong>: Experimental integrity verification.</li>
-                </ul>
+                <p className="text-[11px] text-[var(--text-secondary)] font-sans leading-relaxed">
+                  {selectedArchitectureTier === 'client' &&
+                    'The client application communicates over HTTP REST for configuration and querying, while maintaining a bidirectional WebSocket connection to stream per-iteration convergence data, live progress bars, and run completion payloads.'}
+                  {selectedArchitectureTier === 'backend' &&
+                    'The backend orchestrates the multi-objective optimization queue. Heavy PyTorch tensor calculations and hardware NVML telemetry measurements run on dedicated asynchronous thread pools without blocking the API event loop.'}
+                  {selectedArchitectureTier === 'persistence' &&
+                    'The persistence layer utilizes SQLite with write-ahead logging (WAL) mode. Every metric measurement is linked to foreign keys for experiments, hardware profiles, and mathematical seeds to ensure complete scientific reproducibility.'}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* 7-Stage Deterministic Pipeline Flow */}
-          <div className="ws-panel p-6 space-y-4">
-            <h3 className="ws-section-title flex items-center gap-2">
-              <Workflow className="w-4 h-4 text-emerald-400" />
-              <span>7-Stage Deterministic Benchmark Pipeline</span>
-            </h3>
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              Every benchmark run follows an invariant sequence to prevent hardware cache contamination, asynchronous thread latency bias, and stochastic noise:
-            </p>
+          {/* Interactive 7-Stage Deterministic Pipeline Flow */}
+          <div className="ws-panel p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+              <div>
+                <h3 className="ws-section-title flex items-center gap-2">
+                  <Workflow className="w-4 h-4 text-emerald-400" />
+                  <span>7-Stage Deterministic Benchmark Pipeline</span>
+                </h3>
+                <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                  Click any stage to view execution invariants, input data, and mathematical operations.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-[var(--accent)] font-bold">
+                Stage {selectedPipelineStep} of 7 Selected
+              </span>
+            </div>
 
-            <div className="space-y-2.5 font-mono text-xs">
+            {/* Step Selector Horizontal Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 font-mono text-xs">
               {[
-                { stage: '1. Baseline Calibration', desc: 'Evaluates uncompressed FP32 dense CNN model on validation test split. Captures reference accuracy, latency, and footprint.', color: 'text-sky-400' },
-                { stage: '2. Quantization Stage', desc: 'Applies FP16 or INT8 Post-Training Quantization (PTQ) with histogram calibration.', color: 'text-cyan-400' },
-                { stage: '3. Structured Pruning', desc: 'Computes L1-norm filter importance and zeroes low-contribution channels.', color: 'text-teal-400' },
-                { stage: '4. Metaheuristic Search', desc: 'Executes population search over continuous vector bounds [0, 1]^D to find optimal layer-wise compression ratios.', color: 'text-amber-400' },
-                { stage: '5. Hardware Telemetry', desc: '50 warmup iterations followed by 200 timed forward passes synchronized with torch.cuda.synchronize() and NVML energy capture.', color: 'text-purple-400' },
-                { stage: '6. Statistical Aggregation', desc: 'Computes Mean, Median, Variance, and 95% Confidence Intervals across N stochastic runs under deterministic seed policy.', color: 'text-pink-400' },
-                { stage: '7. Pareto & Decision Scoring', desc: 'Extracts non-dominated solutions and computes Weighted Sum Model (WSM) composite score on a 0-100 scale.', color: 'text-emerald-400' },
-              ].map((step, idx) => (
-                <div key={idx} className="p-3 rounded bg-[var(--surface-secondary)] border border-[var(--border)] flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center font-bold shrink-0 text-[11px] text-[var(--accent)]">
-                    {idx + 1}
+                { id: 1, label: '1. Baseline', color: 'sky' },
+                { id: 2, label: '2. Quantize', color: 'cyan' },
+                { id: 3, label: '3. Prune', color: 'teal' },
+                { id: 4, label: '4. Search', color: 'amber' },
+                { id: 5, label: '5. Telemetry', color: 'purple' },
+                { id: 6, label: '6. Statistics', color: 'pink' },
+                { id: 7, label: '7. Pareto', color: 'emerald' },
+              ].map((step) => {
+                const isSelected = selectedPipelineStep === step.id;
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => setSelectedPipelineStep(step.id)}
+                    className={`p-2.5 rounded text-center transition-all border ${
+                      isSelected
+                        ? 'bg-[var(--surface-elevated)] border-[var(--accent)] text-[var(--accent)] font-bold shadow-xs'
+                        : 'bg-[var(--surface-secondary)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <div className="text-[10px] text-[var(--text-muted)]">Step 0{step.id}</div>
+                    <div className="text-xs truncate font-bold mt-0.5">{step.label}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Stage Deep Detail Card */}
+            <div className="p-5 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3 font-sans text-xs">
+              {selectedPipelineStep === 1 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sky-400 font-mono font-bold text-sm">
+                    <span>Stage 1: Baseline FP32 Calibration</span>
                   </div>
-                  <div>
-                    <span className={`font-bold ${step.color}`}>{step.stage}</span>
-                    <p className="text-[11px] text-[var(--text-secondary)] font-sans mt-0.5">{step.desc}</p>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Evaluates the uncompressed, pre-trained dense CNN checkpoint in full FP32 precision on the validation test partition. Captures baseline reference Top-1 accuracy, FP32 inference latency (ms), disk storage (MB), FLOPs, and energy draw.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-sky-300 border border-[var(--border)]">
+                    Input: Dense State Dict &bull; Output: Baseline Vector [Acc_base, Lat_base, Size_base, Energy_base]
                   </div>
                 </div>
-              ))}
+              )}
+
+              {selectedPipelineStep === 2 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 font-mono font-bold text-sm">
+                    <span>Stage 2: Post-Training Quantization (PTQ) Calibration</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Applies FP16 half-precision or INT8 uniform affine quantization to model weights and activations using MinMax or histogram calibration on a representative data slice.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-cyan-300 border border-[var(--border)]">
+                    Formula: S = (max(X) - min(X)) / (q_max - q_min), &nbsp; Z = round((-min(X)/S) + q_min)
+                  </div>
+                </div>
+              )}
+
+              {selectedPipelineStep === 3 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-teal-400 font-mono font-bold text-sm">
+                    <span>Stage 3: Structured L1-Norm Channel Pruning</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Calculates L1-norm filter importance across all convolutional layers. Eliminates lowest magnitude filters according to the target layer sparsity vector, producing physically smaller channel dimensions.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-teal-300 border border-[var(--border)]">
+                    Formula: I_j = sum_&#123;c, k1, k2&#125; |W(j, c, k1, k2)| &bull; Generates sparse layer tensors
+                  </div>
+                </div>
+              )}
+
+              {selectedPipelineStep === 4 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-amber-400 font-mono font-bold text-sm">
+                    <span>Stage 4: Metaheuristic Swarm Search &amp; Optimization</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Initializes population agents across continuous space [0.0, 1.0]^D. Each iteration evaluates candidate compression vectors against the multi-objective fitness function and streams real-time telemetry over WebSockets.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-amber-300 border border-[var(--border)]">
+                    Search Space: [0.0, 1.0]^D &bull; Objective: min f(X) = w_acc*dAcc + w_lat*NormLat + w_size*NormSize + w_energy*NormEnergy
+                  </div>
+                </div>
+              )}
+
+              {selectedPipelineStep === 5 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-purple-400 font-mono font-bold text-sm">
+                    <span>Stage 5: Hardware Synchronized Telemetry Profiling</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Applies the optimal search vector and runs 50 unmeasured warm-up iterations followed by 200 timed forward passes synchronized with <code className="font-mono text-purple-300">torch.cuda.synchronize()</code> while polling NVIDIA NVML for power draw.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-purple-300 border border-[var(--border)]">
+                    Protocol: 50 Warmup + 200 CUDA Event Passes + 100Hz NVML Energy Integral
+                  </div>
+                </div>
+              )}
+
+              {selectedPipelineStep === 6 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-pink-400 font-mono font-bold text-sm">
+                    <span>Stage 6: Multi-Run Statistical Aggregation</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Aggregates metrics across N stochastic runs with deterministic seed offsets. Computes Sample Mean, Median, Standard Deviation, Standard Error, and 95% Confidence Intervals using Student's t-distribution.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-pink-300 border border-[var(--border)]">
+                    Formulas: Mean (x_bar), Std (s), CI_95 = x_bar +/- t_&#123;0.025, N-1&#125; * (s / sqrt(N))
+                  </div>
+                </div>
+              )}
+
+              {selectedPipelineStep === 7 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold text-sm">
+                    <span>Stage 7: Multi-Objective Scoring &amp; Pareto Extraction</span>
+                  </div>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    Evaluates the Weighted Sum Model (WSM) composite score on a 0-100 scale, extracts the 2D/3D Pareto non-dominated frontier, and compiles the 5-stage ablation trajectory.
+                  </p>
+                  <div className="p-3 rounded bg-[var(--surface)] font-mono text-[11px] text-emerald-300 border border-[var(--border)]">
+                    Output: WSM Composite Scores (0-100), Pareto Optimal Sets, Ranked Algorithm Champions
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
       )}
 
       {/* ========================================================================= */}
-      {/* 3. 10 OPTIMIZERS & MATHEMATICAL CONTRACTS */}
+      {/* 3. 10 OPTIMIZERS & MATHEMATICAL FORMULATIONS */}
       {/* ========================================================================= */}
       {activeTab === 'algorithms' && (
         <section className="space-y-6 animate-fade-in" id="algorithms-and-math">
@@ -602,7 +948,7 @@ export const DocumentationView: React.FC = () => {
                 <div className="space-y-4">
                   {/* Literature Reference */}
                   <div>
-                    <span className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Primary Literature Reference:</span>
+                    <span className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Primary Literature Citation:</span>
                     <div className="p-2.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] font-mono text-[11px] text-[var(--text-secondary)]">
                       {selectedAlg.authors} ({selectedAlg.year}). <em>{selectedAlg.name}</em>.
                     </div>
@@ -612,6 +958,92 @@ export const DocumentationView: React.FC = () => {
                   <div>
                     <span className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Search Mechanics &amp; Convergence Dynamics:</span>
                     <p className="text-[var(--text-secondary)] leading-relaxed">{selectedAlg.description}</p>
+                  </div>
+
+                  {/* Mathematical Formulation Card */}
+                  <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs font-mono text-[var(--accent)] flex items-center gap-1.5">
+                        <Code2 className="w-3.5 h-3.5" />
+                        <span>Core Position Update Equation ({selectedAlg.key})</span>
+                      </span>
+                      <button
+                        onClick={() => copyCode(selectedAlg.description, `math-${selectedAlg.key}`)}
+                        className="text-[10px] font-mono text-[var(--accent)] hover:underline flex items-center gap-1"
+                      >
+                        {copiedSection === `math-${selectedAlg.key}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedSection === `math-${selectedAlg.key}` ? 'Copied' : 'Copy Math'}</span>
+                      </button>
+                    </div>
+
+                    {/* Styled Math Formula Render */}
+                    <div className="p-3 rounded bg-[var(--surface)] border border-[var(--border)] font-mono text-xs text-[var(--text-primary)] space-y-1.5">
+                      {selectedAlg.key === 'GWO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">X_1 = X_alpha - A_1 * |C_1 * X_alpha - X|</div>
+                          <div className="text-sky-400 font-bold">X_2 = X_beta - A_2 * |C_2 * X_beta - X|</div>
+                          <div className="text-sky-400 font-bold">X_3 = X_delta - A_3 * |C_3 * X_delta - X|</div>
+                          <div className="text-emerald-400 font-bold pt-1 border-t border-[var(--border)]">X(t+1) = (X_1 + X_2 + X_3) / 3</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'WOA' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Encircling: X(t+1) = X*(t) - A * |C * X*(t) - X(t)| &nbsp; (if p &lt; 0.5)</div>
+                          <div className="text-purple-400 font-bold">Spiral: X(t+1) = D&#39; * exp(b*l) * cos(2*pi*l) + X*(t) &nbsp; (if p &ge; 0.5)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'ALO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Random Walk: R_i^t = (X_i^t - a_i) * (d_i^t - c_i^t) / (b_i - a_i) + c_i^t</div>
+                          <div className="text-emerald-400 font-bold">Ant_i^t = (R_A^t + R_E^t) / 2</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'MFO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Spiral Trajectory: S(M_i, F_j) = D_i * exp(b*t) * cos(2*pi*t) + F_j</div>
+                          <div className="text-amber-400 font-bold">Adaptive Flames: Flame_No = round(N - t * (N-1)/T)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'GOA' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Social Forces: X_i^d = c * (Sum_{'{j!=i}'} c * (ub-lb)/2 * s(|x_j-x_i|) * (x_j-x_i)/d_ij) + T_d</div>
+                          <div className="text-teal-400 font-bold">Comfort Zone: s(r) = f * exp(-r/l) - exp(-r)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'MVO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Wormhole Tunnel: x_i^j = X_j* +/- TDR * ((ub-lb)*r4 + lb) &nbsp; (if r2 &lt; WEP)</div>
+                          <div className="text-purple-400 font-bold">WEP = WEP_min + t * (WEP_max - WEP_min)/T</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'SCA' && (
+                        <>
+                          <div className="text-sky-400 font-bold">X(t+1) = X(t) + r1 * sin(r2) * |r3 * P(t) - X(t)| &nbsp; (if r4 &lt; 0.5)</div>
+                          <div className="text-sky-400 font-bold">X(t+1) = X(t) + r1 * cos(r2) * |r3 * P(t) - X(t)| &nbsp; (if r4 &ge; 0.5)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'AOA' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Exploration: x_best / (MOP + eps) * ((ub-lb)*mu + lb) &nbsp; (if r1 &gt; MOA)</div>
+                          <div className="text-emerald-400 font-bold">Exploitation: x_best - MOP * ((ub-lb)*mu + lb) &nbsp; (if r1 &le; MOA)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'MGO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Territorial Dominance: X_new = X_best + Cof_1 * (X_rand - X_i)</div>
+                          <div className="text-amber-400 font-bold">Maternal Herd: X_new = X_i + Cof_2 * (X_best - X_rand)</div>
+                        </>
+                      )}
+                      {selectedAlg.key === 'GMO' && (
+                        <>
+                          <div className="text-sky-400 font-bold">Geometric Mean Vector: G = exp( (1/K) * Sum ln(X_i + eps) )</div>
+                          <div className="text-emerald-400 font-bold">X_i(t+1) = X_i(t) + omega * (G - X_i(t)) + beta * (X* - X_i(t))</div>
+                        </>
+                      )}
+                      {!['GWO', 'WOA', 'ALO', 'MFO', 'GOA', 'MVO', 'SCA', 'AOA', 'MGO', 'GMO'].includes(selectedAlg.key) && (
+                        <div className="text-purple-300 font-bold">Custom BaseOptimizer Algorithm Execution Vector</div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Key Algorithmic Strengths */}
@@ -627,18 +1059,18 @@ export const DocumentationView: React.FC = () => {
                   {/* Standard Optimization Contract */}
                   <div className="p-4 bg-[var(--surface-secondary)] border border-[var(--border)] rounded-md space-y-2 font-mono text-[11px]">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-[var(--text-primary)]">Standard Optimization Contract:</span>
+                      <span className="font-bold text-[var(--text-primary)]">BaseOptimizer Python Interface:</span>
                       <button
                         onClick={() =>
                           copyCode(
-                            `def optimize(self, fitness_fn, dim, pop_size=20, max_iter=50, bounds=(0.0, 1.0), seed=42):\n    # Adheres to BaseOptimizer Contract\n    pass`,
+                            `from backend.app.optimizers.base import BaseOptimizer\n\nclass CustomOptimizer(BaseOptimizer):\n    def optimize(self, fitness_func):\n        # Search in continuous bounds [0.0, 1.0]^D\n        pass`,
                             'contract'
                           )
                         }
                         className="text-[10px] text-[var(--accent)] hover:underline flex items-center gap-1"
                       >
                         {copiedSection === 'contract' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        <span>{copiedSection === 'contract' ? 'Copied' : 'Copy Template'}</span>
+                        <span>{copiedSection === 'contract' ? 'Copied' : 'Copy Code'}</span>
                       </button>
                     </div>
                     <p className="text-[var(--text-secondary)] font-sans leading-relaxed">
@@ -653,38 +1085,75 @@ export const DocumentationView: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* 4. COMPRESSION & HARDWARE TELEMETRY */}
+      {/* 4. COMPRESSION & HARDWARE TELEMETRY WITH BEAUTIFUL FORMULAS */}
       {/* ========================================================================= */}
       {activeTab === 'compression' && (
         <section className="space-y-6 animate-fade-in" id="compression-telemetry">
           {/* Post Training Quantization Card */}
           <div className="ws-panel p-6 space-y-4">
-            <h3 className="ws-section-title flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-cyan-400" />
-              <span>1. Post-Training Quantization (PTQ) Engine</span>
-            </h3>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <h3 className="ws-section-title flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-cyan-400" />
+                <span>1. Post-Training Quantization (PTQ) Mathematical Model</span>
+              </h3>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-bold">
+                PTQ INT8 / FP16
+              </span>
+            </div>
+
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              Post-Training Quantization reduces 32-bit floating-point weights ($W$) and activations ($X$) into 8-bit integers ($q$) without requiring full end-to-end backpropagation:
+              Post-Training Quantization reduces 32-bit floating-point weights (<code className="font-mono">W &isin; &Ropf;</code>) and activations (<code className="font-mono">X &isin; &Ropf;</code>) into 8-bit integers (<code className="font-mono">q &isin; [0, 255]</code> or <code className="font-mono">[-128, 127]</code>) without retraining:
             </p>
-            <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] font-mono text-xs text-[var(--text-primary)] space-y-1">
-              <div>Scale Parameter: <strong>S = (max(X) - min(X)) / (q_max - q_min)</strong></div>
-              <div>Zero-Point: <strong>Z = round(( -min(X) / S ) + q_min)</strong></div>
-              <div>Quantized Mapping: <strong>q = clamp(round(X / S + Z), q_min, q_max)</strong></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+              <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Scale Factor (S)</span>
+                <div className="text-[var(--text-primary)] font-bold">S = (max(X) - min(X)) / (q_max - q_min)</div>
+                <p className="text-[10px] text-[var(--text-muted)] font-sans pt-1">Maps continuous dynamic range to quantized grid interval</p>
+              </div>
+
+              <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Zero-Point (Z)</span>
+                <div className="text-[var(--text-primary)] font-bold">Z = round((-min(X) / S) + q_min)</div>
+                <p className="text-[10px] text-[var(--text-muted)] font-sans pt-1">Ensures exact zero representation for zero-padding efficiency</p>
+              </div>
+
+              <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">Quantized Mapping</span>
+                <div className="text-[var(--text-primary)] font-bold">q = clamp(round(X / S + Z), q_min, q_max)</div>
+                <p className="text-[10px] text-[var(--text-muted)] font-sans pt-1">Transforms tensor elements with saturation clamping</p>
+              </div>
             </div>
           </div>
 
           {/* Structured Channel Pruning Card */}
           <div className="ws-panel p-6 space-y-4">
-            <h3 className="ws-section-title flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-amber-400" />
-              <span>2. Structured L1-Norm Channel Pruning</span>
-            </h3>
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <h3 className="ws-section-title flex items-center gap-2">
+                <HardDrive className="w-4 h-4 text-amber-400" />
+                <span>2. Structured L1-Norm Channel Pruning &amp; FLOP Accounting</span>
+              </h3>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold">
+                L1-Norm Sparsity
+              </span>
+            </div>
+
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               Structured channel pruning eliminates entire convolutional filters based on their L1-norm weight magnitude, producing dense sub-networks with reduced FLOP requirements:
             </p>
-            <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] font-mono text-xs text-[var(--text-primary)] space-y-1">
-              <div>Filter Importance: <strong>I_j = &sum;<sub>c=1</sub><sup>C</sup> &sum;<sub>k1=1</sub><sup>K</sup> &sum;<sub>k2=1</sub><sup>K</sup> |W(j, c, k1, k2)|</strong></div>
-              <div>Pruning Mask: <strong>M_j = 1 if I_j &ge; Percentile(I, pruning_ratio) else 0</strong></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs">
+              <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">Filter Importance Score (I_j)</span>
+                <div className="text-[var(--text-primary)] font-bold">I_j = &sum;<sub>c=1</sub><sup>C</sup> &sum;<sub>k1=1</sub><sup>K</sup> &sum;<sub>k2=1</sub><sup>K</sup> |W(j, c, k1, k2)|</div>
+                <p className="text-[10px] text-[var(--text-muted)] font-sans pt-1">Total L1 magnitude across input channels C and kernel spatial dims K&times;K</p>
+              </div>
+
+              <div className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1">
+                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">Pruning Mask (M_j)</span>
+                <div className="text-[var(--text-primary)] font-bold">M_j = 1 if I_j &ge; Percentile(I, pruning_ratio) else 0</div>
+                <p className="text-[10px] text-[var(--text-muted)] font-sans pt-1">Zeroes channels falling below the optimizer threshold percentile</p>
+              </div>
             </div>
           </div>
 
@@ -692,23 +1161,33 @@ export const DocumentationView: React.FC = () => {
           <div className="ws-panel p-6 space-y-4">
             <h3 className="ws-section-title flex items-center gap-2">
               <Zap className="w-4 h-4 text-purple-400" />
-              <span>3. Hardware Telemetry &amp; Power Sampling</span>
+              <span>3. Hardware Telemetry &amp; NVML Power Integral</span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
               <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2">
-                <span className="font-bold text-sky-400 font-mono block">CUDA Synchronization Protocol</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sky-400 font-mono">CUDA Stream Synchronization</span>
+                  <span className="text-[10px] font-mono text-sky-400/80">Timing Invariant</span>
+                </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed">
-                  Asynchronous GPU kernel launches can report artificially low latency if execution is measured on host CPU. The platform calls <code className="font-mono">torch.cuda.synchronize()</code> before and after the 200 measured inference loops to guarantee exact time measurements.
+                  Asynchronous GPU kernel launches can report artificially low latency if measured on host CPU threads. The platform enforces explicit hardware barriers:
                 </p>
+                <div className="p-2.5 rounded bg-[var(--surface)] font-mono text-[11px] text-sky-300">
+                  torch.cuda.synchronize() &rarr; 50 Warm-up passes &rarr; 200 CUDA Event Passes &rarr; torch.cuda.synchronize()
+                </div>
               </div>
 
               <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2">
-                <span className="font-bold text-purple-400 font-mono block">NVIDIA NVML Power Monitoring</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-purple-400 font-mono">NVIDIA NVML Power Sampling</span>
+                  <span className="text-[10px] font-mono text-purple-400/80">100Hz Integral</span>
+                </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed">
-                  GPU power consumption is sampled via NVIDIA NVML (<code className="font-mono">pynvml</code>) at 100Hz intervals during inference. Total energy in Joules is derived via:
+                  GPU board power is polled via NVIDIA Management Library (<code className="font-mono">pynvml</code>) at high frequency. Total energy (Joules) is integrated over time:
                 </p>
-                <div className="p-2 rounded bg-[var(--surface)] font-mono text-[11px] text-[var(--accent)]">
-                  Energy (J) = Average_Power_Watts &times; Latency_Seconds
+                <div className="p-2.5 rounded bg-[var(--surface)] font-mono text-[11px] text-purple-300">
+                  Energy (J) = &int;<sub>0</sub><sup>T</sup> P(t) dt &approx; &sum;<sub>k=1</sub><sup>M</sup> P(t_k) &bull; &Delta;t_k
                 </div>
               </div>
             </div>
@@ -724,24 +1203,30 @@ export const DocumentationView: React.FC = () => {
           <div className="ws-panel p-6 space-y-5">
             <h3 className="ws-section-title flex items-center gap-2">
               <Scale className="w-4 h-4 text-[var(--accent)]" />
-              <span>Multi-Objective Decision Models &amp; Pareto Theory</span>
+              <span>Multi-Objective Decision Models &amp; Pareto Frontier Theory</span>
             </h3>
 
             <div className="space-y-4 text-xs font-sans">
               <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2">
-                <span className="font-bold text-[var(--text-primary)] font-mono">1. Weighted Sum Model (WSM) Scoring</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[var(--text-primary)] font-mono text-sm">1. Weighted Sum Model (WSM) Scoring</span>
+                  <span className="text-[10px] font-mono text-[var(--accent)] font-bold">Scale 0 - 100</span>
+                </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed">
-                  Each objective is normalized to the range $[0.0, 1.0]$. Latency, Model Size, and Energy are inverted because lower values indicate superior performance:
+                  Each objective is normalized to the unit interval $[0.0, 1.0]$. Latency, Model Size, and Energy are inverted because lower values indicate superior performance:
                 </p>
-                <div className="p-3 rounded bg-[var(--surface)] font-mono text-[var(--accent)] font-bold text-center">
+                <div className="p-3 rounded bg-[var(--surface)] font-mono text-[var(--accent)] font-bold text-center text-xs">
                   Score = (w_acc &bull; NormAcc + w_lat &bull; (1 - NormLat) + w_size &bull; (1 - NormSize) + w_energy &bull; (1 - NormEnergy)) &times; 100
                 </div>
               </div>
 
               <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2">
-                <span className="font-bold text-[var(--text-primary)] font-mono">2. Pareto Dominance Formalization</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[var(--text-primary)] font-mono text-sm">2. Pareto Dominance Formalization</span>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold">Non-Dominated Set</span>
+                </div>
                 <p className="text-[var(--text-secondary)] leading-relaxed">
-                  A candidate compressed model $A$ dominates another model $B$ ($A \succ B$) if and only if:
+                  A candidate compressed model $A$ strictly dominates another model $B$ ($A \succ B$) if and only if:
                 </p>
                 <div className="p-3 rounded bg-[var(--surface)] font-mono text-[var(--text-primary)] text-center text-xs">
                   &forall; i &isin; &#123;Acc, Lat, Size, Energy&#125;, &nbsp; f_i(A) &le; f_i(B) &nbsp; &and; &nbsp; &exist; j, &nbsp; f_j(A) &lt; f_j(B)
@@ -889,9 +1374,18 @@ export const DocumentationView: React.FC = () => {
         <section className="space-y-6 animate-fade-in" id="deep-project-report">
           <div className="ws-panel p-8 space-y-6 text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
             <div className="border-b border-[var(--border)] pb-4 space-y-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--accent)] font-bold">
-                Official Scientific Whitepaper
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--accent)] font-bold">
+                  Official Scientific Whitepaper
+                </span>
+                <button
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-[11px] font-semibold transition"
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Open Interactive Reader</span>
+                </button>
+              </div>
               <h2 className="text-xl font-bold text-[var(--text-primary)] font-sans">
                 CNN Optimization Benchmark: Comprehensive Research Report &amp; Multi-Objective Evaluation
               </h2>
@@ -1065,6 +1559,14 @@ export const DocumentationView: React.FC = () => {
                         }
                         md += '\n';
                       }
+                      if (sec.subsections) {
+                        for (const sub of sec.subsections) {
+                          md += `### ${sub.title}\n\n${sub.content}\n\n`;
+                          if (sub.codeSnippet) {
+                            md += '```text\n' + sub.codeSnippet + '\n```\n\n';
+                          }
+                        }
+                      }
                     }
                     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
@@ -1082,6 +1584,162 @@ export const DocumentationView: React.FC = () => {
             </div>
           </div>
         </section>
+      )}
+
+      {/* ========================================================================= */}
+      {/* INTERACTIVE FULL REPORT LIVE PREVIEW MODAL / READER */}
+      {/* ========================================================================= */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-5xl max-h-[92vh] bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl flex flex-col overflow-hidden text-[var(--text-primary)]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--surface-secondary)]">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+                    <span>Scientific Project Report &amp; Documentation</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      LIVE PREVIEW
+                    </span>
+                  </h2>
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                    Official publication document &bull; Formatted for PDF, Word (.doc), and Markdown
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => exportToPdf(getFullPlatformDocData())}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition"
+                  title="Export PDF"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">PDF</span>
+                </button>
+                <button
+                  onClick={() => exportToDoc(getFullPlatformDocData(), 'CNN_Optimization_Benchmark_Report.doc')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition"
+                  title="Export DOCS"
+                >
+                  <FileType className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">DOCS</span>
+                </button>
+                <button
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
+                  title="Close Preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Publication Document Layout */}
+            <div className="p-8 overflow-y-auto space-y-8 text-xs leading-relaxed font-sans bg-[var(--surface)] select-text">
+              {/* Document Cover / Header Block */}
+              <div className="border-b-2 border-b-[var(--border)] pb-6 space-y-3 text-center">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--accent)] font-bold">
+                  Scientific Research Manual &amp; Comprehensive Project Report
+                </span>
+                <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                  CNN Optimization Benchmark Platform
+                </h1>
+                <p className="text-xs text-[var(--text-secondary)] max-w-2xl mx-auto">
+                  Multi-Objective Metaheuristic Optimization, Hardware Telemetry Profiling, and Deep Neural Network Compression
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-[var(--text-muted)] pt-2 border-t border-[var(--border)]/50">
+                  <span>Author: <strong>Umesh Patel (@UmeshCode1)</strong></span>
+                  <span>&bull;</span>
+                  <span>Version: <strong>v2.4 Scientific Edition</strong></span>
+                  <span>&bull;</span>
+                  <span>URL: <strong>https://cnn.umeshlabs.in</strong></span>
+                </div>
+              </div>
+
+              {/* Section Iterations */}
+              {getFullPlatformDocData().sections.map((sec, sIdx) => (
+                <div key={sIdx} className="space-y-3">
+                  <h2 className="text-sm font-bold font-mono text-[var(--text-primary)] uppercase flex items-center gap-2 border-b border-[var(--border)] pb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[var(--surface-secondary)] border border-[var(--border)] text-[var(--accent)] flex items-center justify-center text-[10px] shrink-0">
+                      {sIdx + 1}
+                    </span>
+                    <span>{sec.title}</span>
+                  </h2>
+
+                  {sec.content && (
+                    <p className="text-[var(--text-secondary)] whitespace-pre-line leading-relaxed">
+                      {sec.content}
+                    </p>
+                  )}
+
+                  {sec.table && (
+                    <div className="overflow-x-auto my-3 border border-[var(--border)] rounded-lg">
+                      <table className="ws-table w-full">
+                        <thead>
+                          <tr>
+                            {sec.table.headers.map((h, i) => (
+                              <th key={i}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sec.table.rows.map((row, rIdx) => (
+                            <tr key={rIdx}>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx} className={cIdx === 0 ? 'font-bold font-mono text-[var(--text-primary)]' : ''}>
+                                  {cell}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {sec.subsections && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                      {sec.subsections.map((sub, subIdx) => (
+                        <div key={subIdx} className="p-3.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2">
+                          <h3 className="font-bold text-xs font-mono text-[var(--accent)]">{sub.title}</h3>
+                          <p className="text-[11px] text-[var(--text-secondary)]">{sub.content}</p>
+                          {sub.codeSnippet && (
+                            <pre className="p-2.5 rounded bg-[var(--surface)] text-[10px] font-mono text-[var(--text-primary)] overflow-x-auto border border-[var(--border)]">
+                              {sub.codeSnippet}
+                            </pre>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {sec.codeSnippet && (
+                    <div className="p-3 rounded bg-[var(--surface-secondary)] border border-[var(--border)] font-mono text-xs text-[var(--accent)] font-bold text-center">
+                      {sec.codeSnippet}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 border-t border-[var(--border)] bg-[var(--surface-secondary)] flex items-center justify-between text-xs font-mono">
+              <span className="text-[var(--text-muted)]">
+                MIT Open Source &bull; Umesh Patel (@UmeshCode1)
+              </span>
+              <button
+                onClick={() => setIsPreviewOpen(false)}
+                className="px-4 py-1.5 rounded ws-button-primary text-xs font-semibold"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Algorithm Upload Modal */}
