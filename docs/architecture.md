@@ -92,7 +92,7 @@ sequenceDiagram
     participant API as FastAPI REST Router
     participant Worker as Async Runner Worker
     participant Comp as Compression Engine (PTQ / Pruning)
-    participant Opt as Metaheuristic Optimizer
+    participant Optimizer as Metaheuristic Optimizer
     participant Hardware as GPU/CPU Hardware Telemetry
     participant Stats as Analytics & Pareto Engine
     participant WS as WebSocket Broadcaster
@@ -116,13 +116,13 @@ sequenceDiagram
     %% Multi-Run Optimizer Execution Loop
     loop For Each Stochastic Run (r = 1 .. Number_of_Runs)
         loop For Each Selected Optimizer (alg in Selected_Algorithms)
-            Worker->>Opt: Initialize Population X(0) in [0, 1]^D with Deterministic Seed
+            Worker->>Optimizer: Initialize Population X(0) in [0, 1]^D with Deterministic Seed
             
             loop For Each Search Iteration (t = 1 .. Max_Iterations)
-                Opt->>Comp: Apply Candidate Compression Solution Vector X_i
+                Optimizer->>Comp: Apply Candidate Compression Solution Vector X_i
                 Comp->>Hardware: Rapid Proxy Fitness Evaluation
-                Hardware-->>Opt: Fitness Value f(X_i)
-                Opt->>Opt: Update Search Vectors (Exploration / Exploitation)
+                Hardware-->>Optimizer: Fitness Value f(X_i)
+                Optimizer->>Optimizer: Update Search Vectors (Exploration / Exploitation)
                 Worker->>WS: Broadcast ITERATION_UPDATE (alg, run_index, iteration, best_fitness)
             end
             
