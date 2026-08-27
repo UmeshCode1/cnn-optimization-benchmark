@@ -13,9 +13,46 @@ export interface HardwareProfile {
   python_version: string;
 }
 
+export interface CapabilityMatrix {
+  python_version: string;
+  pytorch_available: boolean;
+  pytorch_version?: string;
+  cpu_model: string;
+  cpu_cores: number;
+  ram_gb: number;
+  os_info: string;
+  cuda_available: boolean;
+  cuda_version?: string;
+  gpu_model?: string;
+  gpu_vram_mb: number;
+  gpu_count: number;
+  nvml_available: boolean;
+  rapl_available: boolean;
+  cpu_inference_available: boolean;
+  gpu_inference_available: boolean;
+  int8_dynamic_available: boolean;
+  int8_static_available: boolean;
+  fp16_available: boolean;
+  datasets_available: string[];
+  real_mode_feasible: boolean;
+  real_mode_reason: string;
+  detection_warnings: string[];
+}
+
+export interface SystemCapabilities {
+  default_mode: 'DEMO' | 'REAL';
+  demo_mode_available: boolean;
+  real_mode_available: boolean;
+  real_mode_reason: string;
+  capabilities: CapabilityMatrix;
+  deployment_note: string;
+}
+
 export interface BaselineSnapshot {
   accuracy: number;
+  accuracy_provenance?: string;
   latency_ms: number;
+  latency_provenance?: string;
   model_size_mb: number;
   energy_j: number;
   parameters_m: number;
@@ -28,6 +65,9 @@ export interface Experiment {
   description: string;
   status: 'DRAFT' | 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
   is_demo: boolean;
+  execution_mode?: 'DEMO' | 'REAL';
+  execution_environment?: string;
+  measurement_capabilities?: Record<string, any>;
   preset: string;
   dataset_name: string;
   dataset_split: string;
@@ -68,6 +108,10 @@ export interface ExperimentRun {
   run_index: number;
   seed: number;
   status: string;
+  execution_mode?: 'DEMO' | 'REAL';
+  accuracy_provenance?: string;
+  latency_provenance?: string;
+  energy_provenance?: string;
   accuracy: number;
   accuracy_drop: number;
   latency_ms: number;
@@ -117,11 +161,14 @@ export interface RankedAlgorithm {
   algorithm: string;
   accuracy: number;
   accuracy_drop?: number;
+  accuracy_provenance?: string;
   latency_ms: number;
+  latency_provenance?: string;
   speedup?: number;
   model_size_mb: number;
   compression_ratio?: number;
   energy_j: number;
+  energy_provenance?: string;
   parameters_m?: number;
   flops_m?: number;
   overall_score: number;

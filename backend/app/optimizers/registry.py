@@ -41,68 +41,46 @@ class CustomDynamicOptimizer(BaseOptimizer):
         custom_name: str = "Custom Optimizer",
         exploration_rate: float = 0.5,
     ):
-        super().__init__(population_size, max_iterations, seed)
+        super().__init__(
+            name=custom_name,
+            acronym=custom_key,
+            population_size=population_size,
+            max_iterations=max_iterations,
+            seed=seed,
+        )
         self.custom_key = custom_key
         self.custom_name = custom_name
         self.exploration_rate = exploration_rate
 
-    def optimize(
-        self,
-        fitness_func: Callable[[np.ndarray], float],
-        dim: int,
-        bounds: tuple = (0.0, 1.0),
-    ) -> Dict[str, Any]:
-        """Execute custom metaheuristic optimization loop."""
-        population = self.initialize_population(dim, bounds)
-        fitness_scores = np.array([fitness_func(ind) for ind in population])
+    def step(self, iteration: int, objective_fn: Callable[[np.ndarray], float]) -> None:
+        """Execute a single iteration step of the custom adaptive optimizer."""
+        # Dynamic decay factor from 2.0 to 0.0
+        a = 2.0 * (1.0 - iteration / self.max_iterations)
+        best_sol = self.best_solution if self.best_solution is not None else self.population[0]
 
-        best_idx = np.argmin(fitness_scores)
-        best_solution = population[best_idx].copy()
-        best_fitness = float(fitness_scores[best_idx])
+        for i in range(self.population_size):
+            r1 = self.rng.random()
+            r2 = self.rng.random()
 
-        convergence_curve = [best_fitness]
-        lower_bound, upper_bound = bounds
+            # Exploration vs Exploitation balance
+            if self.rng.random() < self.exploration_rate:
+                # Exploration: random vector guided perturbation
+                random_index = self.rng.integers(0, self.population_size)
+                random_agent = self.population[random_index]
+                D = np.abs(2.0 * r1 * random_agent - self.population[i])
+                step_pos = random_agent - a * D * (2.0 * r2 - 1.0)
+            else:
+                # Exploitation: elite vector attraction
+                D_best = np.abs(2.0 * r1 * best_sol - self.population[i])
+                step_pos = best_sol - a * D_best * np.cos(2.0 * np.pi * r2)
 
-        # Iteration Loop
-        for iteration in range(1, self.max_iterations + 1):
-            # Dynamic decay factor from 2.0 to 0.0
-            a = 2.0 * (1.0 - iteration / self.max_iterations)
+            self.population[i] = self.clip_bounds(step_pos)
+            fit = self.evaluate_individual(self.population[i], objective_fn)
+            self.fitness[i] = fit
 
-            for i in range(self.population_size):
-                r1 = self.rng.random()
-                r2 = self.rng.random()
-
-                # Exploration vs Exploitation balance
-                if self.rng.random() < self.exploration_rate:
-                    # Exploration: random vector guided perturbation
-                    random_index = self.rng.integers(0, self.population_size)
-                    random_agent = population[random_index]
-                    D = np.abs(2.0 * r1 * random_agent - population[i])
-                    step = random_agent - a * D * (2.0 * r2 - 1.0)
-                else:
-                    # Exploitation: elite vector attraction
-                    D_best = np.abs(2.0 * r1 * best_solution - population[i])
-                    step = best_solution - a * D_best * np.cos(2.0 * np.pi * r2)
-
-                # Clamp bounds
-                population[i] = np.clip(step, lower_bound, upper_bound)
-                current_fitness = fitness_func(population[i])
-
-                if current_fitness < fitness_scores[i]:
-                    fitness_scores[i] = current_fitness
-                    if current_fitness < best_fitness:
-                        best_fitness = float(current_fitness)
-                        best_solution = population[i].copy()
-
-            convergence_curve.append(best_fitness)
-
-        return {
-            "best_solution": best_solution,
-            "best_fitness": best_fitness,
-            "convergence_curve": convergence_curve,
-            "algorithm": self.custom_key,
-            "iterations": self.max_iterations,
-        }
+            if fit < self.best_fitness:
+                self.best_fitness = fit
+                self.best_solution = self.population[i].copy()
 
 
 BUILTIN_OPTIMIZER_REGISTRY: Dict[str, Type[BaseOptimizer]] = {

@@ -1,15 +1,60 @@
 version: '3.8'
 
+# CNN Optimization Benchmark — Local Deployment
+# ─────────────────────────────────────────────
+# Supports REAL Mode with actual PyTorch inference.
+#
+# Usage:
+#   CPU Real Mode:   docker-compose up
+#   GPU Real Mode:   docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+#   Demo Mode only:  EXECUTION_MODE=DEMO docker-compose up
+
 services:
-  benchmark-app:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
+    image: cnn-benchmark-backend:latest
+    container_name: cnn-benchmark-backend
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - DB_PATH=/app/data/benchmark.db
     volumes:
-      - ./data:/app/data
+      # Persistent database
+      - ./data/db:/app/data/db
+      # Dataset cache (downloaded automatically on first use in REAL mode)
+      - ./data/datasets:/app/data/datasets
+    environment:
+      # EXECUTION_MODE: DEMO (always works) or REAL (requires PyTorch + datasets)
+      - EXECUTION_MODE=${EXECUTION_MODE:-DEMO}
+      # DB path inside container
+      - DB_PATH=/app/data/db/benchmark.db
+      # Dataset download directory for real mode
+      - DATASET_DIR=/app/data/datasets
+      # Optionally point to a PostgreSQL database instead of SQLite
+      # - DATABASE_URL=postgresql://user:pass@host:5432/benchmark
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000
+    image: cnn-benchmark-frontend:latest
+    container_name: cnn-benchmark-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  dataset_cache:

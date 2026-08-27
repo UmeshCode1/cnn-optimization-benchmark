@@ -1,0 +1,15 @@
+version: '3.8'
+# GPU override — use with:
+# docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+
+services:
+  backend:
+    environment:
+      - EXECUTION_MODE=REAL
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

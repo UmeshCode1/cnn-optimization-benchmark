@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Plus,
+  Sparkles,
 } from 'lucide-react';
 import { HardwareProfile, DatasetInfo, CNNModelInfo, AlgorithmMeta } from '../../types';
 import { api } from '../../services/api';
@@ -591,15 +592,22 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Compute Target:</label>
+                  <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Execution Engine:</label>
                   <select
-                    value={formData.is_demo ? 'CPU' : (hardware?.device_type === 'GPU' ? 'GPU' : 'CPU')}
-                    onChange={() => {}}
+                    value={formData.is_demo ? 'DEMO' : 'AUTO'}
+                    onChange={(e) => {
+                      const isDemo = e.target.value === 'DEMO';
+                      setFormData({
+                        ...formData,
+                        is_demo: isDemo,
+                        // @ts-ignore
+                        execution_mode: isDemo ? 'DEMO' : 'REAL',
+                      });
+                    }}
                     className="w-full ws-input p-2 text-xs font-mono"
                   >
-                    <option value="AUTO">Auto (GPU CUDA if available)</option>
-                    <option value="GPU">GPU Accelerated (CUDA)</option>
-                    <option value="CPU">Host CPU Multi-Core</option>
+                    <option value="AUTO">Real Mode (PyTorch Engine if available)</option>
+                    <option value="DEMO">Demo / Simulation Mode (Sandbox)</option>
                   </select>
                 </div>
                 <div>

@@ -75,6 +75,11 @@ class Experiment(Base):
     cnn_model_name = Column(String(64), nullable=False, default="ResNet-18")
     checkpoint_name = Column(String(128), default="torchvision_pretrained")
     
+    # Execution mode — determines which engine was used
+    execution_mode = Column(String(8), default="DEMO")  # DEMO | REAL
+    execution_environment = Column(Text, default="")
+    measurement_capabilities_json = Column(Text, default="{}")
+
     # Compression configuration
     quantization_type = Column(String(32), default="INT8")  # FP32, FP16, INT8, INT8_DYNAMIC
     pruning_method = Column(String(32), default="STRUCTURED_CHANNEL")  # NONE, UNSTRUCTURED, STRUCTURED_CHANNEL, STRUCTURED_FILTER
@@ -141,6 +146,9 @@ class Experiment(Base):
             "status": self.status,
             "is_demo": self.is_demo,
             "preset": self.preset,
+            "execution_mode": self.execution_mode or "DEMO",
+            "execution_environment": self.execution_environment or "",
+            "measurement_capabilities": json.loads(self.measurement_capabilities_json or "{}"),
             "dataset_name": self.dataset_name,
             "dataset_split": self.dataset_split,
             "input_resolution": self.input_resolution,
@@ -191,6 +199,12 @@ class ExperimentRun(Base):
     seed = Column(Integer, nullable=False)
     status = Column(String(32), default="COMPLETED")  # RUNNING, COMPLETED, FAILED
 
+    # Provenance tracking (which engine + method produced each metric)
+    accuracy_provenance = Column(String(32), default="SIMULATED")   # MEASURED | SIMULATED
+    latency_provenance = Column(String(32), default="SIMULATED")    # MEASURED | ESTIMATED | SIMULATED
+    energy_provenance = Column(String(32), default="ESTIMATED")     # MEASURED | ESTIMATED | SIMULATED
+    execution_mode = Column(String(8), default="DEMO")              # DEMO | REAL
+
     # Measured primary metrics
     accuracy = Column(Float, nullable=False)
     latency_ms = Column(Float, nullable=False)
@@ -230,6 +244,10 @@ class ExperimentRun(Base):
             "run_index": self.run_index,
             "seed": self.seed,
             "status": self.status,
+            "execution_mode": self.execution_mode or "DEMO",
+            "accuracy_provenance": self.accuracy_provenance or "SIMULATED",
+            "latency_provenance": self.latency_provenance or "SIMULATED",
+            "energy_provenance": self.energy_provenance or "ESTIMATED",
             "accuracy": self.accuracy,
             "accuracy_drop": self.accuracy_drop,
             "latency_ms": self.latency_ms,

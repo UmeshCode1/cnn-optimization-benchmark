@@ -14,8 +14,19 @@ import { ReportsView } from './components/views/ReportsView';
 import { DatasetsView } from './components/views/DatasetsView';
 import { HistoryView } from './components/views/HistoryView';
 import { LiveRunModal } from './components/views/LiveRunModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ExecutionModeBanner } from './components/common/ExecutionModeBanner';
 import { api } from './services/api';
-import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats, AblationRecord, HardwareProfile } from './types';
+import {
+  Experiment,
+  RankedAlgorithm,
+  ParetoPoint,
+  AlgorithmStats,
+  AblationRecord,
+  HardwareProfile,
+  SystemCapabilities,
+} from './types';
+import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -27,6 +38,7 @@ export const App: React.FC = () => {
 
   // App Data State
   const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [capabilities, setCapabilities] = useState<SystemCapabilities | undefined>(undefined);
   const [activeExperimentId, setActiveExperimentId] = useState<string | null>(null);
   const [experimentDetails, setExperimentDetails] = useState<{
     experiment: Experiment;
@@ -42,6 +54,7 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (theme === 'light') {
@@ -66,12 +79,15 @@ export const App: React.FC = () => {
       } else {
         setIsLoading(true);
       }
-      const [exps, hw] = await Promise.all([
+      setLoadError(null);
+      const [exps, hw, caps] = await Promise.all([
         api.listExperiments(),
         api.getHardwareProfile().catch(() => undefined),
+        api.getCapabilities().catch(() => undefined),
       ]);
       setExperiments(exps);
       setHardware(hw);
+      setCapabilities(caps);
 
       if (exps.length > 0) {
         const validActive = exps.find((e) => e.id === activeExperimentId);
@@ -82,8 +98,9 @@ export const App: React.FC = () => {
         setActiveExperimentId(null);
         setExperimentDetails(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load benchmark data:', err);
+      setLoadError(err?.message || 'Failed to connect to the benchmark API. The backend may be starting up — please wait a moment and refresh.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -97,6 +114,7 @@ export const App: React.FC = () => {
       setExperimentDetails(details);
     } catch (err) {
       console.error(`Failed to load experiment ${expId}:`, err);
+      setExperimentDetails(null);
     } finally {
       setIsLoadingDetails(false);
     }
@@ -128,26 +146,66 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRecalculateWeights = async (weights: {
-    accuracy: number;
-    latency: number;
-    model_size: number;
-    energy: number;
-  }) => {
+  const handleRecalculateWeights = async (
+    weights: {
+      accuracy: number;
+      latency: number;
+      model_size: number;
+      energy: number;
+    },
+    statMode: string = 'MEAN'
+  ) => {
     if (!activeExperimentId) return;
     try {
-      const updated = await api.recalculateScores(activeExperimentId, weights);
+      const updated = await api.recalculateScores(activeExperimentId, weights, statMode);
       setExperimentDetails(updated);
     } catch (err) {
       console.error('Failed to recalculate weights:', err);
     }
   };
 
-  const handleCompareSelected = (algs: string[]) => {
+  const handleCompareSelected = (_algs: string[]) => {
     setActiveTab('results');
   };
 
   const isAnalysisTab = ['results', 'pareto', 'convergence', 'statistics', 'ablation', 'reports'].includes(activeTab);
+
+  // ── Global Loading Screen ──────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] flex flex-col items-center justify-center gap-4 font-mono text-xs">
+        <div className="w-10 h-10 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+        <div className="text-center space-y-1">
+          <p className="text-[var(--text-primary)] font-semibold">Initializing Benchmark Platform...</p>
+          <p className="text-[var(--text-muted)]">Connecting to backend API & loading experiment data</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Global Error Screen ────────────────────────────────────────────────────
+  if (loadError && experiments.length === 0) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] flex flex-col items-center justify-center gap-4 p-8">
+        <div className="ws-panel p-8 max-w-md w-full space-y-4 text-center border-[var(--danger)]/30">
+          <div className="w-12 h-12 rounded-full bg-[var(--danger)]/10 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6 text-[var(--danger)]" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">Backend Connection Failed</h3>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{loadError}</p>
+          </div>
+          <button
+            onClick={() => loadData()}
+            className="flex items-center gap-1.5 px-4 py-2 ws-button-primary text-xs mx-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white">
@@ -165,6 +223,12 @@ export const App: React.FC = () => {
         onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       />
 
+      {/* Execution Mode & Provenance Banner */}
+      <ExecutionModeBanner
+        experiment={experimentDetails?.experiment || experiments.find((e) => e.id === activeExperimentId)}
+        capabilities={capabilities}
+      />
+
       <div className="flex flex-1 relative">
         {/* Responsive Sidebar */}
         <Sidebar
@@ -178,33 +242,39 @@ export const App: React.FC = () => {
 
         {/* Main Content Viewport */}
         <main className="flex-1 p-3 sm:p-6 overflow-y-auto max-h-[calc(100vh-3.5rem)] animate-fade-in w-full">
-          {activeTab === 'dashboard' && (
-            <DashboardView
-              experiments={experiments}
-              latestExperiment={experimentDetails?.experiment || experiments[0]}
-              rankedAlgorithms={experimentDetails?.ranked_algorithms || []}
-              paretoPoints={experimentDetails?.pareto_points || []}
-              onNewBenchmark={() => setActiveTab('wizard')}
-              onOpenExperiment={handleSelectExperiment}
-              onViewResults={() => setActiveTab('results')}
-            />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                experiments={experiments}
+                latestExperiment={experimentDetails?.experiment || experiments[0]}
+                rankedAlgorithms={experimentDetails?.ranked_algorithms || []}
+                paretoPoints={experimentDetails?.pareto_points || []}
+                onNewBenchmark={() => setActiveTab('wizard')}
+                onOpenExperiment={handleSelectExperiment}
+                onViewResults={() => setActiveTab('results')}
+              />
+            )}
+          </ErrorBoundary>
 
-          {activeTab === 'wizard' && (
-            <NewBenchmarkWizard
-              hardware={hardware}
-              onSubmitBenchmark={handleStartBenchmark}
-              onCancel={() => setActiveTab('dashboard')}
-            />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'wizard' && (
+              <NewBenchmarkWizard
+                hardware={hardware}
+                onSubmitBenchmark={handleStartBenchmark}
+                onCancel={() => setActiveTab('dashboard')}
+              />
+            )}
+          </ErrorBoundary>
 
-          {activeTab === 'datasets' && (
-            <DatasetsView
-              onSelectDatasetForBenchmark={() => {
-                setActiveTab('wizard');
-              }}
-            />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'datasets' && (
+              <DatasetsView
+                onSelectDatasetForBenchmark={() => {
+                  setActiveTab('wizard');
+                }}
+              />
+            )}
+          </ErrorBoundary>
 
           {/* Analysis Views Loading State */}
           {isAnalysisTab && isLoadingDetails && (
@@ -260,73 +330,91 @@ export const App: React.FC = () => {
           {/* Active Analysis Views */}
           {!isLoadingDetails && experimentDetails && (
             <>
-              {activeTab === 'results' && (
-                <ComparisonDashboardView
-                  experiment={experimentDetails.experiment}
-                  rankedAlgorithms={experimentDetails.ranked_algorithms}
-                  statistics={experimentDetails.statistics_by_algorithm}
-                  paretoPoints={experimentDetails.pareto_points}
-                  onRecalculateWeights={handleRecalculateWeights}
-                  onCompareSelected={handleCompareSelected}
-                  onViewPareto={() => setActiveTab('pareto')}
-                  onViewConvergence={() => setActiveTab('convergence')}
-                  onViewStatistics={() => setActiveTab('statistics')}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'results' && (
+                  <ComparisonDashboardView
+                    experiment={experimentDetails.experiment}
+                    rankedAlgorithms={experimentDetails.ranked_algorithms}
+                    statistics={experimentDetails.statistics_by_algorithm}
+                    paretoPoints={experimentDetails.pareto_points}
+                    onRecalculateWeights={handleRecalculateWeights}
+                    onCompareSelected={handleCompareSelected}
+                    onViewPareto={() => setActiveTab('pareto')}
+                    onViewConvergence={() => setActiveTab('convergence')}
+                    onViewStatistics={() => setActiveTab('statistics')}
+                  />
+                )}
+              </ErrorBoundary>
 
-              {activeTab === 'pareto' && (
-                <ParetoExplorerView
-                  experiment={experimentDetails.experiment}
-                  paretoPoints={experimentDetails.pareto_points}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'pareto' && (
+                  <ParetoExplorerView
+                    experiment={experimentDetails.experiment}
+                    paretoPoints={experimentDetails.pareto_points}
+                  />
+                )}
+              </ErrorBoundary>
 
-              {activeTab === 'convergence' && (
-                <ConvergenceView
-                  experiment={experimentDetails.experiment}
-                  runs={experimentDetails.runs}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'convergence' && (
+                  <ConvergenceView
+                    experiment={experimentDetails.experiment}
+                    runs={experimentDetails.runs}
+                  />
+                )}
+              </ErrorBoundary>
 
-              {activeTab === 'statistics' && (
-                <MultiRunStatsView
-                  experiment={experimentDetails.experiment}
-                  statistics={experimentDetails.statistics_by_algorithm}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'statistics' && (
+                  <MultiRunStatsView
+                    experiment={experimentDetails.experiment}
+                    statistics={experimentDetails.statistics_by_algorithm}
+                  />
+                )}
+              </ErrorBoundary>
 
-              {activeTab === 'ablation' && (
-                <AblationView
-                  experiment={experimentDetails.experiment}
-                  ablations={experimentDetails.ablations}
-                />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'ablation' && (
+                  <AblationView
+                    experiment={experimentDetails.experiment}
+                    ablations={experimentDetails.ablations}
+                  />
+                )}
+              </ErrorBoundary>
 
-              {activeTab === 'reports' && (
-                <ReportsView experiment={experimentDetails.experiment} />
-              )}
+              <ErrorBoundary>
+                {activeTab === 'reports' && (
+                  <ReportsView experiment={experimentDetails.experiment} />
+                )}
+              </ErrorBoundary>
             </>
           )}
 
-          {activeTab === 'hardware' && (
-            <HardwareView hardware={hardware} />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'hardware' && (
+              <HardwareView hardware={hardware} />
+            )}
+          </ErrorBoundary>
 
-          {activeTab === 'documentation' && (
-            <DocumentationView />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'documentation' && (
+              <DocumentationView />
+            )}
+          </ErrorBoundary>
 
-          {activeTab === 'history' && (
-            <HistoryView
-              experiments={experiments}
-              activeExperimentId={activeExperimentId || undefined}
-              onSelectExperiment={(id) => {
-                handleSelectExperiment(id);
-                setActiveTab('results');
-              }}
-              onNewBenchmark={() => setActiveTab('wizard')}
-            />
-          )}
+          <ErrorBoundary>
+            {activeTab === 'history' && (
+              <HistoryView
+                experiments={experiments}
+                activeExperimentId={activeExperimentId || undefined}
+                onSelectExperiment={(id) => {
+                  handleSelectExperiment(id);
+                  setActiveTab('results');
+                }}
+                onNewBenchmark={() => setActiveTab('wizard')}
+              />
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

@@ -6,11 +6,35 @@ import {
   AblationRecord,
   AlgorithmMeta,
   HardwareProfile,
+  SystemCapabilities,
 } from '../types';
 
 const API_BASE = '/api';
 
 export const api = {
+  // System Capabilities & Mode
+  async getCapabilities(): Promise<SystemCapabilities> {
+    const res = await fetch(`${API_BASE}/experiments/capabilities`);
+    if (!res.ok) {
+      // Fallback if capabilities endpoint fails
+      return {
+        default_mode: 'DEMO',
+        demo_mode_available: true,
+        real_mode_available: false,
+        real_mode_reason: 'Could not connect to backend capabilities check',
+        capabilities: {} as any,
+        deployment_note: 'Render Free Tier — Demo / Simulation Mode Active',
+      };
+    }
+    return res.json();
+  },
+
+  async cancelExperiment(expId: string): Promise<{ status: string; message: string }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/cancel`, { method: 'POST' });
+    if (!res.ok) throw new Error(`Failed to cancel experiment ${expId}`);
+    return res.json();
+  },
+
   // Experiments
   async listExperiments(dataset?: string, model?: string, status?: string): Promise<Experiment[]> {
     const params = new URLSearchParams();

@@ -1,13 +1,35 @@
 """
-Accuracy and Top-1 / Top-5 Evaluation Suite.
+Accuracy and Top-1 Evaluation Suite.
+
+SCIENTIFIC VALIDITY NOTICE:
+This module operates in SIMULATION mode. The deployed environment (Render free tier)
+does not have GPU access, PyTorch model weights, or actual dataset files loaded in memory.
+
+In simulation mode, accuracy is ANALYTICALLY ESTIMATED using a calibrated degradation
+model. This is NOT measured inference on the actual test dataset.
+
+To run REAL evaluation: instantiate the CNN model, load the checkpoint, load the
+dataset test split, apply pruning + quantization, run inference, and compute top-1/top-5.
+
+All results are labeled with provenance = "SIMULATED_MODEL" to make this explicit.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 import numpy as np
 
 
+# Simulation mode flag — set True when PyTorch + real datasets are available
+REAL_EVAL_AVAILABLE = False
+
+
 class AccuracyEvaluator:
-    """Evaluates classification accuracy on test/validation sets."""
+    """
+    Accuracy evaluator.
+    
+    In REAL mode: runs actual CNN inference on test dataset.
+    In SIMULATION mode: estimates accuracy via a calibrated degradation model.
+    All outputs are explicitly labeled with their provenance.
+    """
 
     @staticmethod
     def evaluate_synthetic_or_real(
@@ -18,20 +40,36 @@ class AccuracyEvaluator:
         optimizer_solution: np.ndarray = None,
     ) -> Dict[str, Any]:
         """
-        Evaluate classification accuracy.
-        When running in standalone test or PyTorch mode, accounts for:
-        - Baseline model accuracy on CIFAR-10 / CIFAR-100 (e.g. 93.4% for ResNet-18)
-        - Pruning degradation curve (minimal degradation under 40%, steeper beyond 70%)
-        - Quantization accuracy recovery
-        - Optimizer solution quality (recovers accuracy through optimal layer-wise pruning allocation)
-        """
-        if optimizer_solution is not None:
-            # Optimizer fine-tunes layer-wise sparsity distribution
-            solution_score = float(np.mean(optimizer_solution))
-        else:
-            solution_score = 0.5
+        Estimate classification accuracy under compression.
 
-        # Base accuracy penalty from pruning
+        PROVENANCE: SIMULATED_MODEL
+        This function does NOT run actual model inference.
+        It uses a calibrated analytical degradation model to simulate the effect
+        of pruning + quantization + optimizer solution quality on accuracy.
+        
+        The result represents a plausible simulation, not a measured outcome.
+        """
+        if REAL_EVAL_AVAILABLE and predictions_and_targets is not None:
+            # Real path: compute from actual inference outputs
+            preds, targets = predictions_and_targets
+            correct = sum(p == t for p, t in zip(preds, targets))
+            final_acc = (correct / len(targets)) * 100.0
+            accuracy_drop = round(baseline_acc - final_acc, 2)
+            return {
+                "accuracy": round(final_acc, 2),
+                "top1_accuracy": round(final_acc, 2),
+                "accuracy_drop": accuracy_drop,
+                "baseline_accuracy": baseline_acc,
+                "unit": "%",
+                "provenance": "MEASURED",
+                "method": "Top-1 accuracy on held-out test dataset",
+                "simulation_mode": False,
+            }
+
+        # ── Simulation path (no real model available) ──────────────────────
+        solution_score = float(np.mean(optimizer_solution)) if optimizer_solution is not None else 0.5
+
+        # Pruning degradation model (calibrated against published structured pruning papers)
         if pruning_ratio <= 0.30:
             prune_penalty = pruning_ratio * 1.5
         elif pruning_ratio <= 0.60:
@@ -39,14 +77,15 @@ class AccuracyEvaluator:
         else:
             prune_penalty = 1.65 + (pruning_ratio - 0.60) * 12.0
 
-        # Quantization penalty (INT8 has ~0.2-0.5% drop on CIFAR)
-        quant_penalty = 0.0
-        if quantization_type in ["INT8", "INT8_DYNAMIC"]:
-            quant_penalty = 0.35
-        elif quantization_type == "FP16":
-            quant_penalty = 0.05
+        # Quantization penalty (calibrated against INT8 PTQ literature on CIFAR)
+        quant_penalty = {
+            "INT8": 0.35,
+            "INT8_DYNAMIC": 0.40,
+            "FP16": 0.05,
+            "FP32": 0.0,
+        }.get(quantization_type, 0.0)
 
-        # Metaheuristic optimizer recovery factor (up to 80% accuracy recovery)
+        # Optimizer recovery: better solutions recover more accuracy
         optimizer_recovery = min(prune_penalty * 0.75, solution_score * 2.2)
 
         final_acc = max(10.0, min(99.9, baseline_acc - prune_penalty - quant_penalty + optimizer_recovery))
@@ -55,10 +94,13 @@ class AccuracyEvaluator:
         return {
             "accuracy": round(final_acc, 2),
             "top1_accuracy": round(final_acc, 2),
-            "top5_accuracy": round(min(99.9, final_acc + 5.8), 2),
             "accuracy_drop": accuracy_drop,
             "baseline_accuracy": baseline_acc,
             "unit": "%",
-            "provenance": "MEASURED",
-            "method": "Test dataset top-1 classification rate",
+            "provenance": "SIMULATED_MODEL",
+            "method": (
+                "Analytical degradation model (pruning + quantization + optimizer recovery). "
+                "NOT measured on actual dataset. Deploy with PyTorch + dataset for real evaluation."
+            ),
+            "simulation_mode": True,
         }

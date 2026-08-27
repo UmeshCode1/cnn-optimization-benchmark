@@ -48,6 +48,7 @@ import { exportToTxt, exportToDoc, exportToPdf, DocumentExportData } from '../..
 
 type DocTab =
   | 'overview'
+  | 'local_hosting'
   | 'architecture'
   | 'algorithms'
   | 'compression'
@@ -385,13 +386,14 @@ export const DocumentationView: React.FC = () => {
       <nav aria-label="Documentation Sections" className="flex items-center gap-1.5 border-b border-[var(--border)] pb-2 overflow-x-auto text-xs font-mono">
         {[
           { id: 'overview', label: '1. Executive Overview', icon: BookOpen },
-          { id: 'architecture', label: '2. Architecture & Pipeline', icon: Layers },
-          { id: 'algorithms', label: '3. 10 Optimizers & Math', icon: Code2 },
-          { id: 'compression', label: '4. Compression & Telemetry', icon: Cpu },
-          { id: 'pareto', label: '5. Pareto & Scoring Engine', icon: GitFork },
-          { id: 'datasets', label: '6. Datasets & Model Zoo', icon: Boxes },
-          { id: 'deep_report', label: '7. Deep Project Report', icon: FileText },
-          { id: 'export', label: '8. Export Hub (TXT/PDF/DOCS)', icon: Download },
+          { id: 'local_hosting', label: '2. Local Hosting & Real Mode (GPU)', icon: Terminal },
+          { id: 'architecture', label: '3. Architecture & Pipeline', icon: Layers },
+          { id: 'algorithms', label: '4. 10 Optimizers & Math', icon: Code2 },
+          { id: 'compression', label: '5. Compression & Telemetry', icon: Cpu },
+          { id: 'pareto', label: '6. Pareto & Scoring Engine', icon: GitFork },
+          { id: 'datasets', label: '7. Datasets & Model Zoo', icon: Boxes },
+          { id: 'deep_report', label: '8. Deep Project Report', icon: FileText },
+          { id: 'export', label: '9. Export Hub (TXT/PDF/DOCS)', icon: Download },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -411,6 +413,111 @@ export const DocumentationView: React.FC = () => {
           );
         })}
       </nav>
+
+      {/* ========================================================================= */}
+      {/* LOCAL HOSTING & REAL EXPERIMENT MODE SETUP GUIDE */}
+      {/* ========================================================================= */}
+      {activeTab === 'local_hosting' && (
+        <section className="space-y-6 animate-fade-in" id="local-hosting-guide">
+          <div className="ws-panel p-6 space-y-4 border-emerald-500/30">
+            <div className="flex items-center gap-2 text-emerald-400 font-mono font-bold text-sm">
+              <Terminal className="w-4 h-4" />
+              <span>Local Deployment Guide — Genuine Hardware Benchmarking (Real Mode)</span>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-sans">
+              To obtain 100% genuine measured metrics (real PyTorch model inference, CUDA latency synchronization, and NVIDIA NVML / Intel RAPL power telemetry), deploy the platform on a local workstation, on-premise GPU server, or cloud VM with dedicated hardware resources.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Method 1: Docker Compose */}
+              <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-[var(--text-primary)] font-mono flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    Method 1: Docker Compose (NVIDIA GPU / CPU)
+                  </h4>
+                  <button
+                    onClick={() => copyCode('docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build', 'doc-docker')}
+                    className="p-1 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  >
+                    {copiedSection === 'doc-docker' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] font-sans">
+                  Automatically spins up the FastAPI backend and Nginx frontend with CUDA container passthrough:
+                </p>
+                <pre className="p-2.5 rounded bg-black/40 text-[11px] font-mono text-[var(--text-primary)] overflow-x-auto border border-black/20">
+                  # Clone repository{'\n'}
+                  git clone https://github.com/UmeshCode1/cnn-optimization-benchmark.git{'\n'}
+                  cd cnn-optimization-benchmark{'\n\n'}
+                  # Run on GPU:{'\n'}
+                  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build{'\n\n'}
+                  # Or run on CPU:{'\n'}
+                  docker compose up --build
+                </pre>
+                <div className="text-[10px] text-emerald-400 font-mono">
+                  Accessible at: <code>http://localhost:3000</code>
+                </div>
+              </div>
+
+              {/* Method 2: Native Python */}
+              <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-xs text-[var(--text-primary)] font-mono flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    Method 2: Native Python CLI &amp; Web Server
+                  </h4>
+                  <button
+                    onClick={() => copyCode('python local_runner.py --server', 'doc-python')}
+                    className="p-1 rounded hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  >
+                    {copiedSection === 'doc-python' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] font-sans">
+                  Direct execution using Python 3.10+ and native PyTorch / CUDA installation:
+                </p>
+                <pre className="p-2.5 rounded bg-black/40 text-[11px] font-mono text-[var(--text-primary)] overflow-x-auto border border-black/20">
+                  # 1. Install dependencies{'\n'}
+                  pip install -r backend/requirements.txt{'\n\n'}
+                  # 2. Check hardware capabilities{'\n'}
+                  python local_runner.py --check{'\n\n'}
+                  # 3. Launch Web Server in REAL mode{'\n'}
+                  python local_runner.py --server{'\n\n'}
+                  # Or run standalone CLI experiment:{'\n'}
+                  python local_runner.py --model ResNet-18 --dataset CIFAR-10 --runs 5
+                </pre>
+                <div className="text-[10px] text-[var(--accent)] font-mono">
+                  Server running on: <code>http://localhost:8000</code>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-[var(--surface-secondary)] border border-[var(--border)] space-y-2 text-xs">
+              <h5 className="font-bold font-mono text-[var(--text-primary)]">What changes in REAL Mode vs DEMO Mode?</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] pt-1">
+                <div className="space-y-1">
+                  <span className="font-bold text-amber-400">Sandbox / Demo Mode (Render Cloud):</span>
+                  <ul className="list-disc list-inside text-[var(--text-muted)] space-y-0.5 font-sans">
+                    <li>Uses <code>SimulationEngine</code> with analytical degradation curves</li>
+                    <li>Fast instant previews without downloading GBs of datasets</li>
+                    <li>Provenance explicitly tagged as <code>SIMULATED / ESTIMATED</code></li>
+                  </ul>
+                </div>
+                <div className="space-y-1">
+                  <span className="font-bold text-emerald-400">Real Experiment Mode (Local Workstation):</span>
+                  <ul className="list-disc list-inside text-[var(--text-muted)] space-y-0.5 font-sans">
+                    <li>Uses <code>RealExperimentEngine</code> with genuine PyTorch forward passes</li>
+                    <li>Loads actual test splits (e.g. 10,000 CIFAR-10 samples)</li>
+                    <li>Synchronized CUDA microsecond timers &amp; NVML hardware telemetry</li>
+                    <li>Provenance explicitly tagged as <code>MEASURED (MODEL_INFERENCE)</code></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. EXECUTIVE SUMMARY & PLATFORM OVERVIEW */}

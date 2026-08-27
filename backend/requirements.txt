@@ -1,0 +1,19 @@
+# Core Web & API Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+sqlalchemy>=2.0.0
+
+# Scientific & Optimization Libraries
+numpy>=1.24.0
+scipy>=1.11.0
+psutil>=5.9.0
+
+# PyTorch Inference & Computer Vision (For REAL Mode Benchmarking)
+# Note: In Render Free Tier, minimal dependencies are used.
+# In Local / GPU deployments, torch + torchvision enable Real Mode.
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Hardware Telemetry (Optional, for NVIDIA GPU power measurement)
+pynvml>=11.5.0
