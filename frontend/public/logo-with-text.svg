@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="coreGradL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#93c5fd" />
+    </linearGradient>
+    <linearGradient id="subGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+
+  <!-- Logo Mark at Left -->
+  <g transform="translate(10, 8) scale(0.88)">
+    <rect width="128" height="128" rx="28" fill="#0b0f19" stroke="#1e293b" stroke-width="2" />
+    <circle cx="64" cy="64" r="50" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="4 6" />
+    <ellipse cx="64" cy="64" rx="46" ry="24" transform="rotate(-30 64 64)" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="120 40" />
+    <ellipse cx="64" cy="64" rx="46" ry="24" transform="rotate(45 64 64)" fill="none" stroke="url(#coreGradL)" stroke-width="2" stroke-linecap="round" stroke-dasharray="90 60" />
+    
+    <g transform="translate(64, 64) scale(0.92) translate(-64, -64)">
+      <line x1="32" y1="64" x2="64" y2="34" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.6" />
+      <line x1="32" y1="64" x2="64" y2="94" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.6" />
+      <line x1="96" y1="64" x2="64" y2="34" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.6" />
+      <line x1="96" y1="64" x2="64" y2="94" stroke="#ec4899" stroke-width="1.5" stroke-opacity="0.6" />
+      <path d="M 64 24 L 98 44 L 98 84 L 64 104 L 30 84 L 30 44 Z" fill="none" stroke="url(#coreGradL)" stroke-width="3" stroke-linejoin="round" />
+      <path d="M 64 38 L 86 51 L 86 77 L 64 90 L 42 77 L 42 51 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
+      <circle cx="64" cy="64" r="6" fill="#ffffff" />
+      <circle cx="32" cy="64" r="4.5" fill="#00d2ff" stroke="#ffffff" stroke-width="1.5" />
+      <circle cx="96" cy="64" r="4.5" fill="#ec4899" stroke="#ffffff" stroke-width="1.5" />
+      <circle cx="64" cy="34" r="4.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" />
+      <circle cx="64" cy="94" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- Typography Right -->
+  <text x="145" y="58" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800" fill="url(#textGrad)" letter-spacing="-0.5">
+    CNN BENCHMARK
+  </text>
+  <text x="145" y="88" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="13" font-weight="600" fill="url(#subGrad)" letter-spacing="1.2">
+    METAHEURISTIC OPTIMIZATION &bull; WORKSTATION
+  </text>
+</svg>

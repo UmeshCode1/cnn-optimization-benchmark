@@ -80,15 +80,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Menu className="w-4 h-4" />
         </button>
 
-        <div className="w-7 h-7 rounded bg-[var(--accent)] flex items-center justify-center font-mono font-bold text-white text-xs shadow-sm shrink-0">
-          CNN
+        <div className="w-8 h-8 rounded-lg overflow-hidden border border-[var(--border)] shadow-sm shrink-0 flex items-center justify-center bg-[#0b0f19]">
+          <img src="/logo.svg" alt="CNN Benchmark Logo" className="w-full h-full object-cover" />
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-[var(--text-primary)] tracking-tight truncate max-w-[170px] sm:max-w-none">
+            <span className="font-bold text-sm text-[var(--text-primary)] tracking-tight truncate max-w-[170px] sm:max-w-none">
               CNN Benchmark
             </span>
-            <span className="text-[11px] text-[var(--text-muted)] hidden md:inline">
+            <span className="text-[11px] text-[var(--accent)] font-mono font-semibold hidden md:inline">
               / Research Workstation
             </span>
           </div>

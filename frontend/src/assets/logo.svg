@@ -55,7 +55,6 @@
   <ellipse cx="64" cy="64" rx="46" ry="24" transform="rotate(45 64 64)" fill="none" stroke="url(#coreGrad)" stroke-width="2" stroke-linecap="round" stroke-dasharray="90 60" opacity="0.85" />
 
   <!-- Multi-Layer CNN Feature Map Diamonds / Nodes -->
-  <!-- Layer 1: Input Grid Feature Map -->
   <g transform="translate(64, 64) scale(0.92) translate(-64, -64)">
     <!-- Interconnecting Synapse Rays -->
     <line x1="32" y1="64" x2="64" y2="34" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.6" />

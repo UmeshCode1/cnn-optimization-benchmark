@@ -101,8 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Mobile Header with Close Button */}
         <div className="p-3 border-b border-[var(--border)] flex items-center justify-between md:hidden">
           <div className="flex items-center gap-2 font-semibold text-xs text-[var(--text-primary)]">
-            <div className="w-6 h-6 rounded bg-[var(--accent)] flex items-center justify-center text-white text-[10px] font-bold">
-              CNN
+            <div className="w-7 h-7 rounded-lg overflow-hidden border border-[var(--border)] bg-[#0b0f19] flex items-center justify-center">
+              <img src="/logo.svg" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <span>Benchmark Platform</span>
           </div>
