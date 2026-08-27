@@ -7,6 +7,8 @@ import {
   AlgorithmMeta,
   HardwareProfile,
   SystemCapabilities,
+  DatasetInfo,
+  CNNModelInfo,
 } from '../types';
 
 const API_BASE = '/api';
