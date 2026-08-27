@@ -22,7 +22,7 @@ export const api = {
     return res.json();
   },
 
-  async getExperimentDetails(expId: string): Promise<{
+  async getExperiment(expId: string): Promise<{
     experiment: Experiment;
     runs: any[];
     statistics_by_algorithm: Record<string, AlgorithmStats>;
@@ -33,6 +33,10 @@ export const api = {
     const res = await fetch(`${API_BASE}/experiments/${expId}`);
     if (!res.ok) throw new Error(`Failed to fetch experiment details: ${expId}`);
     return res.json();
+  },
+
+  async getExperimentDetails(expId: string) {
+    return this.getExperiment(expId);
   },
 
   async validateFairness(config: any): Promise<{
@@ -88,6 +92,28 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to recalculate objective weights');
     return res.json();
+  },
+
+  async recalculateScores(
+    expId: string,
+    weights: { weight_accuracy?: number; weight_latency?: number; weight_model_size?: number; weight_energy?: number; accuracy?: number; latency?: number; model_size?: number; energy?: number },
+    statMode: string = 'MEAN'
+  ): Promise<{
+    experiment: Experiment;
+    runs: any[];
+    statistics_by_algorithm: Record<string, AlgorithmStats>;
+    ranked_algorithms: RankedAlgorithm[];
+    pareto_points: ParetoPoint[];
+    ablations: AblationRecord[];
+  }> {
+    const formattedWeights = {
+      weight_accuracy: weights.weight_accuracy ?? weights.accuracy ?? 0.4,
+      weight_latency: weights.weight_latency ?? weights.latency ?? 0.25,
+      weight_model_size: weights.weight_model_size ?? weights.model_size ?? 0.2,
+      weight_energy: weights.weight_energy ?? weights.energy ?? 0.15,
+    };
+    await this.recalculateWeights(expId, formattedWeights, statMode);
+    return this.getExperiment(expId);
   },
 
   async compareSelected(

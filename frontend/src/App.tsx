@@ -40,6 +40,7 @@ export const App: React.FC = () => {
   const [hardware, setHardware] = useState<HardwareProfile | undefined>(undefined);
   const [runningExperimentId, setRunningExperimentId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingDetails, setIsLoadingDetails] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
@@ -73,9 +74,13 @@ export const App: React.FC = () => {
       setHardware(hw);
 
       if (exps.length > 0) {
-        const targetId = activeExperimentId || exps[0].id;
+        const validActive = exps.find((e) => e.id === activeExperimentId);
+        const targetId = validActive ? validActive.id : exps[0].id;
         setActiveExperimentId(targetId);
         await loadExperimentDetails(targetId);
+      } else {
+        setActiveExperimentId(null);
+        setExperimentDetails(null);
       }
     } catch (err) {
       console.error('Failed to load benchmark data:', err);
@@ -87,10 +92,13 @@ export const App: React.FC = () => {
 
   const loadExperimentDetails = async (expId: string) => {
     try {
+      setIsLoadingDetails(true);
       const details = await api.getExperiment(expId);
       setExperimentDetails(details);
     } catch (err) {
       console.error(`Failed to load experiment ${expId}:`, err);
+    } finally {
+      setIsLoadingDetails(false);
     }
   };
 
@@ -101,8 +109,8 @@ export const App: React.FC = () => {
   const handleSelectExperiment = async (expId: string) => {
     setActiveExperimentId(expId);
     await loadExperimentDetails(expId);
-    // If user is on dashboard, wizard, history, documentation, or datasets, open the experiment results view
-    if (['dashboard', 'wizard', 'history', 'documentation', 'datasets'].includes(activeTab)) {
+    // If user is on dashboard, wizard, or history, open results view
+    if (['dashboard', 'wizard', 'history'].includes(activeTab)) {
       setActiveTab('results');
     }
   };
@@ -137,12 +145,14 @@ export const App: React.FC = () => {
     setActiveTab('results');
   };
 
+  const isAnalysisTab = ['results', 'pareto', 'convergence', 'statistics', 'ablation', 'reports'].includes(activeTab);
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white">
       {/* Top Navigation Control Bar */}
       <Navbar
         hardware={hardware}
-        activeExperiment={experimentDetails?.experiment}
+        activeExperiment={experimentDetails?.experiment || experiments.find((e) => e.id === activeExperimentId)}
         experiments={experiments}
         onSelectExperiment={handleSelectExperiment}
         theme={theme}
@@ -154,12 +164,12 @@ export const App: React.FC = () => {
       />
 
       <div className="flex flex-1 relative">
-        {/* Responsive Sidebar (Sticky on Desktop, Off-Canvas Drawer on Mobile) */}
+        {/* Responsive Sidebar */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           completedExperimentsCount={experiments.filter((e) => e.status === 'COMPLETED').length}
-          activeExperimentId={experimentDetails?.experiment?.id}
+          activeExperimentId={experimentDetails?.experiment?.id || activeExperimentId}
           isOpenMobile={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
@@ -169,7 +179,7 @@ export const App: React.FC = () => {
           {activeTab === 'dashboard' && (
             <DashboardView
               experiments={experiments}
-              latestExperiment={experimentDetails?.experiment}
+              latestExperiment={experimentDetails?.experiment || experiments[0]}
               rankedAlgorithms={experimentDetails?.ranked_algorithms || []}
               paretoPoints={experimentDetails?.pareto_points || []}
               onNewBenchmark={() => setActiveTab('wizard')}
@@ -194,46 +204,106 @@ export const App: React.FC = () => {
             />
           )}
 
-          {activeTab === 'results' && experimentDetails && (
-            <ComparisonDashboardView
-              experiment={experimentDetails.experiment}
-              rankedAlgorithms={experimentDetails.ranked_algorithms}
-              statistics={experimentDetails.statistics_by_algorithm}
-              paretoPoints={experimentDetails.pareto_points}
-              onRecalculateWeights={handleRecalculateWeights}
-              onCompareSelected={handleCompareSelected}
-              onViewPareto={() => setActiveTab('pareto')}
-              onViewConvergence={() => setActiveTab('convergence')}
-              onViewStatistics={() => setActiveTab('statistics')}
-            />
+          {/* Analysis Views Loading State */}
+          {isAnalysisTab && isLoadingDetails && (
+            <div className="flex flex-col items-center justify-center min-h-[400px] text-xs font-mono text-[var(--text-muted)] space-y-3">
+              <div className="w-8 h-8 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+              <span>Loading benchmark experiment data ({activeExperimentId || 'EXP'})...</span>
+            </div>
           )}
 
-          {activeTab === 'pareto' && experimentDetails && (
-            <ParetoExplorerView
-              experiment={experimentDetails.experiment}
-              paretoPoints={experimentDetails.pareto_points}
-            />
+          {/* Analysis Views Empty State */}
+          {isAnalysisTab && !isLoadingDetails && !experimentDetails && (
+            <div className="ws-panel p-8 text-center max-w-lg mx-auto mt-12 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center mx-auto text-xl">
+                📊
+              </div>
+              <h3 className="text-base font-bold text-[var(--text-primary)]">No Benchmark Selected</h3>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                {experiments.length > 0
+                  ? 'Select an experiment from the active switcher in the navbar or pick one below to view detailed analytics.'
+                  : 'No benchmarks found. Launch a new benchmark to evaluate metaheuristic optimization on CNNs.'}
+              </p>
+              {experiments.length > 0 ? (
+                <div className="pt-2 space-y-2">
+                  <div className="text-[11px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
+                    Quick Select:
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {experiments.slice(0, 3).map((exp) => (
+                      <button
+                        key={exp.id}
+                        onClick={() => handleSelectExperiment(exp.id)}
+                        className="p-2.5 rounded bg-[var(--surface-secondary)] hover:bg-[var(--surface-elevated)] text-left flex items-center justify-between border border-[var(--border)] text-xs font-mono cursor-pointer transition-colors"
+                      >
+                        <span className="font-bold text-[var(--accent)]">{exp.id}</span>
+                        <span className="text-[var(--text-secondary)] font-sans text-[11px]">
+                          {exp.dataset_name} &bull; {exp.cnn_model_name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setActiveTab('wizard')}
+                  className="px-4 py-2 ws-button-primary text-xs"
+                >
+                  Start New Benchmark
+                </button>
+              )}
+            </div>
           )}
 
-          {activeTab === 'convergence' && experimentDetails && (
-            <ConvergenceView
-              experiment={experimentDetails.experiment}
-              runs={experimentDetails.runs}
-            />
-          )}
+          {/* Active Analysis Views */}
+          {!isLoadingDetails && experimentDetails && (
+            <>
+              {activeTab === 'results' && (
+                <ComparisonDashboardView
+                  experiment={experimentDetails.experiment}
+                  rankedAlgorithms={experimentDetails.ranked_algorithms}
+                  statistics={experimentDetails.statistics_by_algorithm}
+                  paretoPoints={experimentDetails.pareto_points}
+                  onRecalculateWeights={handleRecalculateWeights}
+                  onCompareSelected={handleCompareSelected}
+                  onViewPareto={() => setActiveTab('pareto')}
+                  onViewConvergence={() => setActiveTab('convergence')}
+                  onViewStatistics={() => setActiveTab('statistics')}
+                />
+              )}
 
-          {activeTab === 'statistics' && experimentDetails && (
-            <MultiRunStatsView
-              experiment={experimentDetails.experiment}
-              statistics={experimentDetails.statistics_by_algorithm}
-            />
-          )}
+              {activeTab === 'pareto' && (
+                <ParetoExplorerView
+                  experiment={experimentDetails.experiment}
+                  paretoPoints={experimentDetails.pareto_points}
+                />
+              )}
 
-          {activeTab === 'ablation' && experimentDetails && (
-            <AblationView
-              experiment={experimentDetails.experiment}
-              ablations={experimentDetails.ablations}
-            />
+              {activeTab === 'convergence' && (
+                <ConvergenceView
+                  experiment={experimentDetails.experiment}
+                  runs={experimentDetails.runs}
+                />
+              )}
+
+              {activeTab === 'statistics' && (
+                <MultiRunStatsView
+                  experiment={experimentDetails.experiment}
+                  statistics={experimentDetails.statistics_by_algorithm}
+                />
+              )}
+
+              {activeTab === 'ablation' && (
+                <AblationView
+                  experiment={experimentDetails.experiment}
+                  ablations={experimentDetails.ablations}
+                />
+              )}
+
+              {activeTab === 'reports' && (
+                <ReportsView experiment={experimentDetails.experiment} />
+              )}
+            </>
           )}
 
           {activeTab === 'hardware' && (
@@ -242,10 +312,6 @@ export const App: React.FC = () => {
 
           {activeTab === 'documentation' && (
             <DocumentationView />
-          )}
-
-          {activeTab === 'reports' && experimentDetails && (
-            <ReportsView experiment={experimentDetails.experiment} />
           )}
 
           {activeTab === 'history' && (
