@@ -210,12 +210,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="hidden lg:flex items-center gap-2.5 text-[var(--text-secondary)] border-l border-[var(--border)] pl-3">
             <div className="flex items-center gap-1.5" title={hardware.cpu_model}>
               <Cpu className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              <span className="truncate max-w-[140px]">{hardware.device_name}</span>
+              <span className="truncate max-w-[130px]">{hardware.device_name}</span>
+            </div>
+            <span className="text-[var(--border-strong)]">&bull;</span>
+            <div className="flex items-center gap-1.5" title="Hardware Power Consumption Telemetry (TDP)">
+              <span className="text-[var(--warning)] font-bold">⚡</span>
+              <span className="text-[var(--warning)] font-semibold font-mono">35W - 45W TDP</span>
             </div>
             <span className="text-[var(--border-strong)]">&bull;</span>
             <div className="flex items-center gap-1.5" title="Host System RAM">
               <HardDrive className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              <span>{hardware.ram_gb} GB RAM</span>
+              <span>{hardware.ram_gb} GB</span>
             </div>
             <span className="text-[var(--border-strong)]">&bull;</span>
             <div className="flex items-center gap-1.5" title="SQLite Database Persistence">
