@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layers2, CheckCircle2 } from 'lucide-react';
 import { Experiment, AblationRecord } from '../../types';
+import { AblationWaterfallChart } from '../charts/AblationWaterfallChart';
 
 interface AblationViewProps {
   experiment: Experiment;
@@ -83,6 +84,9 @@ export const AblationView: React.FC<AblationViewProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Interactive Visual Decomposition Waterfall */}
+      <AblationWaterfallChart ablations={effectiveAblations} height={350} />
 
       {/* Sequential Stages Grid */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
