@@ -120,9 +120,11 @@ export const App: React.FC = () => {
       const created = await api.createExperiment(config);
       setRunningExperimentId(created.id);
       setActiveExperimentId(created.id);
+      setExperiments((prev) => [created, ...prev.filter((e) => e.id !== created.id)]);
       setActiveTab('dashboard');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to launch benchmark:', err);
+      alert(`Failed to launch benchmark: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -332,10 +334,22 @@ export const App: React.FC = () => {
       {runningExperimentId && (
         <LiveRunModal
           experimentId={runningExperimentId}
-          onClose={() => setRunningExperimentId(null)}
-          onCompleted={() => {
+          onClose={async () => {
+            const expId = runningExperimentId;
             setRunningExperimentId(null);
-            loadData();
+            await loadData();
+            if (expId) {
+              await loadExperimentDetails(expId);
+            }
+          }}
+          onCompleted={async () => {
+            const expId = runningExperimentId;
+            setRunningExperimentId(null);
+            await loadData();
+            if (expId) {
+              setActiveExperimentId(expId);
+              await loadExperimentDetails(expId);
+            }
             setActiveTab('results');
           }}
         />

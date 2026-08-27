@@ -22,7 +22,50 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
   const [isDone, setIsDone] = useState<boolean>(false);
 
   useEffect(() => {
+    let isSubscribed = true;
+    let pollInterval: any = null;
+
+    // Polling fallback to guarantee updates even if WebSocket drops
+    const startPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(async () => {
+        if (!isSubscribed) return;
+        try {
+          const details = await api.getExperiment(experimentId);
+          if (details && details.experiment) {
+            const exp = details.experiment;
+            if (exp.status === 'COMPLETED') {
+              setProgressPct(100);
+              setStatus('COMPLETED');
+              setIsDone(true);
+              setCurrentAlgorithm(exp.best_algorithm || 'Optimization Completed');
+              setLogs((prev) => [
+                `[BENCHMARK COMPLETED] Winner: ${exp.best_algorithm || 'Optimal'}. All metrics calculated.`,
+                ...prev.slice(0, 30),
+              ]);
+              if (pollInterval) clearInterval(pollInterval);
+            } else if (exp.status === 'FAILED') {
+              setStatus('FAILED');
+              setLogs((prev) => [`[ERROR] Benchmark execution failed: ${exp.error_message || 'Unknown error'}`, ...prev]);
+              if (pollInterval) clearInterval(pollInterval);
+            } else if (details.runs && details.runs.length > 0) {
+              const completedCount = details.runs.length;
+              const expectedTotal = (exp.selected_algorithms?.length || 10) * exp.number_of_runs;
+              const pct = Math.min(95, Math.round((completedCount / (expectedTotal || 1)) * 100));
+              setProgressPct(pct);
+              const lastRun = details.runs[details.runs.length - 1];
+              setCurrentAlgorithm(lastRun.algorithm);
+              setCurrentRunIndex(lastRun.run_index);
+            }
+          }
+        } catch (e) {
+          // ignore poll errors
+        }
+      }, 1500);
+    };
+
     const ws = api.createProgressWebSocket(experimentId, (data) => {
+      if (!isSubscribed) return;
       if (data.event === 'RUN_START') {
         setCurrentAlgorithm(data.algorithm);
         setCurrentRunIndex(data.run_index);
@@ -32,7 +75,7 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
       } else if (data.event === 'RUN_COMPLETED') {
         setProgressPct(data.progress_pct);
         setLogs((prev) => [
-          `[EVAL COMPLETED] ${data.algorithm} Run #${data.run_index} &rarr; Acc: ${data.run_data.accuracy.toFixed(2)}%, Lat: ${data.run_data.latency_ms.toFixed(2)}ms, Score: ${data.run_data.overall_score.toFixed(1)}`,
+          `[EVAL COMPLETED] ${data.algorithm} Run #${data.run_index} &rarr; Acc: ${data.run_data.accuracy?.toFixed(2)}%, Lat: ${data.run_data.latency_ms?.toFixed(2)}ms, Score: ${data.run_data.overall_score?.toFixed(1)}`,
           ...prev.slice(0, 30),
         ]);
       } else if (data.event === 'BENCHMARK_COMPLETED') {
@@ -40,17 +83,22 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
         setStatus('COMPLETED');
         setIsDone(true);
         setLogs((prev) => [`[BENCHMARK FINISHED] Winner: ${data.best_algorithm}. Computing Pareto frontiers & statistics.`, ...prev]);
-        setTimeout(() => {
-          onCompleted();
-        }, 1200);
+        if (pollInterval) clearInterval(pollInterval);
       } else if (data.event === 'BENCHMARK_FAILED') {
         setStatus('FAILED');
         setLogs((prev) => [`[ERROR] Benchmark execution failed: ${data.error}`, ...prev]);
+        if (pollInterval) clearInterval(pollInterval);
       }
     });
 
+    startPolling();
+
     return () => {
-      ws.close();
+      isSubscribed = false;
+      if (pollInterval) clearInterval(pollInterval);
+      try {
+        ws.close();
+      } catch (e) {}
     };
   }, [experimentId]);
 
