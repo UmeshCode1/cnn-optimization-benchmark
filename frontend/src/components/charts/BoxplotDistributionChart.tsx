@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { AlgorithmStats } from '../../types';
-import { Activity, BarChart2, CheckCircle2 } from 'lucide-react';
+import { BarChart2 } from 'lucide-react';
 
-export type BoxplotMetricKey = 'accuracy' | 'latency_ms' | 'power_w' | 'energy_j' | 'flops_m' | 'model_size_mb' | 'overall_score';
+export type BoxplotMetricKey =
+  | 'accuracy'
+  | 'latency_ms'
+  | 'power_w'
+  | 'energy_j'
+  | 'flops_m'
+  | 'model_size_mb'
+  | 'overall_score';
 
 interface BoxplotDistributionChartProps {
   stats: Record<string, AlgorithmStats>;
@@ -26,11 +33,14 @@ const ALG_COLORS: Record<string, string> = {
 export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> = ({
   stats,
   metricKey,
-  height = 360,
+  height = 370,
 }) => {
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
 
-  const metricLabels: Record<BoxplotMetricKey, { label: string; unit: string; higherBetter: boolean }> = {
+  const metricLabels: Record<
+    BoxplotMetricKey,
+    { label: string; unit: string; higherBetter: boolean }
+  > = {
     accuracy: { label: 'Top-1 Accuracy Distribution', unit: '%', higherBetter: true },
     latency_ms: { label: 'Latency Distribution', unit: 'ms', higherBetter: false },
     power_w: { label: 'Average Power Draw Distribution', unit: 'W', higherBetter: false },
@@ -58,8 +68,10 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
   algKeys.forEach((alg) => {
     const summary = (stats[alg] as any)?.[metricKey];
     if (summary) {
-      globalMin = Math.min(globalMin, summary.min_val);
-      globalMax = Math.max(globalMax, summary.max_val);
+      const minV = Number(summary.min_val ?? summary.mean);
+      const maxV = Number(summary.max_val ?? summary.mean);
+      if (isFinite(minV)) globalMin = Math.min(globalMin, minV);
+      if (isFinite(maxV)) globalMax = Math.max(globalMax, maxV);
     }
   });
 
@@ -68,21 +80,35 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
     globalMax = 100;
   }
 
-  const range = Math.max(0.01, globalMax - globalMin);
-  const padDelta = Math.max(range * 0.2, metricKey === 'accuracy' ? 0.3 : 0.05);
-  const plotMin = Math.max(0, globalMin - padDelta);
-  const plotMax = globalMax + padDelta;
+  // Ensure dynamic range never collapses into zero or micro-decimal flatline
+  const rawRange = Math.max(0, globalMax - globalMin);
+  const minRequiredSpan = Math.max(
+    rawRange * 0.35,
+    Math.abs(globalMax) * 0.15,
+    metricKey === 'energy_j' ? 0.02 : metricKey === 'power_w' ? 1.0 : metricKey === 'accuracy' ? 2.0 : 5.0
+  );
+
+  const plotMin = Math.max(0, globalMin - minRequiredSpan * 0.5);
+  const plotMax = globalMax + minRequiredSpan * 0.5;
 
   const svgWidth = 740;
   const svgHeight = height;
-  const padding = { top: 25, right: 30, bottom: 48, left: 65 };
+  const padding = { top: 30, right: 35, bottom: 50, left: 70 };
 
   const plotWidth = svgWidth - padding.left - padding.right;
   const plotHeight = svgHeight - padding.top - padding.bottom;
 
   const getY = (val: number) =>
     padding.top + plotHeight - ((val - plotMin) / (plotMax - plotMin || 1e-6)) * plotHeight;
-  const colWidth = plotWidth / algKeys.length;
+  const colWidth = plotWidth / Math.max(1, algKeys.length);
+
+  // Format tick labels
+  const formatTick = (val: number) => {
+    if (metricKey === 'energy_j') return val.toFixed(4);
+    if (metricKey === 'power_w' || metricKey === 'latency_ms') return val.toFixed(2);
+    if (metricKey === 'flops_m') return val >= 100 ? val.toFixed(0) : val.toFixed(1);
+    return val.toFixed(1);
+  };
 
   return (
     <div className="ws-panel p-5 space-y-4">
@@ -143,7 +169,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   fill="var(--text-muted)"
                   fontSize="10"
                 >
-                  {val.toFixed(metricKey === 'energy_j' ? 4 : range < 0.5 ? 2 : 1)}
+                  {formatTick(val)}
                 </text>
               </g>
             );
@@ -155,15 +181,28 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
             if (!summary) return null;
 
             const centerX = padding.left + idx * colWidth + colWidth / 2;
-            const boxWidth = Math.min(28, colWidth * 0.65);
+            const boxWidth = Math.min(30, colWidth * 0.68);
             const color = ALG_COLORS[alg] || 'var(--accent)';
 
-            const yMin = getY(summary.min_val);
-            const yMax = getY(summary.max_val);
-            const yMedian = getY(summary.median);
-            const yMean = getY(summary.mean);
-            const yCiLower = getY(summary.ci_95_lower);
-            const yCiUpper = getY(summary.ci_95_upper);
+            const rawMin = Number(summary.min_val ?? summary.mean);
+            const rawMax = Number(summary.max_val ?? summary.mean);
+            const rawMedian = Number(summary.median ?? summary.mean);
+            const rawMean = Number(summary.mean);
+            const rawCiLower = Number(summary.ci_95_lower ?? rawMin);
+            const rawCiUpper = Number(summary.ci_95_upper ?? rawMax);
+
+            const yMin = getY(rawMin);
+            const yMax = getY(rawMax);
+            const yMedian = getY(rawMedian);
+            const yMean = getY(rawMean);
+            const yCiLower = getY(rawCiLower);
+            const yCiUpper = getY(rawCiUpper);
+
+            const boxTop = Math.min(yCiLower, yCiUpper);
+            const boxBottom = Math.max(yCiLower, yCiUpper);
+            const rawBoxHeight = boxBottom - boxTop;
+            const boxHeight = Math.max(10, rawBoxHeight);
+            const adjustedBoxTop = rawBoxHeight < 10 ? yMedian - 5 : boxTop;
 
             const isHovered = hoveredAlg === alg;
 
@@ -181,63 +220,66 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                   x2={centerX}
                   y2={yMax}
                   stroke={color}
-                  strokeWidth={isHovered ? 2 : 1.5}
+                  strokeWidth={isHovered ? 2.5 : 1.8}
                   strokeDasharray="2 2"
                 />
 
                 {/* Min / Max Whisker Caps */}
                 <line
-                  x1={centerX - boxWidth / 3}
+                  x1={centerX - boxWidth * 0.35}
                   y1={yMin}
-                  x2={centerX + boxWidth / 3}
+                  x2={centerX + boxWidth * 0.35}
                   y2={yMin}
                   stroke={color}
-                  strokeWidth="1.5"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                 />
                 <line
-                  x1={centerX - boxWidth / 3}
+                  x1={centerX - boxWidth * 0.35}
                   y1={yMax}
-                  x2={centerX + boxWidth / 3}
+                  x2={centerX + boxWidth * 0.35}
                   y2={yMax}
                   stroke={color}
-                  strokeWidth="1.5"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                 />
 
                 {/* 95% Confidence Interval / IQR Box */}
                 <rect
                   x={centerX - boxWidth / 2}
-                  y={Math.min(yCiLower, yCiUpper)}
+                  y={adjustedBoxTop}
                   width={boxWidth}
-                  height={Math.max(6, Math.abs(yCiLower - yCiUpper))}
-                  fill={isHovered ? `${color}50` : `${color}25`}
+                  height={boxHeight}
+                  fill={isHovered ? `${color}55` : `${color}25`}
                   stroke={color}
-                  strokeWidth={isHovered ? 2 : 1.5}
-                  rx="3"
+                  strokeWidth={isHovered ? 2.5 : 1.8}
+                  rx="4"
                   className="transition-colors duration-150"
                 />
 
-                {/* Median Solid Line */}
+                {/* Median Solid Bar */}
                 <line
-                  x1={centerX - boxWidth / 2}
+                  x1={centerX - boxWidth / 2 + 1}
                   y1={yMedian}
-                  x2={centerX + boxWidth / 2}
+                  x2={centerX + boxWidth / 2 - 1}
                   y2={yMedian}
                   stroke="#FFFFFF"
-                  strokeWidth="2.5"
+                  strokeWidth="3"
+                  strokeLinecap="round"
                 />
 
                 {/* Mean Diamond Marker */}
                 <polygon
-                  points={`${centerX},${yMean - 4} ${centerX + 4},${yMean} ${centerX},${yMean + 4} ${centerX - 4},${yMean}`}
+                  points={`${centerX},${yMean - 4.5} ${centerX + 4.5},${yMean} ${centerX},${yMean + 4.5} ${centerX - 4.5},${yMean}`}
                   fill="#F59E0B"
                   stroke="#000000"
-                  strokeWidth="0.8"
+                  strokeWidth="1"
                 />
 
                 {/* X Axis Algorithm Label */}
                 <text
                   x={centerX}
-                  y={padding.top + plotHeight + 16}
+                  y={padding.top + plotHeight + 18}
                   textAnchor="middle"
                   fill={isHovered ? 'var(--text-primary)' : 'var(--text-secondary)'}
                   fontWeight={isHovered ? 'bold' : 'normal'}
@@ -252,13 +294,13 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
           {/* Y Axis Unit Label */}
           <text
-            x={16}
+            x={18}
             y={padding.top + plotHeight / 2}
             textAnchor="middle"
             fill="var(--text-muted)"
             fontSize="10"
             className="font-sans"
-            transform={`rotate(-90 16 ${padding.top + plotHeight / 2})`}
+            transform={`rotate(-90 18 ${padding.top + plotHeight / 2})`}
           >
             {currentMetric.label} ({currentMetric.unit})
           </text>
@@ -266,9 +308,15 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
         {/* Hover Tooltip Card */}
         {hoveredAlg && stats[hoveredAlg] && (stats[hoveredAlg] as any)[metricKey] && (
-          <div className="absolute top-2 right-6 ws-panel p-3 shadow-xl border border-[var(--border-strong)] z-20 text-xs font-mono space-y-1 w-56 animate-fade-in pointer-events-none bg-[var(--surface-elevated)]/95 backdrop-blur-md">
+          <div className="absolute top-2 right-6 ws-panel p-3 shadow-xl border border-[var(--border-strong)] z-20 text-xs font-mono space-y-1.5 w-60 animate-fade-in pointer-events-none bg-[var(--surface-elevated)]/95 backdrop-blur-md">
             <div className="font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-1 flex items-center justify-between">
-              <span>{hoveredAlg}</span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: ALG_COLORS[hoveredAlg] || 'var(--accent)' }}
+                />
+                {hoveredAlg}
+              </span>
               <span className="text-[10px] text-[var(--text-muted)]">
                 {stats[hoveredAlg].runs_count} runs
               </span>
@@ -299,7 +347,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
             </div>
             <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[10px]">
               <span className="text-[var(--text-muted)]">95% CI:</span>
-              <span className="text-[var(--success)]">
+              <span className="text-[var(--success)] font-medium">
                 [{(stats[hoveredAlg] as any)[metricKey].ci_95_lower.toFixed(metricKey === 'energy_j' ? 4 : 2)}, {(stats[hoveredAlg] as any)[metricKey].ci_95_upper.toFixed(metricKey === 'energy_j' ? 4 : 2)}]
               </span>
             </div>

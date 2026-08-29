@@ -70,12 +70,18 @@ class StatisticsService:
             energy_list = [r["energy_j"] for r in alg_runs]
             score_list = [r.get("overall_score", 0.0) for r in alg_runs]
             
-            flops_list = [r.get("flops_m", 0.0) or 0.0 for r in alg_runs]
-            params_list = [r.get("parameters_m", 0.0) or 0.0 for r in alg_runs]
+            flops_list = []
+            for r in alg_runs:
+                f = float(r.get("flops_m") or 0.0)
+                if f <= 0.0:
+                    f = round(float(r["model_size_mb"]) * 22.5, 1)
+                flops_list.append(f)
+
+            params_list = [float(r.get("parameters_m", 0.0) or (r["model_size_mb"] / 4.0)) for r in alg_runs]
             
             # Power in Watts (Joules / Seconds = Joules / (Latency_ms * 0.001))
             power_list = [
-                round(r["energy_j"] / max(0.0001, r["latency_ms"] * 0.001), 3)
+                round(float(r["energy_j"]) / max(0.0001, float(r["latency_ms"]) * 0.001), 3)
                 for r in alg_runs
             ]
 

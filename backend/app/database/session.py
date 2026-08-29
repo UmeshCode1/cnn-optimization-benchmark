@@ -401,6 +401,16 @@ def seed_initial_experiments(session: Session, hw_id: int):
 
                 curve = [round(0.01 + 0.08 * (1.0 / (1.0 + t * 0.28 * (idx + 1) * 0.4)), 4) for t in range(40)]
 
+                prof_size = prof["size"]
+                # Compute realistic per-algorithm FLOPs and parameters based on pruned footprint
+                flops_base = round(1300.0 * (prof_size / 97.80) * 1.6, 1)
+                params_base = round(25.56 * (prof_size / 97.80) * 1.5, 2)
+                jitter_flops = round(((r * 7) % 5 - 2) * 2.5, 1)
+                jitter_params = round(((r * 5) % 5 - 2) * 0.08, 2)
+
+                run_flops = round(flops_base + jitter_flops, 1)
+                run_params = round(params_base + jitter_params, 2)
+
                 run_obj = ExperimentRun(
                     experiment_id=exp3.id,
                     algorithm_acronym=alg,
@@ -413,14 +423,14 @@ def seed_initial_experiments(session: Session, hw_id: int):
                     latency_p95_ms=round(run_lat + 0.35, 2),
                     latency_min_ms=round(run_lat - 0.15, 2),
                     latency_max_ms=round(run_lat + 0.45, 2),
-                    model_size_mb=prof["size"],
+                    model_size_mb=prof_size,
                     energy_j=run_energy,
                     energy_source="MEASURED_GPU",
-                    parameters_m=20.45,
-                    flops_m=1040.0,
-                    compression_ratio=round(97.80 / max(0.01, prof["size"]), 2),
+                    parameters_m=run_params,
+                    flops_m=run_flops,
+                    compression_ratio=round(97.80 / max(0.01, prof_size), 2),
                     speedup=round(18.50 / max(0.01, run_lat), 2),
-                    size_reduction_pct=round(((97.80 - prof["size"]) / 97.80) * 100.0, 1),
+                    size_reduction_pct=round(((97.80 - prof_size) / 97.80) * 100.0, 1),
                     energy_reduction_pct=round(((0.5200 - run_energy) / 0.5200) * 100.0, 1),
                     best_fitness=round(curve[-1], 4),
                     overall_score=round(prof["score"] + jitter_acc * 0.5, 2),
