@@ -48,7 +48,7 @@ def check_capabilities():
     print(f"  INT8 Dynamic:    {'SUPPORTED' if caps.int8_dynamic_available else 'UNSUPPORTED'}")
     print(f"  FP16 CUDA:       {'SUPPORTED' if caps.fp16_available else 'UNSUPPORTED'}")
     print("-" * 60)
-    print(f"  REAL MODE:       {'READY ✅' if caps.real_mode_feasible else 'UNAVAILABLE ❌'}")
+    print(f"  REAL MODE:       {'READY [OK]' if caps.real_mode_feasible else 'UNAVAILABLE [DEMO ONLY]'}")
     print(f"  Status Details:  {caps.real_mode_reason}")
     print("=" * 60 + "\n")
     return caps.real_mode_feasible
