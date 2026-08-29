@@ -70,7 +70,7 @@ app = FastAPI(
         "- **REAL**: Actual PyTorch model inference (requires local/GPU deployment)\n\n"
         "All metrics include explicit provenance: MEASURED | CALCULATED | ESTIMATED | SIMULATED"
     ),
-    version="2.0.0",
+    version="2.5.0",
     lifespan=lifespan,
 )
 
@@ -114,7 +114,7 @@ def health_check():
     return {
         "status": "HEALTHY",
         "service": "CNN Optimization Benchmark Platform",
-        "version": "2.0.0",
+        "version": "2.5.0",
         "algorithms_count": 10,
         "default_execution_mode": mode,
         "demo_mode_available": True,
