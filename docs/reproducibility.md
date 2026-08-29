@@ -64,15 +64,19 @@ def reset_hardware_state():
 For an algorithm evaluated over $N$ stochastic runs ($r = 1, \dots, N$):
 
 ### 1. Sample Mean ($\mu$):
+
 $$\bar{x} = \frac{1}{N} \sum_{r=1}^{N} x_r$$
 
 ### 2. Sample Standard Deviation ($\sigma$):
+
 $$s = \sqrt{\frac{1}{N - 1} \sum_{r=1}^{N} (x_r - \bar{x})^2}$$
 
 ### 3. Standard Error of the Mean ($\text{SE}$):
+
 $$\text{SE} = \frac{s}{\sqrt{N}}$$
 
 ### 4. 95% Confidence Interval ($\text{CI}_{95}$):
+
 $$\text{CI}_{95} = \bar{x} \pm t_{0.025, N-1} \cdot \text{SE}$$
 
 Where $t_{0.025, N-1}$ is the critical two-tailed value from Student's $t$-distribution with $N-1$ degrees of freedom (e.g. $t = 2.776$ for $N=5$).
