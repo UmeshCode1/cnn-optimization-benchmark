@@ -44,25 +44,35 @@ class GrasshopperOptimizer(BaseOptimizer):
         c decreases dynamically to reduce comfort zone around the target.
         """
         # Decreasing comfort zone parameter c
-        c = self.c_max - iteration * ((self.c_max - self.c_min) / self.max_iterations)
+        c = self.c_max - iteration * ((self.c_max - self.c_min) / max(1, self.max_iterations))
         
         target = self.best_solution.copy() if self.best_solution is not None else self.population[0].copy()
 
         new_population = np.zeros_like(self.population)
 
+        # Vectorized pairwise computation across population
         for i in range(self.population_size):
-            s_interaction = np.zeros(self.dimension)
-            for j in range(self.population_size):
-                if i != j:
-                    dist = np.linalg.norm(self.population[j] - self.population[i]) + 1e-12
-                    # Normalized vector
-                    r_ij_vec = (self.population[j] - self.population[i]) / dist
-                    # Social force
-                    force = self._social_force(dist)
-                    s_interaction += (self.ub - self.lb) / 2.0 * force * r_ij_vec
+            diffs = self.population - self.population[i]  # shape (pop_size, dim)
+            dists = np.linalg.norm(diffs, axis=1, keepdims=True) + 1e-12  # shape (pop_size, 1)
+
+            # Map distance to [1, 4] comfort zone scale for stability
+            norm_dists = 2.0 + (dists % 2.0)
+            
+            # Unit direction vectors
+            directions = diffs / dists
+            
+            # Social forces
+            forces = self._social_force(norm_dists)
+            
+            # Weighted interactions (excluding self i == j)
+            mask = np.ones(self.population_size, dtype=bool)
+            mask[i] = False
+            
+            dim_span = (self.ub - self.lb) / 2.0
+            interaction = np.sum(dim_span * forces[mask] * directions[mask], axis=0)
 
             # Position update: c * (sum_j c * (ub-lb)/2 * s(dist) * dir) + Target
-            new_pos = c * (c * s_interaction) + target
+            new_pos = c * (c * interaction) + target
             new_pos = self.clip_bounds(new_pos)
             
             fit = self.evaluate_individual(new_pos, objective_fn)
