@@ -26,6 +26,10 @@ const DEFAULT_DATASETS: DatasetInfo[] = [
   { id: 'mnist', name: 'MNIST', is_custom: false, classes_count: 10, classes: [], train_samples: 60000, test_samples: 10000, resolution: '28x28x1', channels: 1, description: 'Handwritten digits dataset', created_at: '' },
   { id: 'fashion-mnist', name: 'Fashion-MNIST', is_custom: false, classes_count: 10, classes: [], train_samples: 60000, test_samples: 10000, resolution: '28x28x1', channels: 1, description: 'Zalando fashion benchmark dataset', created_at: '' },
   { id: 'imagenet-subset', name: 'ImageNet-1k Subset', is_custom: false, classes_count: 100, classes: [], train_samples: 50000, test_samples: 5000, resolution: '224x224x3', channels: 3, description: 'ImageNet 100-class subset', created_at: '' },
+  { id: 'svhn', name: 'SVHN (Street View House Numbers)', is_custom: false, classes_count: 10, classes: [], train_samples: 73257, test_samples: 26032, resolution: '32x32x3', channels: 3, description: 'Real-world house number digits cropped from Google Street View', created_at: '' },
+  { id: 'stl-10', name: 'STL-10 (High-Res 96x96)', is_custom: false, classes_count: 10, classes: [], train_samples: 5000, test_samples: 8000, resolution: '96x96x3', channels: 3, description: 'High-resolution 96x96 color images with high spatial detail', created_at: '' },
+  { id: 'eurosat', name: 'EuroSAT (Sentinel-2 Satellite)', is_custom: false, classes_count: 10, classes: [], train_samples: 21600, test_samples: 5400, resolution: '64x64x3', channels: 3, description: 'Earth observation land cover satellite imagery captured by Sentinel-2', created_at: '' },
+  { id: 'bloodmnist', name: 'BloodMNIST (MedMNIST Biomedical)', is_custom: false, classes_count: 8, classes: [], train_samples: 11959, test_samples: 3421, resolution: '28x28x3', channels: 3, description: 'Microscopic blood cell morphology images from biomedical labs', created_at: '' },
 ];
 
 const DEFAULT_MODELS: CNNModelInfo[] = [
