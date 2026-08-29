@@ -74,32 +74,31 @@ def create_experiment(
     # ── Execution mode ──────────────────────────────────────────────────────
     requested_mode = getattr(request, "execution_mode", None) or get_default_mode()
 
-    # Validate REAL mode capabilities before creating the experiment
-    if requested_mode == "REAL":
-        caps_check = CapabilityService.validate_for_real_experiment(
-            model_name=request.cnn_model_name,
-            dataset_name=request.dataset_name,
-            quantization_type=request.quantization_type,
-            pruning_method=request.pruning_method,
-        )
-        if not caps_check["ok"]:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "error": "Real Mode is not available in this environment.",
-                    "reason": "Capability check failed.",
-                    "missing_capabilities": caps_check["errors"],
-                    "suggestion": "Switch to DEMO mode or run locally with PyTorch installed.",
-                }
-            )
+    caps_check = CapabilityService.validate_for_real_experiment(
+        model_name=request.cnn_model_name,
+        dataset_name=request.dataset_name,
+        quantization_type=request.quantization_type,
+        pruning_method=request.pruning_method,
+    )
+
+    if requested_mode == "AUTO":
+        effective_mode = "REAL" if caps_check["ok"] else "DEMO"
+    elif requested_mode == "REAL":
+        if caps_check["ok"]:
+            effective_mode = "REAL"
+        else:
+            # If user explicitly requested REAL but environment lacks PyTorch, fallback to calibrated DEMO mode
+            effective_mode = "DEMO"
+    else:
+        effective_mode = "DEMO"
 
     exp = Experiment(
         id=exp_id,
         title=request.title,
         description=request.description or "",
         status="QUEUED" if auto_run else "DRAFT",
-        is_demo=(requested_mode == "DEMO"),
-        execution_mode=requested_mode,
+        is_demo=(effective_mode == "DEMO"),
+        execution_mode=effective_mode,
         preset=request.preset,
         dataset_name=request.dataset_name,
         dataset_split=request.dataset_split,

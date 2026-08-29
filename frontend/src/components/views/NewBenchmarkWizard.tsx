@@ -74,10 +74,11 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
   const [isDatasetModalOpen, setIsDatasetModalOpen] = useState<boolean>(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState<boolean>(false);
   const [isAlgorithmModalOpen, setIsAlgorithmModalOpen] = useState<boolean>(false);
+  const [isTitleUserEdited, setIsTitleUserEdited] = useState<boolean>(false);
 
   // Form State
   const [formData, setFormData] = useState({
-    title: 'ResNet-18 Benchmark on CIFAR-10',
+    title: 'ResNet-18 INT8 Compression on CIFAR-10',
     description: 'Comprehensive comparative evaluation across metaheuristic optimizers.',
     preset: 'STANDARD',
     is_demo: false,
@@ -283,8 +284,11 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g. ResNet-18 Multi-Objective Compression on CIFAR-10"
+              onChange={(e) => {
+                setIsTitleUserEdited(true);
+                setFormData({ ...formData, title: e.target.value });
+              }}
+              placeholder="e.g. ResNet-18 INT8 Compression on CIFAR-10"
               className="w-full ws-input px-3 py-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--surface)] border border-[var(--border-strong)] rounded-md focus:border-[var(--accent)]"
               required
             />
@@ -346,14 +350,18 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                 {datasets.map((d) => (
                   <div
                     key={d.id}
-                    onClick={() =>
+                    onClick={() => {
+                      const newTitle = isTitleUserEdited
+                        ? formData.title
+                        : `${formData.cnn_model_name} ${formData.quantization_type} Compression on ${d.name}`;
                       setFormData({
                         ...formData,
+                        title: newTitle,
                         dataset_name: d.name,
                         dataset_split: `train:${d.train_samples},test:${d.test_samples}`,
                         input_resolution: d.resolution,
-                      })
-                    }
+                      });
+                    }}
                     className={`p-3.5 rounded border cursor-pointer transition flex flex-col justify-between ${
                       formData.dataset_name === d.name
                         ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
@@ -431,7 +439,16 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                 {models.map((m) => (
                   <div
                     key={m.id || m.name}
-                    onClick={() => setFormData({ ...formData, cnn_model_name: m.name })}
+                    onClick={() => {
+                      const newTitle = isTitleUserEdited
+                        ? formData.title
+                        : `${m.name} ${formData.quantization_type} Compression on ${formData.dataset_name}`;
+                      setFormData({
+                        ...formData,
+                        title: newTitle,
+                        cnn_model_name: m.name,
+                      });
+                    }}
                     className={`p-3.5 rounded border cursor-pointer transition ${
                       formData.cnn_model_name === m.name
                         ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
@@ -471,7 +488,16 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                 ].map((q) => (
                   <div
                     key={q.type}
-                    onClick={() => setFormData({ ...formData, quantization_type: q.type })}
+                    onClick={() => {
+                      const newTitle = isTitleUserEdited
+                        ? formData.title
+                        : `${formData.cnn_model_name} ${q.type} Compression on ${formData.dataset_name}`;
+                      setFormData({
+                        ...formData,
+                        title: newTitle,
+                        quantization_type: q.type,
+                      });
+                    }}
                     className={`p-3.5 rounded border cursor-pointer transition ${
                       formData.quantization_type === q.type
                         ? 'bg-[var(--surface-elevated)] border-[var(--accent)]'
@@ -601,13 +627,13 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                         ...formData,
                         is_demo: isDemo,
                         // @ts-ignore
-                        execution_mode: isDemo ? 'DEMO' : 'REAL',
+                        execution_mode: isDemo ? 'DEMO' : 'AUTO',
                       });
                     }}
                     className="w-full ws-input p-2 text-xs font-mono"
                   >
-                    <option value="AUTO">Real Mode (PyTorch Engine if available)</option>
-                    <option value="DEMO">Demo / Simulation Mode (Sandbox)</option>
+                    <option value="AUTO">Auto-Select (Real if PyTorch available, otherwise Simulation)</option>
+                    <option value="DEMO">Deterministic Simulation (Cloud Sandbox)</option>
                   </select>
                 </div>
                 <div>
