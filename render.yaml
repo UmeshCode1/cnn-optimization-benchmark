@@ -9,3 +9,13 @@ services:
     envVars:
       - key: PORT
         value: 8000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cnn-benchmark-db
+          property: connectionString
+
+databases:
+  - name: cnn-benchmark-db
+    plan: free
+    databaseName: cnn_benchmark
+    user: cnn_user

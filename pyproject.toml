@@ -52,6 +52,7 @@ dependencies = [
     "scipy>=1.11.0",
     "psutil>=5.9.0",
     "httpx>=0.24.0",
+    "psycopg2-binary>=2.9.9",
 ]
 
 [project.optional-dependencies]
