@@ -104,14 +104,17 @@ graph TD
 ## 📐 Mathematical Formulation
 
 ### 1. Weighted Sum Model (WSM) Composite Scoring
+
 $$\text{Composite Score}_i = \left( w_{\text{acc}} \cdot \tilde{A}_i + w_{\text{lat}} \cdot \tilde{L}_i + w_{\text{size}} \cdot \tilde{S}_i + w_{\text{energy}} \cdot \tilde{E}_i \right) \times 100$$
 
 Where $\tilde{A}_i, \tilde{L}_i, \tilde{S}_i, \tilde{E}_i \in [0, 1]$ are min-max normalized metrics across all algorithms with inverse transformation for minimization metrics (Latency, Size, Energy).
 
 ### 2. Multi-Objective Fitness Evaluation
+
 $$f(\mathbf{x}) = w_{\text{acc}} \left(\frac{\Delta \text{Acc}(\mathbf{x})}{\text{Acc}_{\text{baseline}}}\right) + w_{\text{lat}} \left(\frac{\text{Lat}(\mathbf{x})}{\text{Lat}_{\text{baseline}}}\right) + w_{\text{size}} \left(\frac{\text{Size}(\mathbf{x})}{\text{Size}_{\text{baseline}}}\right) + w_{\text{energy}} \left(\frac{\text{Energy}(\mathbf{x})}{\text{Energy}_{\text{baseline}}}\right)$$
 
 ### 3. Compute Throughput Density (TOPs)
+
 $$\text{TOPs} = \frac{\text{FLOPs (M)} \times 10^6}{\text{Latency (ms)} \times 10^{-3} \times 10^{12}} = \frac{\text{FLOPs (M)}}{\text{Latency (ms)} \times 10^6}$$
 
 ---

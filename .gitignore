@@ -35,3 +35,10 @@ backend/data/custom_algorithms/*.py
 *.pt
 *.onnx
 *.bin
+
+# Packaging & Distribution
+build/
+*.egg-info/
+*.whl
+*.tar.gz
+
