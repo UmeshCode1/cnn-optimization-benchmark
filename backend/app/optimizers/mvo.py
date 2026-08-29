@@ -40,7 +40,7 @@ class MultiVerseOptimizer(BaseOptimizer):
         """Roulette wheel based on normalized inflation rates."""
         # Convert fitness to higher-is-better normalized inflation rate
         shifted = np.max(sorted_fitness) - sorted_fitness + 1e-6
-        prob = shifted / np.sum(shifted)
+        prob = shifted / (np.sum(shifted) + 1e-12)
         cumulative_prob = np.cumsum(prob)
         r = self.rng.random()
         for i, cp in enumerate(cumulative_prob):
@@ -55,10 +55,10 @@ class MultiVerseOptimizer(BaseOptimizer):
         govern space exploration and exploitation.
         """
         # Wormhole Existence Probability (WEP) increases linearly
-        WEP = self.wep_min + iteration * ((self.wep_max - self.wep_min) / self.max_iterations)
+        WEP = self.wep_min + iteration * ((self.wep_max - self.wep_min) / max(1, self.max_iterations))
 
         # Travelling Distance Rate (TDR) decreases non-linearly
-        TDR = 1.0 - ((iteration ** (1.0 / self.p_constant)) / (self.max_iterations ** (1.0 / self.p_constant)))
+        TDR = 1.0 - ((iteration ** (1.0 / self.p_constant)) / (max(1, self.max_iterations) ** (1.0 / self.p_constant)))
 
         # Sort universes by inflation rate (best fitness)
         sorted_indices = np.argsort(self.fitness)
@@ -71,21 +71,26 @@ class MultiVerseOptimizer(BaseOptimizer):
 
         for i in range(self.population_size):
             new_pos = self.population[i].copy()
-            for j in range(self.dimension):
-                r1 = self.rng.random()
-                if r1 < 0.5:
-                    # White/black hole exchange via roulette wheel
-                    white_hole_idx = self._roulette_wheel_selection(sorted_fitness)
-                    new_pos[j] = sorted_universes[white_hole_idx, j]
+            
+            # Vectorized white/black hole exchange via roulette wheel
+            r1 = self.rng.random(self.dimension)
+            white_hole_mask = r1 < 0.5
+            if np.any(white_hole_mask):
+                for j in np.where(white_hole_mask)[0]:
+                    white_idx = self._roulette_wheel_selection(sorted_fitness)
+                    new_pos[j] = sorted_universes[white_idx, j]
 
-                r2 = self.rng.random()
-                if r2 < WEP:
-                    r3 = self.rng.random()
-                    r4 = self.rng.random()
-                    if r3 < 0.5:
-                        new_pos[j] = best_universe[j] + TDR * ((self.ub[j] - self.lb[j]) * r4 + self.lb[j])
-                    else:
-                        new_pos[j] = best_universe[j] - TDR * ((self.ub[j] - self.lb[j]) * r4 + self.lb[j])
+            # Wormhole tunnel updates
+            r2 = self.rng.random(self.dimension)
+            wormhole_mask = r2 < WEP
+            if np.any(wormhole_mask):
+                r3 = self.rng.random(self.dimension)
+                r4 = self.rng.random(self.dimension)
+                
+                delta = TDR * ((self.ub - self.lb) * r4 + self.lb)
+                direction = np.where(r3 < 0.5, 1.0, -1.0)
+                
+                new_pos[wormhole_mask] = best_universe[wormhole_mask] + (direction * delta)[wormhole_mask]
 
             new_pos = self.clip_bounds(new_pos)
             fit = self.evaluate_individual(new_pos, objective_fn)

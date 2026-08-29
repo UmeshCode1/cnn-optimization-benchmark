@@ -45,39 +45,35 @@ class ArithmeticOptimizer(BaseOptimizer):
         dynamically guide exploration vs exploitation arithmetic branches.
         """
         # Math Optimizer Accelerated (MOA)
-        MOA = self.moa_min + iteration * ((self.moa_max - self.moa_min) / self.max_iterations)
+        MOA = self.moa_min + iteration * ((self.moa_max - self.moa_min) / max(1, self.max_iterations))
 
         # Math Optimizer Probability (MOP)
-        MOP = 1.0 - ((iteration ** (1.0 / self.alpha)) / (self.max_iterations ** (1.0 / self.alpha)))
+        MOP = 1.0 - ((iteration ** (1.0 / self.alpha)) / (max(1, self.max_iterations) ** (1.0 / self.alpha)))
 
         best_idx = np.argmin(self.fitness)
         best_pos = self.population[best_idx].copy()
 
         new_population = np.zeros_like(self.population)
+        dim_scale = (self.ub - self.lb) * self.mu + self.lb
 
         for i in range(self.population_size):
-            new_pos = np.zeros(self.dimension)
-            for j in range(self.dimension):
-                r1 = self.rng.random()
-                r2 = self.rng.random()
-                r3 = self.rng.random()
+            r1 = self.rng.random(self.dimension)
+            r2 = self.rng.random(self.dimension)
+            r3 = self.rng.random(self.dimension)
 
-                if r1 > MOA:
-                    # High dispersion (Exploration): Division and Multiplication
-                    if r2 > 0.5:
-                        # Division operator
-                        new_pos[j] = best_pos[j] / (MOP + 1e-12) * ((self.ub[j] - self.lb[j]) * self.mu + self.lb[j])
-                    else:
-                        # Multiplication operator
-                        new_pos[j] = best_pos[j] * MOP * ((self.ub[j] - self.lb[j]) * self.mu + self.lb[j])
-                else:
-                    # Low dispersion (Exploitation): Subtraction and Addition
-                    if r3 > 0.5:
-                        # Subtraction operator
-                        new_pos[j] = best_pos[j] - MOP * ((self.ub[j] - self.lb[j]) * self.mu + self.lb[j])
-                    else:
-                        # Addition operator
-                        new_pos[j] = best_pos[j] + MOP * ((self.ub[j] - self.lb[j]) * self.mu + self.lb[j])
+            # High dispersion (Exploration): Division and Multiplication
+            div_mask = (r1 > MOA) & (r2 > 0.5)
+            mul_mask = (r1 > MOA) & (r2 <= 0.5)
+
+            # Low dispersion (Exploitation): Subtraction and Addition
+            sub_mask = (r1 <= MOA) & (r3 > 0.5)
+            add_mask = (r1 <= MOA) & (r3 <= 0.5)
+
+            new_pos = np.zeros(self.dimension)
+            new_pos[div_mask] = (best_pos / (MOP + 1e-12) * dim_scale)[div_mask]
+            new_pos[mul_mask] = (best_pos * MOP * dim_scale)[mul_mask]
+            new_pos[sub_mask] = (best_pos - MOP * dim_scale)[sub_mask]
+            new_pos[add_mask] = (best_pos + MOP * dim_scale)[add_mask]
 
             new_pos = self.clip_bounds(new_pos)
             fit = self.evaluate_individual(new_pos, objective_fn)

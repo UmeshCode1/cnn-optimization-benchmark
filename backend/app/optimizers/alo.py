@@ -40,7 +40,7 @@ class AntLionOptimizer(BaseOptimizer):
         iteration: int,
     ) -> np.ndarray:
         """
-        Simulate random walk of an ant around a chosen antlion with shrinking bounds.
+        Simulate independent random walks of an ant around a chosen antlion across each dimension with shrinking bounds.
         """
         # Ratio of shrinking bounds parameter I
         if iteration > 0.95 * self.max_iterations:
@@ -56,29 +56,25 @@ class AntLionOptimizer(BaseOptimizer):
         else:
             w = 1
         
-        I = 1.0 + (10.0 ** w) * (iteration / self.max_iterations)
+        I = 1.0 + (10.0 ** w) * (iteration / max(1, self.max_iterations))
         
         c = self.lb / I
         d = self.ub / I
 
-        # Move bounds centered on selected antlion
-        if self.rng.random() < 0.5:
-            c = c + antlion
-        else:
-            c = -c + antlion
+        # Move bounds centered on selected antlion per dimension
+        coin_c = (self.rng.random(self.dimension) < 0.5).astype(float)
+        c = (2 * coin_c - 1) * c + antlion
 
-        if self.rng.random() < 0.5:
-            d = d + antlion
-        else:
-            d = -d + antlion
+        coin_d = (self.rng.random(self.dimension) < 0.5).astype(float)
+        d = (2 * coin_d - 1) * d + antlion
 
-        # Cumulative sum of random steps (-1 or +1)
-        steps = 2 * (self.rng.random(self.max_iterations) > 0.5).astype(float) - 1.0
-        X = np.cumsum(steps)
+        # Multi-dimensional independent cumulative random walk (-1 or +1)
+        steps = 2 * (self.rng.random((self.max_iterations, self.dimension)) > 0.5).astype(float) - 1.0
+        X = np.cumsum(steps, axis=0)
         
-        # Min-max normalization mapped to [c, d]
-        a = np.min(X)
-        b = np.max(X)
+        # Min-max normalization mapped to [c, d] per dimension
+        a = np.min(X, axis=0)
+        b = np.max(X, axis=0)
         norm_val = ((X[-1] - a) / (b - a + 1e-12)) * (d - c) + c
         return norm_val
 
@@ -86,7 +82,7 @@ class AntLionOptimizer(BaseOptimizer):
         """Select an antlion using roulette wheel selection."""
         # Convert minimization fitness to selection probabilities
         shifted = np.max(weights) - weights + 1e-6
-        prob = shifted / np.sum(shifted)
+        prob = shifted / (np.sum(shifted) + 1e-12)
         cumulative_prob = np.cumsum(prob)
         r = self.rng.random()
         for i, cp in enumerate(cumulative_prob):
