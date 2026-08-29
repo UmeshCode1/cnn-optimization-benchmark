@@ -11,7 +11,10 @@ import {
   BookOpen,
   FileText,
   History,
+  Database,
+  SlidersHorizontal,
   X,
+  Sparkles,
 } from 'lucide-react';
 
 export type NavTab =
@@ -61,16 +64,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'pareto', label: 'Pareto Front', icon: GitFork },
         { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
         { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
-        { id: 'ablation', label: 'Ablation Study', icon: Layers },
+        { id: 'ablation', label: 'Ablation Study', icon: SlidersHorizontal },
       ],
     },
     {
       title: 'RESOURCES',
       items: [
-        { id: 'datasets', label: 'Dataset Repository', icon: Layers },
+        { id: 'datasets', label: 'Dataset Repository', icon: Database },
         { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },
-        { id: 'documentation', label: 'Documentation & Report', icon: BookOpen },
-        { id: 'reports', label: 'Research Reports', icon: FileText },
+        { id: 'documentation', label: 'Algorithm Docs & Guide', icon: BookOpen },
+        { id: 'reports', label: 'Export & Reports', icon: FileText },
       ],
     },
   ];
@@ -108,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <button
             onClick={onCloseMobile}
-            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -129,9 +132,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       key={item.id}
                       onClick={() => handleSelectTab(item.id as NavTab)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-[var(--surface-elevated)] text-[var(--accent)] font-semibold border-l-2 border-[var(--accent)] rounded-l-none'
+                          ? 'bg-[var(--surface-elevated)] text-[var(--accent)] font-semibold border-l-2 border-[var(--accent)] rounded-l-none shadow-xs'
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]'
                       }`}
                     >
@@ -140,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span>{item.label}</span>
                       </div>
                       {item.badge && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)] font-semibold">
                           {item.badge}
                         </span>
                       )}
