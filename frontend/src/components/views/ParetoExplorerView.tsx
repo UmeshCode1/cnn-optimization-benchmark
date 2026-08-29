@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { GitFork, Info } from 'lucide-react';
+import { GitFork, Info, Zap, Cpu } from 'lucide-react';
 import { Experiment, ParetoPoint } from '../../types';
-import { ScatterParetoChart } from '../charts/ScatterParetoChart';
+import { ScatterParetoChart, ParetoAxisType } from '../charts/ScatterParetoChart';
 
 interface ParetoExplorerViewProps {
   experiment: Experiment;
@@ -12,7 +12,7 @@ export const ParetoExplorerView: React.FC<ParetoExplorerViewProps> = ({
   experiment,
   paretoPoints,
 }) => {
-  const [xAxis, setXAxis] = useState<'latency_ms' | 'model_size_mb' | 'energy_j'>('latency_ms');
+  const [xAxis, setXAxis] = useState<ParetoAxisType>('latency_ms');
   const [onlyPareto, setOnlyPareto] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<ParetoPoint | null>(null);
 
@@ -30,7 +30,7 @@ export const ParetoExplorerView: React.FC<ParetoExplorerViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Empirical non-dominated trade-off boundary across Accuracy, Latency, Size, and Energy metrics.
+            Empirical non-dominated trade-off boundary across Accuracy, Latency, Size, Energy, FLOPs, and Power metrics.
           </p>
         </div>
 
@@ -47,10 +47,10 @@ export const ParetoExplorerView: React.FC<ParetoExplorerViewProps> = ({
         <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
         <div className="text-xs text-[var(--text-secondary)] space-y-1">
           <div className="font-semibold text-[var(--text-primary)] font-mono text-xs">
-            Concept of Pareto Dominance in CNN Compression:
+            Concept of Multi-Objective Pareto Dominance:
           </div>
           <p className="leading-relaxed">
-            A solution <strong>A</strong> dominates solution <strong>B</strong> if <strong>A</strong> is at least equal to <strong>B</strong> across all evaluation objectives (Accuracy ↑, Latency ↓, Model Size ↓, Energy ↓) and strictly superior in at least one metric. Points residing on the Pareto frontier represent the mathematically optimal trade-off boundary.
+            A solution <strong>A</strong> dominates solution <strong>B</strong> if <strong>A</strong> is at least equal to <strong>B</strong> across all evaluation objectives (Accuracy ↑, Latency ↓, Model Size ↓, Energy / Power ↓, FLOPs ↓) and strictly superior in at least one metric. Solutions on the Pareto frontier represent optimal trade-offs where no metric can improve without sacrificing another.
           </p>
         </div>
       </div>
@@ -79,28 +79,43 @@ export const ParetoExplorerView: React.FC<ParetoExplorerViewProps> = ({
                 <th>Algorithm</th>
                 <th className="text-right">Accuracy (%) ↑</th>
                 <th className="text-right">Latency (ms) ↓</th>
+                <th className="text-right">FLOPs (M)</th>
+                <th className="text-right">Power / Energy ↓</th>
+                <th className="text-right">TOPs (Throughput)</th>
                 <th className="text-right">Model Size (MB) ↓</th>
-                <th className="text-right">Energy (J) ↓</th>
                 <th className="text-right">Composite Score</th>
                 <th className="text-center">Pareto Classification</th>
               </tr>
             </thead>
             <tbody>
-              {paretoSolutions.map((p) => (
-                <tr key={p.algorithm}>
-                  <td className="font-bold text-[var(--text-primary)] font-sans">{p.algorithm}</td>
-                  <td className="text-right text-[var(--success)] font-semibold">{p.accuracy.toFixed(2)}%</td>
-                  <td className="text-right text-[var(--text-primary)]">{p.latency_ms.toFixed(2)} ms</td>
-                  <td className="text-right text-[var(--text-secondary)]">{p.model_size_mb.toFixed(2)} MB</td>
-                  <td className="text-right text-[var(--text-secondary)]">{p.energy_j.toFixed(4)} J</td>
-                  <td className="text-right font-bold text-[var(--accent)]">{p.overall_score.toFixed(1)}</td>
-                  <td className="text-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30 font-mono">
-                      NON-DOMINATED
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {paretoSolutions.map((p: any) => {
+                const powerW = p.power_w || (p.energy_j / Math.max(0.0001, p.latency_ms * 0.001));
+                const flopsM = p.flops_m || (p.parameters_m ? p.parameters_m * 50 : 330.0);
+                const tops = p.tops || ((flopsM * 1e6) / (Math.max(0.001, p.latency_ms) * 1e-3 * 1e12));
+
+                return (
+                  <tr key={p.algorithm}>
+                    <td className="font-bold text-[var(--text-primary)] font-sans">{p.algorithm}</td>
+                    <td className="text-right text-[var(--success)] font-semibold">{p.accuracy.toFixed(2)}%</td>
+                    <td className="text-right text-[var(--text-primary)]">{p.latency_ms.toFixed(2)} ms</td>
+                    <td className="text-right text-[var(--text-primary)]">{flopsM.toFixed(1)} M</td>
+                    <td className="text-right">
+                      <div className="text-[var(--text-primary)]">{p.energy_j.toFixed(4)} J</div>
+                      <div className="text-[10px] text-[var(--text-muted)] font-sans">
+                        {powerW.toFixed(2)} W ({((powerW * 1000)).toFixed(0)} mW)
+                      </div>
+                    </td>
+                    <td className="text-right text-[var(--accent)] font-semibold">{tops.toFixed(3)} TOPs</td>
+                    <td className="text-right text-[var(--text-secondary)]">{p.model_size_mb.toFixed(2)} MB</td>
+                    <td className="text-right font-bold text-[var(--accent)]">{p.overall_score.toFixed(1)}</td>
+                    <td className="text-center">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30 font-mono">
+                        NON-DOMINATED
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

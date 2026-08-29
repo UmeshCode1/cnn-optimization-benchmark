@@ -175,6 +175,10 @@ def get_experiment_details(exp_id: str, db: Session = Depends(get_db)):
     )
 
     pareto_points = ParetoService.compute_pareto_front(ranked)
+    pareto_set = {p["algorithm"] for p in pareto_points if p.get("is_pareto", False)}
+    for r in ranked:
+        r["is_pareto"] = r["algorithm"] in pareto_set
+        r["is_pareto_optimal"] = r["is_pareto"]
 
     return {
         "experiment": exp.to_dict(),

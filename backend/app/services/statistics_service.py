@@ -1,7 +1,7 @@
 """
 Multi-Run Statistical Analysis Service.
 Computes Mean, Median, Standard Deviation, Min, Max, and 95% Confidence Intervals
-across stochastic metaheuristic experiment runs.
+across stochastic metaheuristic experiment runs for Accuracy, Latency, Model Size, Energy, FLOPs, and Power Draw.
 """
 
 from typing import List, Dict, Any
@@ -68,7 +68,16 @@ class StatisticsService:
             lat_list = [r["latency_ms"] for r in alg_runs]
             size_list = [r["model_size_mb"] for r in alg_runs]
             energy_list = [r["energy_j"] for r in alg_runs]
-            score_list = [r["overall_score"] for r in alg_runs]
+            score_list = [r.get("overall_score", 0.0) for r in alg_runs]
+            
+            flops_list = [r.get("flops_m", 0.0) or 0.0 for r in alg_runs]
+            params_list = [r.get("parameters_m", 0.0) or 0.0 for r in alg_runs]
+            
+            # Power in Watts (Joules / Seconds = Joules / (Latency_ms * 0.001))
+            power_list = [
+                round(r["energy_j"] / max(0.0001, r["latency_ms"] * 0.001), 3)
+                for r in alg_runs
+            ]
 
             summaries[alg] = {
                 "algorithm": alg,
@@ -77,6 +86,9 @@ class StatisticsService:
                 "latency_ms": cls.calculate_metric_summary(lat_list),
                 "model_size_mb": cls.calculate_metric_summary(size_list),
                 "energy_j": cls.calculate_metric_summary(energy_list),
+                "power_w": cls.calculate_metric_summary(power_list),
+                "flops_m": cls.calculate_metric_summary(flops_list),
+                "parameters_m": cls.calculate_metric_summary(params_list),
                 "overall_score": cls.calculate_metric_summary(score_list),
                 "raw_runs": alg_runs,
             }

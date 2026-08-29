@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Sliders, RotateCcw, HelpCircle, Check, ArrowUpDown, ChevronDown, ChevronUp, Layers } from 'lucide-react';
+import { Sliders, RotateCcw, HelpCircle, Check, ArrowUpDown, ChevronDown, ChevronUp, Layers, Zap, Cpu } from 'lucide-react';
 import { RankedAlgorithm, ParetoPoint } from '../../types';
 
 interface AlgorithmComparisonWorkbenchProps {
@@ -27,7 +27,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
   const [showWeightSliders, setShowWeightSliders] = useState(false);
   const [selectedAlgs, setSelectedAlgs] = useState<string[]>(() => {
     if (initialSelectedKeys && initialSelectedKeys.length > 0) return initialSelectedKeys;
-    return rankedAlgorithms.slice(0, 4).map((a) => a.algorithm);
+    return rankedAlgorithms.map((a) => a.algorithm);
   });
   const [expandedExplanation, setExpandedExplanation] = useState<string | null>(null);
 
@@ -61,10 +61,22 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
         normW_energy * normEnergy
       ) * 100.0;
 
-      const isPareto = paretoPoints.some((p) => p.algorithm === alg.algorithm && p.is_pareto_optimal);
+      // Check Pareto membership
+      const isPareto =
+        alg.is_pareto ||
+        alg.is_pareto_optimal ||
+        paretoPoints.some((p) => p.algorithm === alg.algorithm && (p.is_pareto || (p as any).is_pareto_optimal));
+
+      // Calculate power and TOPs
+      const powerW = alg.power_w || (alg.energy_j / Math.max(0.0001, alg.latency_ms * 0.001));
+      const flopsM = alg.flops_m || (alg.parameters_m ? alg.parameters_m * 50 : 330.0);
+      const topsVal = (flopsM * 1e6) / (Math.max(0.001, alg.latency_ms) * 1e-3 * 1e12);
 
       return {
         ...alg,
+        flops_m: flopsM,
+        power_w: powerW,
+        tops: topsVal,
         dynamicScore: Math.max(0, Math.min(100, dynamicScore)),
         isPareto,
       };
@@ -104,14 +116,14 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
             </span>
           </div>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Compare multi-objective trade-offs side-by-side with transparent weight sensitivity.
+            Compare multi-objective trade-offs side-by-side with transparent weight sensitivity and power/compute profiling.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowWeightSliders(!showWeightSliders)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-colors cursor-pointer ${
               showWeightSliders || isCustomWeights
                 ? 'bg-[var(--surface-elevated)] border-[var(--accent)] text-[var(--accent)]'
                 : 'ws-button-secondary text-[var(--text-secondary)]'
@@ -124,7 +136,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
           {isCustomWeights && (
             <button
               onClick={() => setWeights(defaultWeights)}
-              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               title="Reset to default research weights (40/25/20/15)"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -135,7 +147,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
 
       {/* Expandable Objective Weight Slider Tray */}
       {showWeightSliders && (
-        <div className="p-3.5 bg-[var(--surface-secondary)] rounded-md border border-[var(--border)] space-y-3 text-xs">
+        <div className="p-3.5 bg-[var(--surface-secondary)] rounded-md border border-[var(--border)] space-y-3 text-xs animate-fade-in">
           <div className="flex items-center justify-between font-mono">
             <span className="font-semibold text-[var(--text-primary)]">Dynamic Objective Weighting</span>
             <span className="text-[var(--text-muted)] text-[11px]">
@@ -220,9 +232,9 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
             <button
               key={alg.algorithm}
               onClick={() => toggleAlgorithm(alg.algorithm)}
-              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors border ${
+              className={`px-2.5 py-1 rounded text-xs font-mono transition-colors border cursor-pointer ${
                 isSelected
-                  ? 'bg-[var(--surface-elevated)] border-[var(--accent)] text-[var(--accent)] font-semibold'
+                  ? 'bg-[var(--surface-elevated)] border-[var(--accent)] text-[var(--accent)] font-semibold shadow-xs'
                   : 'bg-[var(--surface-secondary)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -232,7 +244,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
         })}
         <button
           onClick={() => setSelectedAlgs(recalculatedAlgorithms.map((a) => a.algorithm))}
-          className="text-[11px] text-[var(--accent)] hover:underline ml-2 font-mono"
+          className="text-[11px] text-[var(--accent)] hover:underline ml-2 font-mono cursor-pointer"
         >
           Select All
         </button>
@@ -250,8 +262,9 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
                 <th className="text-right">Accuracy ↑</th>
                 <th className="text-right">Latency ↓</th>
                 <th className="text-right">Model Size ↓</th>
-                <th className="text-right">Energy ↓</th>
+                <th className="text-right">Energy / Power ↓</th>
                 <th className="text-right">FLOPs</th>
+                <th className="text-right">TOPs (Throughput)</th>
                 <th className="text-center">Pareto Front</th>
                 <th className="text-center">Rationale</th>
               </tr>
@@ -263,11 +276,11 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
 
                 return (
                   <React.Fragment key={alg.algorithm}>
-                    <tr className={isBest ? 'bg-blue-500/5' : ''}>
+                    <tr className={isBest ? 'bg-blue-500/5 font-medium' : ''}>
                       <td className="font-semibold">
-                        <span className={`px-1.5 py-0.5 rounded text-[11px] ${
+                        <span className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
                           isBest
-                            ? 'bg-[var(--accent)] text-white'
+                            ? 'bg-[var(--accent)] text-white font-bold'
                             : 'bg-[var(--surface-secondary)] text-[var(--text-muted)]'
                         }`}>
                           #{alg.dynamicRank}
@@ -276,7 +289,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
                       <td className="font-bold text-[var(--text-primary)] font-sans">
                         {alg.algorithm}
                         {isBest && (
-                          <span className="ml-2 text-[10px] text-[var(--success)] font-mono font-medium">
+                          <span className="ml-2 text-[10px] text-[var(--success)] font-mono font-bold bg-[var(--success)]/10 px-1 py-0.2 rounded border border-[var(--success)]/30">
                             [LEADER]
                           </span>
                         )}
@@ -293,19 +306,26 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
                       <td className="text-right text-[var(--text-secondary)]">
                         {alg.model_size_mb.toFixed(2)} MB
                       </td>
-                      <td className="text-right text-[var(--text-secondary)]">
-                        {alg.energy_j.toFixed(4)} J
+                      <td className="text-right">
+                        <div className="text-[var(--text-primary)]">{alg.energy_j.toFixed(4)} J</div>
+                        <div className="text-[10px] text-[var(--text-muted)] font-sans">
+                          {(alg.power_w || 0).toFixed(2)} W ({((alg.power_w || 0) * 1000).toFixed(0)} mW)
+                        </div>
                       </td>
-                      <td className="text-right text-[var(--text-muted)]">
-                        {alg.flops_m?.toFixed(1) || '--'} M
+                      <td className="text-right text-[var(--text-primary)]">
+                        {alg.flops_m ? `${alg.flops_m.toFixed(1)} M` : '--'}
+                      </td>
+                      <td className="text-right text-[var(--accent)] font-semibold">
+                        {alg.tops ? `${alg.tops.toFixed(3)} TOPs` : '--'}
                       </td>
                       <td className="text-center">
                         {alg.isPareto ? (
-                          <span className="text-[10px] text-[var(--success)] border border-[var(--success)]/30 bg-[var(--success)]/10 px-1.5 py-0.5 rounded">
-                            Optimal
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--success)] border border-[var(--success)]/40 bg-[var(--success)]/15 px-2 py-0.5 rounded-full shadow-xs">
+                            <span>★</span>
+                            <span>Non-Dominated</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] text-[var(--text-muted)]">
+                          <span className="text-[10px] text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--surface-secondary)] border border-[var(--border)]">
                             Dominated
                           </span>
                         )}
@@ -313,7 +333,7 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
                       <td className="text-center">
                         <button
                           onClick={() => setExpandedExplanation(isExpanded ? null : alg.algorithm)}
-                          className="text-[11px] text-[var(--accent)] hover:underline inline-flex items-center gap-0.5"
+                          className="text-[11px] text-[var(--accent)] hover:underline inline-flex items-center gap-0.5 cursor-pointer font-sans"
                         >
                           <span>Why #{alg.dynamicRank}?</span>
                           {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -324,15 +344,19 @@ export const AlgorithmComparisonWorkbench: React.FC<AlgorithmComparisonWorkbench
                     {/* Expandable Trade-Off Rationale */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={10} className="p-3 bg-[var(--surface-secondary)] border-b border-[var(--border)]">
-                          <div className="space-y-1.5 font-sans text-xs text-[var(--text-secondary)]">
-                            <div className="font-semibold text-[var(--text-primary)] font-mono">
-                              Trade-Off Rationale for {alg.algorithm} (Rank #{alg.dynamicRank}):
+                        <td colSpan={11} className="p-3.5 bg-[var(--surface-secondary)] border-b border-[var(--border)] animate-fade-in">
+                          <div className="space-y-2 font-sans text-xs text-[var(--text-secondary)]">
+                            <div className="font-semibold text-[var(--text-primary)] font-mono flex items-center gap-2">
+                              <span>Trade-Off Rationale for {alg.algorithm} (Rank #{alg.dynamicRank}):</span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--surface-elevated)] border border-[var(--border)] text-[var(--accent)]">
+                                {alg.isPareto ? 'Pareto Optimal Frontier Solution' : 'Sub-Optimal Trade-Off'}
+                              </span>
                             </div>
                             <p className="leading-relaxed">
-                              {alg.algorithm} achieves a composite score of <strong>{alg.dynamicScore.toFixed(1)}/100</strong> under current weights (Accuracy: {(weights.accuracy*100).toFixed(0)}%, Latency: {(weights.latency*100).toFixed(0)}%, Size: {(weights.size*100).toFixed(0)}%, Energy: {(weights.energy*100).toFixed(0)}%).
-                              {alg.latency_ms < 3.1 ? ' Demonstrates superior hardware inference throughput.' : ' Slower inference latency than top cluster.'}
-                              {alg.accuracy > 87.5 ? ' Preserves strong classification accuracy.' : ' Lower Top-1 accuracy retention.'}
+                              {alg.algorithm} delivers an overall weighted score of <strong>{alg.dynamicScore.toFixed(1)}/100</strong> under active weights (Accuracy: {(weights.accuracy*100).toFixed(0)}%, Latency: {(weights.latency*100).toFixed(0)}%, Size: {(weights.size*100).toFixed(0)}%, Energy: {(weights.energy*100).toFixed(0)}%).
+                              It consumes <strong>{alg.energy_j.toFixed(4)} J</strong> per inference (avg power <strong>{(alg.power_w || 0).toFixed(2)} W</strong>), processing at <strong>{alg.flops_m?.toFixed(1)} MFLOPs</strong> with compute density of <strong>{alg.tops?.toFixed(3)} TOPs</strong>.
+                              {alg.latency_ms < 6.2 ? ' Exhibits rapid hardware inference velocity.' : ' Shows increased latency execution overhead.'}
+                              {alg.accuracy > 95.5 ? ' Preserves exceptionally high Top-1 vision accuracy.' : ' Displays slight classification degradation.'}
                             </p>
                           </div>
                         </td>

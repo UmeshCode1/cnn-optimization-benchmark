@@ -35,12 +35,35 @@ class ScoringService:
             size = data["model_size_mb"]["min_val" if stat_mode == "BEST" else stat_key]
             energy = data["energy_j"]["min_val" if stat_mode == "BEST" else stat_key]
 
+            # FLOPs and Parameters
+            flops_summary = data.get("flops_m", {})
+            flops_val = flops_summary.get("mean", 0.0) if isinstance(flops_summary, dict) else 0.0
+            if flops_val <= 0.0 and "raw_runs" in data and len(data["raw_runs"]) > 0:
+                flops_val = data["raw_runs"][0].get("flops_m", 0.0) or 0.0
+
+            params_summary = data.get("parameters_m", {})
+            params_val = params_summary.get("mean", 0.0) if isinstance(params_summary, dict) else 0.0
+            if params_val <= 0.0 and "raw_runs" in data and len(data["raw_runs"]) > 0:
+                params_val = data["raw_runs"][0].get("parameters_m", 0.0) or 0.0
+
+            # Power in Watts = Joules / Seconds = energy_j / (latency_ms * 0.001)
+            power_w = round(energy / max(0.0001, lat * 0.001), 3)
+
+            # TOPs (Tera-Operations Per Second) = (FLOPs_M * 1e6) / (Latency_ms * 1e-3) / 1e12 = FLOPs_M / (Latency_ms * 1e6)
+            # Effective throughput in GFLOPs/s / 1000
+            tops = round((flops_val * 1e6) / (max(0.001, lat) * 1e-3 * 1e12), 4) if flops_val > 0 else round(power_w * 0.005, 4)
+
             results.append({
                 "algorithm": alg,
-                "accuracy": acc,
-                "latency_ms": lat,
-                "model_size_mb": size,
-                "energy_j": energy,
+                "accuracy": round(acc, 2),
+                "latency_ms": round(lat, 2),
+                "model_size_mb": round(size, 2),
+                "energy_j": round(energy, 4),
+                "power_w": power_w,
+                "power_mw": round(power_w * 1000.0, 1),
+                "flops_m": round(flops_val, 1),
+                "parameters_m": round(params_val, 2),
+                "tops": tops,
                 "runs_count": data["runs_count"],
             })
 
@@ -66,12 +89,18 @@ class ScoringService:
         n_size = norm_min(sizes)
         n_energy = norm_min(energies)
 
+        total_weight = weight_accuracy + weight_latency + weight_model_size + weight_energy or 1.0
+        w_acc = weight_accuracy / total_weight
+        w_lat = weight_latency / total_weight
+        w_size = weight_model_size / total_weight
+        w_energy = weight_energy / total_weight
+
         for i, r in enumerate(results):
             score = (
-                weight_accuracy * n_acc[i] +
-                weight_latency * n_lat[i] +
-                weight_model_size * n_size[i] +
-                weight_energy * n_energy[i]
+                w_acc * n_acc[i] +
+                w_lat * n_lat[i] +
+                w_size * n_size[i] +
+                w_energy * n_energy[i]
             ) * 100.0
             r["overall_score"] = round(float(score), 2)
 

@@ -2,15 +2,19 @@
 # torch and torchvision are NOT needed for CI tests; they are optional for Real Mode.
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9
 pydantic>=2.5.0
 sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
 numpy>=1.24.0
 scipy>=1.11.0
 psutil>=5.9.0
+
+# HTTP / ASGI testing — compatible with starlette TestClient
+httpx>=0.24.0,<0.28.0
+starlette>=0.35.0
 
 # Test toolchain
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 anyio>=3.7.0
-httpx>=0.24.0
-python-multipart>=0.0.6

@@ -7,13 +7,17 @@ import {
   RotateCcw,
   ShieldCheck,
   Award,
+  Zap,
+  Cpu,
 } from 'lucide-react';
 import { ParetoPoint } from '../../types';
 
+export type ParetoAxisType = 'latency_ms' | 'model_size_mb' | 'energy_j' | 'power_w' | 'flops_m' | 'tops';
+
 interface ScatterParetoChartProps {
   points: ParetoPoint[];
-  xAxis?: 'latency_ms' | 'model_size_mb' | 'energy_j';
-  onXAxisChange?: (axis: 'latency_ms' | 'model_size_mb' | 'energy_j') => void;
+  xAxis?: ParetoAxisType;
+  onXAxisChange?: (axis: ParetoAxisType) => void;
   onlyPareto?: boolean;
   onToggleOnlyPareto?: (val: boolean) => void;
   onSelectPoint?: (point: ParetoPoint) => void;
@@ -45,20 +49,37 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
   const [selectedAlg, setSelectedAlg] = useState<string | null>(null);
 
-  const metricLabels: Record<string, { label: string; unit: string }> = {
-    latency_ms: { label: 'Inference Latency', unit: 'ms' },
-    model_size_mb: { label: 'Model Size', unit: 'MB' },
-    energy_j: { label: 'Energy Consumption', unit: 'J' },
+  const metricLabels: Record<ParetoAxisType, { label: string; unit: string; direction: '↓' | '↑' }> = {
+    latency_ms: { label: 'Inference Latency', unit: 'ms', direction: '↓' },
+    power_w: { label: 'Average Power Consumption', unit: 'W', direction: '↓' },
+    energy_j: { label: 'Energy per Inference', unit: 'J', direction: '↓' },
+    flops_m: { label: 'Computational Load (FLOPs)', unit: 'M', direction: '↓' },
+    tops: { label: 'Compute Throughput Density', unit: 'TOPs', direction: '↑' },
+    model_size_mb: { label: 'Model Footprint', unit: 'MB', direction: '↓' },
   };
 
-  const currentXMetric = metricLabels[xAxis];
+  const currentXMetric = metricLabels[xAxis] || metricLabels.latency_ms;
+
+  const getPointX = (p: any): number => {
+    if (xAxis === 'power_w') {
+      return p.power_w || (p.energy_j / Math.max(0.0001, p.latency_ms * 0.001));
+    }
+    if (xAxis === 'flops_m') {
+      return p.flops_m || (p.parameters_m ? p.parameters_m * 50 : 330.0);
+    }
+    if (xAxis === 'tops') {
+      const f = p.flops_m || (p.parameters_m ? p.parameters_m * 50 : 330.0);
+      return (f * 1e6) / (Math.max(0.001, p.latency_ms) * 1e-3 * 1e12);
+    }
+    return p[xAxis] || 0;
+  };
 
   const filteredPoints = onlyPareto
     ? points.filter((p) => p.is_pareto || p.is_pareto_optimal)
     : points;
 
   // Compute clean data-driven bounds
-  const xVals = filteredPoints.map((p) => p[xAxis]);
+  const xVals = filteredPoints.map((p) => getPointX(p));
   const yVals = filteredPoints.map((p) => p.accuracy);
 
   const dataMinX = xVals.length > 0 ? Math.min(...xVals) : 0;
@@ -90,16 +111,16 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
   // Pareto Frontier Path sorted by X
   const paretoPointsSorted = [...points]
     .filter((p) => p.is_pareto || p.is_pareto_optimal)
-    .sort((a, b) => a[xAxis] - b[xAxis]);
+    .sort((a, b) => getPointX(a) - getPointX(b));
 
   let paretoPathD = '';
   if (paretoPointsSorted.length > 1) {
     paretoPathD = paretoPointsSorted
-      .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(p[xAxis])} ${getY(p.accuracy)}`)
+      .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(getPointX(p))} ${getY(p.accuracy)}`)
       .join(' ');
   }
 
-  const activePoint = points.find((p) => p.algorithm === (hoveredAlg || selectedAlg)) || null;
+  const activePoint: any = points.find((p) => p.algorithm === (hoveredAlg || selectedAlg)) || null;
 
   return (
     <div className="ws-panel p-5 space-y-4">
@@ -122,15 +143,18 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
         <div className="flex flex-wrap items-center gap-2.5 text-xs">
           {/* X Axis Selector */}
           <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="text-[var(--text-muted)] text-[11px]">Trade-off Axis:</span>
+            <span className="text-[var(--text-muted)] text-[11px]">Trade-off Metric (X-Axis):</span>
             <select
               value={xAxis}
-              onChange={(e) => onXAxisChange(e.target.value as any)}
-              className="ws-input px-2.5 py-1 text-xs font-mono"
+              onChange={(e) => onXAxisChange(e.target.value as ParetoAxisType)}
+              className="ws-input px-2.5 py-1 text-xs font-mono cursor-pointer"
             >
-              <option value="latency_ms">Latency (ms) ↓</option>
+              <option value="latency_ms">Inference Latency (ms) ↓</option>
+              <option value="power_w">Power Consumption (Watts) ↓</option>
+              <option value="energy_j">Energy per Inference (J) ↓</option>
+              <option value="flops_m">FLOPs Complexity (M) ↓</option>
+              <option value="tops">Compute Throughput (TOPs) ↑</option>
               <option value="model_size_mb">Model Size (MB) ↓</option>
-              <option value="energy_j">Energy (J) ↓</option>
             </select>
           </div>
 
@@ -140,7 +164,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
               type="checkbox"
               checked={onlyPareto}
               onChange={(e) => onToggleOnlyPareto(e.target.checked)}
-              className="rounded text-[var(--success)] focus:ring-0"
+              className="rounded text-[var(--success)] focus:ring-0 cursor-pointer"
             />
             <span>Filter Only Pareto</span>
           </label>
@@ -178,17 +202,23 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
         })}
       </div>
 
-      {/* SVG Canvas */}
-      <div className="relative w-full flex justify-center">
+      {/* Main SVG Plot Canvas */}
+      <div className="relative overflow-hidden bg-[var(--surface)] border border-[var(--border)] rounded-lg p-2">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full max-w-[850px] overflow-visible font-mono"
+          className="w-full h-auto select-none"
+          style={{ maxHeight: height }}
         >
           <defs>
-            <linearGradient id="paretoGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#00d2ff" stopOpacity="0.9" />
+            <linearGradient id="paretoFrontGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+              <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.8" />
             </linearGradient>
+            <filter id="glowScatter" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="glow" />
+              <feComposite in="SourceGraphic" in2="glow" operator="over" />
+            </filter>
           </defs>
 
           {/* Plot Background */}
@@ -225,7 +255,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                   fill="var(--text-muted)"
                   fontSize="10"
                 >
-                  {val.toFixed(xAxis === 'energy_j' ? 4 : spanX < 1 ? 2 : 1)}
+                  {val.toFixed(xAxis === 'energy_j' ? 4 : spanX < 1 ? 3 : 1)}
                 </text>
               </g>
             );
@@ -259,72 +289,74 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
             );
           })}
 
-          {/* Pareto Frontier Curve Line */}
+          {/* Connected Pareto Frontier Line */}
           {paretoPathD && (
             <path
               d={paretoPathD}
               fill="none"
-              stroke="url(#paretoGlow)"
+              stroke="url(#paretoFrontGlow)"
               strokeWidth="2.5"
-              strokeDasharray="4 2"
+              strokeDasharray="4 3"
+              filter="url(#glowScatter)"
             />
           )}
 
-          {/* Scatter Data Points */}
+          {/* Scatter Points */}
           {filteredPoints.map((p, idx) => {
-            const cx = getX(p[xAxis]);
+            const valX = getPointX(p);
+            const cx = getX(valX);
             const cy = getY(p.accuracy);
             const isPareto = p.is_pareto || p.is_pareto_optimal;
             const isHovered = hoveredAlg === p.algorithm;
             const isSelected = selectedAlg === p.algorithm;
-            const pointColor = ALG_COLORS[p.algorithm] || 'var(--accent)';
+            const color = ALG_COLORS[p.algorithm] || 'var(--accent)';
 
-            // Smart alternating label placement to prevent overlapping
-            const labelOffsetY = idx % 2 === 0 ? -12 : 17;
+            const labelOffset = idx % 2 === 0 ? -12 : 16;
 
             return (
               <g
                 key={p.algorithm}
                 className="cursor-pointer transition-transform"
-                onMouseEnter={() => setHoveredAlg(p.algorithm)}
-                onMouseLeave={() => setHoveredAlg(null)}
                 onClick={() => {
                   setSelectedAlg(p.algorithm);
                   onSelectPoint(p);
                 }}
+                onMouseEnter={() => setHoveredAlg(p.algorithm)}
+                onMouseLeave={() => setHoveredAlg(null)}
               >
-                {/* Pareto Ring Pulse */}
+                {/* Pareto halo */}
                 {isPareto && (
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={isHovered ? 15 : 10}
-                    fill="none"
-                    stroke="var(--success)"
-                    strokeWidth={isHovered ? 2.5 : 1.5}
-                    strokeOpacity={isHovered ? 0.95 : 0.6}
+                    r={isSelected || isHovered ? 14 : 9}
+                    fill={color}
+                    fillOpacity="0.18"
+                    stroke={color}
+                    strokeWidth="1.5"
+                    className="animate-pulse"
                   />
                 )}
 
-                {/* Main Data Point */}
+                {/* Point circle */}
                 <circle
                   cx={cx}
                   cy={cy}
-                  r={isHovered || isSelected ? 7 : 5}
-                  fill={pointColor}
-                  stroke="#FFFFFF"
-                  strokeWidth="1.5"
-                  className="transition-all"
+                  r={isSelected || isHovered ? 7 : isPareto ? 5.5 : 4}
+                  fill={color}
+                  stroke="#ffffff"
+                  strokeWidth={isHovered || isSelected ? 2 : 1}
                 />
 
-                {/* Label Tag */}
+                {/* Text tag */}
                 <text
                   x={cx}
-                  y={cy + labelOffsetY}
+                  y={cy + labelOffset}
                   textAnchor="middle"
-                  fill={isHovered || isSelected ? 'var(--text-primary)' : 'var(--text-secondary)'}
-                  fontSize="10"
-                  fontWeight={isHovered || isSelected || isPareto ? '700' : '500'}
+                  fill="var(--text-primary)"
+                  fontSize={isSelected || isHovered ? '11' : '9.5'}
+                  fontWeight={isPareto || isSelected ? 'bold' : 'normal'}
+                  className="font-mono pointer-events-none"
                 >
                   {p.algorithm}
                 </text>
@@ -332,31 +364,34 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
             );
           })}
 
-          {/* Axis Titles */}
+          {/* Axis Labels */}
           <text
             x={padding.left + plotWidth / 2}
-            y={padding.top + plotHeight + 36}
+            y={svgHeight - 12}
             textAnchor="middle"
-            fill="var(--text-secondary)"
+            fill="var(--text-primary)"
             fontSize="11"
-            fontWeight="600"
+            className="font-sans font-medium"
           >
-            {currentXMetric.label} ({currentXMetric.unit}) &bull; Lower is Better &rarr;
+            {currentXMetric.label} ({currentXMetric.unit}) • {currentXMetric.direction === '↓' ? 'Lower is Better' : 'Higher is Better'}
           </text>
+
           <text
-            transform={`rotate(-90) translate(-${padding.top + plotHeight / 2}, 18)`}
+            x={16}
+            y={padding.top + plotHeight / 2}
             textAnchor="middle"
-            fill="var(--text-secondary)"
+            fill="var(--text-primary)"
             fontSize="11"
-            fontWeight="600"
+            className="font-sans font-medium"
+            transform={`rotate(-90 16 ${padding.top + plotHeight / 2})`}
           >
-            Top-1 Accuracy (%) &bull; Higher is Better &rarr;
+            Top-1 Classification Accuracy (%) • Higher is Better →
           </text>
         </svg>
 
-        {/* Floating Tooltip Details Card */}
+        {/* Floating Telemetry Tooltip for Active Point */}
         {activePoint && (
-          <div className="absolute top-2 right-2 ws-panel-elevated p-3.5 text-xs font-mono shadow-lg z-20 space-y-1.5 max-w-xs">
+          <div className="absolute top-4 right-4 ws-panel p-3.5 shadow-2xl border border-[var(--border-strong)] z-20 text-xs font-mono space-y-1.5 w-64 animate-fade-in pointer-events-none bg-[var(--surface-elevated)]/95 backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-1.5">
               <span className="font-bold text-[var(--text-primary)] text-sm flex items-center gap-1.5">
                 <span
@@ -373,7 +408,7 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
                 }`}
               >
                 {activePoint.is_pareto || activePoint.is_pareto_optimal
-                  ? '★ PARETO OPTIMAL'
+                  ? '★ NON-DOMINATED'
                   : 'DOMINATED'}
               </span>
             </div>
@@ -390,15 +425,27 @@ export const ScatterParetoChart: React.FC<ScatterParetoChartProps> = ({
               </strong>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Model Size:</span>
+              <span className="text-[var(--text-muted)]">Average Power:</span>
+              <strong className="text-[var(--warning)]">
+                {((activePoint.power_w || (activePoint.energy_j / Math.max(0.0001, activePoint.latency_ms * 0.001)))).toFixed(2)} W
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">FLOPs Complexity:</span>
               <span className="text-[var(--text-secondary)]">
-                {activePoint.model_size_mb.toFixed(2)} MB
+                {(activePoint.flops_m || (activePoint.parameters_m ? activePoint.parameters_m * 50 : 330)).toFixed(1)} M
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Energy / Pass:</span>
+              <span className="text-[var(--text-muted)]">Compute Throughput:</span>
+              <strong className="text-[var(--accent)] font-semibold">
+                {(((activePoint.flops_m || 330) * 1e6) / (Math.max(0.001, activePoint.latency_ms) * 1e-3 * 1e12)).toFixed(3)} TOPs
+              </strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Model Size:</span>
               <span className="text-[var(--text-secondary)]">
-                {activePoint.energy_j.toFixed(4)} J
+                {activePoint.model_size_mb.toFixed(2)} MB
               </span>
             </div>
             <div className="flex justify-between border-t border-[var(--border)] pt-1">
