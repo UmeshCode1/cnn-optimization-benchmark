@@ -200,6 +200,13 @@ export const DatasetsView: React.FC<DatasetsViewProps> = ({ onSelectDatasetForBe
                   </td>
                   <td className="text-right">
                     <div className="flex items-center justify-end gap-2 font-sans">
+                      <button
+                        onClick={() => setSelectedDatasetDetail(dataset)}
+                        className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline font-medium"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Inspect</span>
+                      </button>
                       {onSelectDatasetForBenchmark && (
                         <button
                           onClick={() => onSelectDatasetForBenchmark(dataset)}
@@ -226,6 +233,14 @@ export const DatasetsView: React.FC<DatasetsViewProps> = ({ onSelectDatasetForBe
           </table>
         </div>
       </div>
+
+      {/* Dataset Preview Modal */}
+      <DatasetPreviewModal
+        isOpen={!!selectedDatasetDetail}
+        dataset={selectedDatasetDetail}
+        onClose={() => setSelectedDatasetDetail(null)}
+        onSelectForBenchmark={onSelectDatasetForBenchmark}
+      />
 
       {/* Dataset Upload Modal */}
       <DatasetUploadModal
