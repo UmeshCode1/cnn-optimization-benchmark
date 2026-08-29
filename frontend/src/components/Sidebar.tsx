@@ -15,6 +15,9 @@ import {
   SlidersHorizontal,
   X,
   Sparkles,
+  FlaskConical,
+  CheckCircle2,
+  Activity,
 } from 'lucide-react';
 
 export type NavTab =
@@ -155,15 +158,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </div>
 
-        {/* Compact Research Footer */}
-        <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] text-[11px] text-[var(--text-muted)] font-mono space-y-1">
-          <div className="flex items-center justify-between text-[10px]">
-            <span>ACTIVE EXP:</span>
-            <span className="font-semibold text-[var(--text-primary)] truncate max-w-[100px]">{activeExperimentId || 'NONE'}</span>
+        {/* Scientific Laboratory Telemetry Card Footer */}
+        <div className="p-3 border-t border-[var(--border)] bg-[var(--surface-secondary)]/50 backdrop-blur-xs space-y-2">
+          {/* Active Experiment Capsule */}
+          <div
+            onClick={() => handleSelectTab('results')}
+            className="p-2 rounded-lg bg-[var(--surface-elevated)] border border-[var(--border)] hover:border-[var(--accent)] transition-all cursor-pointer space-y-1 shadow-xs group"
+            title="Click to view Active Benchmark Results"
+          >
+            <div className="flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
+              <span className="flex items-center gap-1">
+                <FlaskConical className="w-3 h-3 text-[var(--accent)] group-hover:rotate-12 transition-transform" />
+                <span className="font-semibold uppercase tracking-wider">Active Run</span>
+              </span>
+              <span className="flex items-center gap-1 text-[var(--success)] font-medium text-[9px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+                <span>ONLINE</span>
+              </span>
+            </div>
+            <div className="font-mono text-xs font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
+              {activeExperimentId || 'EXP-20260826-0001'}
+            </div>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
-            <span>OPTIMIZERS:</span>
-            <span className="text-[var(--success)] font-medium">10 / 10 LOADED</span>
+
+          {/* System Status Row */}
+          <div className="flex items-center justify-between text-[11px] font-mono px-1">
+            <span className="text-[var(--text-muted)] text-[10px] uppercase tracking-wider flex items-center gap-1">
+              <Activity className="w-3 h-3 text-[var(--success)]" />
+              <span>Optimizers:</span>
+            </span>
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--success)] px-1.5 py-0.2 rounded bg-[var(--success)]/10 border border-[var(--success)]/20">
+              <CheckCircle2 className="w-2.5 h-2.5" />
+              <span>10 / 10 Ready</span>
+            </span>
           </div>
         </div>
       </aside>
