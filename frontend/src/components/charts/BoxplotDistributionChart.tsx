@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { AlgorithmStats } from '../../types';
 import { Activity, BarChart2, CheckCircle2 } from 'lucide-react';
 
+export type BoxplotMetricKey = 'accuracy' | 'latency_ms' | 'power_w' | 'energy_j' | 'flops_m' | 'model_size_mb' | 'overall_score';
+
 interface BoxplotDistributionChartProps {
   stats: Record<string, AlgorithmStats>;
-  metricKey: 'accuracy' | 'latency_ms' | 'model_size_mb' | 'energy_j' | 'overall_score';
+  metricKey: BoxplotMetricKey;
   height?: number;
 }
 
@@ -28,15 +30,17 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 }) => {
   const [hoveredAlg, setHoveredAlg] = useState<string | null>(null);
 
-  const metricLabels: Record<string, { label: string; unit: string; higherBetter: boolean }> = {
+  const metricLabels: Record<BoxplotMetricKey, { label: string; unit: string; higherBetter: boolean }> = {
     accuracy: { label: 'Top-1 Accuracy Distribution', unit: '%', higherBetter: true },
     latency_ms: { label: 'Latency Distribution', unit: 'ms', higherBetter: false },
-    model_size_mb: { label: 'Model Size Distribution', unit: 'MB', higherBetter: false },
+    power_w: { label: 'Average Power Draw Distribution', unit: 'W', higherBetter: false },
     energy_j: { label: 'Energy Consumption Distribution', unit: 'J', higherBetter: false },
+    flops_m: { label: 'FLOPs Computational Load', unit: 'M', higherBetter: false },
+    model_size_mb: { label: 'Model Size Distribution', unit: 'MB', higherBetter: false },
     overall_score: { label: 'Overall Score Distribution', unit: '/100', higherBetter: true },
   };
 
-  const currentMetric = metricLabels[metricKey];
+  const currentMetric = metricLabels[metricKey] || metricLabels.accuracy;
   const algKeys = Object.keys(stats);
 
   if (algKeys.length === 0) {
@@ -52,12 +56,17 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
   let globalMax = -Infinity;
 
   algKeys.forEach((alg) => {
-    const summary = stats[alg][metricKey];
+    const summary = (stats[alg] as any)?.[metricKey];
     if (summary) {
       globalMin = Math.min(globalMin, summary.min_val);
       globalMax = Math.max(globalMax, summary.max_val);
     }
   });
+
+  if (!isFinite(globalMin) || !isFinite(globalMax)) {
+    globalMin = 0;
+    globalMax = 100;
+  }
 
   const range = Math.max(0.01, globalMax - globalMin);
   const padDelta = Math.max(range * 0.2, metricKey === 'accuracy' ? 0.3 : 0.05);
@@ -88,7 +97,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
               Stochastic Multi-Run Boxplot: {currentMetric.label}
             </h4>
             <span className="text-[11px] font-mono text-[var(--text-muted)]">
-              Min &bull; Q1 / 95% CI Lower &bull; Median &bull; Mean (◆) &bull; Q3 / 95% CI Upper &bull; Max
+              Min &bull; Q1 / 95% CI Lower &bull; Median (—) &bull; Mean (◆) &bull; Q3 / 95% CI Upper &bull; Max
             </span>
           </div>
         </div>
@@ -142,7 +151,7 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
 
           {/* Boxplots for each algorithm */}
           {algKeys.map((alg, idx) => {
-            const summary = stats[alg][metricKey];
+            const summary = (stats[alg] as any)?.[metricKey];
             if (!summary) return null;
 
             const centerX = padding.left + idx * colWidth + colWidth / 2;
@@ -221,69 +230,77 @@ export const BoxplotDistributionChart: React.FC<BoxplotDistributionChartProps> =
                 <polygon
                   points={`${centerX},${yMean - 4} ${centerX + 4},${yMean} ${centerX},${yMean + 4} ${centerX - 4},${yMean}`}
                   fill="#F59E0B"
-                  stroke="#FFFFFF"
+                  stroke="#000000"
                   strokeWidth="0.8"
                 />
 
                 {/* X Axis Algorithm Label */}
                 <text
                   x={centerX}
-                  y={padding.top + plotHeight + 18}
+                  y={padding.top + plotHeight + 16}
                   textAnchor="middle"
                   fill={isHovered ? 'var(--text-primary)' : 'var(--text-secondary)'}
-                  fontWeight={isHovered ? '700' : '600'}
-                  fontSize="10"
+                  fontWeight={isHovered ? 'bold' : 'normal'}
+                  fontSize={isHovered ? '11' : '10'}
+                  className="transition-colors font-mono"
                 >
                   {alg}
                 </text>
               </g>
             );
           })}
+
+          {/* Y Axis Unit Label */}
+          <text
+            x={16}
+            y={padding.top + plotHeight / 2}
+            textAnchor="middle"
+            fill="var(--text-muted)"
+            fontSize="10"
+            className="font-sans"
+            transform={`rotate(-90 16 ${padding.top + plotHeight / 2})`}
+          >
+            {currentMetric.label} ({currentMetric.unit})
+          </text>
         </svg>
 
-        {/* Hover Details Card */}
-        {hoveredAlg && stats[hoveredAlg] && stats[hoveredAlg][metricKey] && (
-          <div className="absolute top-2 right-2 ws-panel-elevated p-3 text-xs font-mono shadow-md z-20 space-y-1 text-[var(--text-secondary)] min-w-[200px]">
+        {/* Hover Tooltip Card */}
+        {hoveredAlg && stats[hoveredAlg] && (stats[hoveredAlg] as any)[metricKey] && (
+          <div className="absolute top-2 right-6 ws-panel p-3 shadow-xl border border-[var(--border-strong)] z-20 text-xs font-mono space-y-1 w-56 animate-fade-in pointer-events-none bg-[var(--surface-elevated)]/95 backdrop-blur-md">
             <div className="font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-1 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: ALG_COLORS[hoveredAlg] || 'var(--accent)' }}
-                />
-                <span>{hoveredAlg}</span>
-              </span>
+              <span>{hoveredAlg}</span>
               <span className="text-[10px] text-[var(--text-muted)]">
-                {stats[hoveredAlg].runs_count} Runs
+                {stats[hoveredAlg].runs_count} runs
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Mean (◆):</span>
-              <strong className="text-amber-400 font-bold">
-                {stats[hoveredAlg][metricKey].mean.toFixed(metricKey === 'energy_j' ? 4 : 2)} {currentMetric.unit}
-              </strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Median:</span>
-              <strong className="text-white font-bold">
-                {stats[hoveredAlg][metricKey].median.toFixed(metricKey === 'energy_j' ? 4 : 2)} {currentMetric.unit}
-              </strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Std Dev (&sigma;):</span>
-              <span>&plusmn;{stats[hoveredAlg][metricKey].std.toFixed(metricKey === 'energy_j' ? 4 : 2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Min &ndash; Max:</span>
-              <span>
-                {stats[hoveredAlg][metricKey].min_val.toFixed(metricKey === 'energy_j' ? 4 : 2)} &ndash;{' '}
-                {stats[hoveredAlg][metricKey].max_val.toFixed(metricKey === 'energy_j' ? 4 : 2)}
+              <span className="text-[var(--text-muted)]">Mean (◆):</span>
+              <span className="font-bold text-amber-400">
+                {(stats[hoveredAlg] as any)[metricKey].mean.toFixed(metricKey === 'energy_j' ? 4 : 2)} {currentMetric.unit}
               </span>
             </div>
-            <div className="flex justify-between border-t border-[var(--border)] pt-1">
-              <span>95% CI:</span>
-              <span className="text-[var(--accent)] font-semibold">
-                [{stats[hoveredAlg][metricKey].ci_95_lower.toFixed(metricKey === 'energy_j' ? 4 : 2)},{' '}
-                {stats[hoveredAlg][metricKey].ci_95_upper.toFixed(metricKey === 'energy_j' ? 4 : 2)}]
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Median (—):</span>
+              <span className="font-semibold text-cyan-400">
+                {(stats[hoveredAlg] as any)[metricKey].median.toFixed(metricKey === 'energy_j' ? 4 : 2)} {currentMetric.unit}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Std Dev (σ):</span>
+              <span className="text-[var(--text-secondary)]">
+                ±{(stats[hoveredAlg] as any)[metricKey].std.toFixed(metricKey === 'energy_j' ? 4 : 2)}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-muted)]">Min - Max:</span>
+              <span className="text-[var(--text-muted)]">
+                {(stats[hoveredAlg] as any)[metricKey].min_val.toFixed(metricKey === 'energy_j' ? 4 : 2)} - {(stats[hoveredAlg] as any)[metricKey].max_val.toFixed(metricKey === 'energy_j' ? 4 : 2)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[10px]">
+              <span className="text-[var(--text-muted)]">95% CI:</span>
+              <span className="text-[var(--success)]">
+                [{(stats[hoveredAlg] as any)[metricKey].ci_95_lower.toFixed(metricKey === 'energy_j' ? 4 : 2)}, {(stats[hoveredAlg] as any)[metricKey].ci_95_upper.toFixed(metricKey === 'energy_j' ? 4 : 2)}]
               </span>
             </div>
           </div>

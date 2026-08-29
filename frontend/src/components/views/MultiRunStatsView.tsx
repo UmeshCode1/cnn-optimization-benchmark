@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Layers, Activity, Award, ShieldCheck } from 'lucide-react';
+import { Layers, Activity, Award, ShieldCheck, Zap, Cpu } from 'lucide-react';
 import { Experiment, AlgorithmStats } from '../../types';
-import { BoxplotDistributionChart } from '../charts/BoxplotDistributionChart';
+import { BoxplotDistributionChart, BoxplotMetricKey } from '../charts/BoxplotDistributionChart';
 
 interface MultiRunStatsViewProps {
   experiment: Experiment;
@@ -12,9 +12,7 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
   experiment,
   statistics,
 }) => {
-  const [selectedMetric, setSelectedMetric] = useState<
-    'accuracy' | 'latency_ms' | 'model_size_mb' | 'energy_j' | 'overall_score'
-  >('accuracy');
+  const [selectedMetric, setSelectedMetric] = useState<BoxplotMetricKey>('accuracy');
 
   const algKeys = Object.keys(statistics);
 
@@ -22,19 +20,17 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
   let bestMeanAlg = algKeys[0] || 'GWO';
   let mostStableAlg = algKeys[0] || 'GWO';
   let minStd = Infinity;
-  let bestMeanVal = selectedMetric === 'latency_ms' || selectedMetric === 'model_size_mb' || selectedMetric === 'energy_j' ? Infinity : -Infinity;
+  const isLowerBetter = selectedMetric === 'latency_ms' || selectedMetric === 'model_size_mb' || selectedMetric === 'energy_j' || selectedMetric === 'power_w' || selectedMetric === 'flops_m';
+  let bestMeanVal = isLowerBetter ? Infinity : -Infinity;
 
   algKeys.forEach((alg) => {
-    const s = statistics[alg]?.[selectedMetric];
+    const s = (statistics[alg] as any)?.[selectedMetric];
     if (s) {
       if (s.std < minStd) {
         minStd = s.std;
         mostStableAlg = alg;
       }
-      const isBetter =
-        selectedMetric === 'latency_ms' || selectedMetric === 'model_size_mb' || selectedMetric === 'energy_j'
-          ? s.mean < bestMeanVal
-          : s.mean > bestMeanVal;
+      const isBetter = isLowerBetter ? s.mean < bestMeanVal : s.mean > bestMeanVal;
       if (isBetter) {
         bestMeanVal = s.mean;
         bestMeanAlg = alg;
@@ -56,17 +52,19 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
         </div>
 
         {/* Metric Selector Tab */}
-        <div className="flex items-center gap-1 bg-[var(--surface-secondary)] p-1 rounded-lg border border-[var(--border)] text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-1 bg-[var(--surface-secondary)] p-1 rounded-lg border border-[var(--border)] text-xs font-mono">
           {[
             { key: 'accuracy', label: 'Accuracy (%)' },
             { key: 'latency_ms', label: 'Latency (ms)' },
-            { key: 'model_size_mb', label: 'Size (MB)' },
+            { key: 'power_w', label: 'Power (W)' },
             { key: 'energy_j', label: 'Energy (J)' },
-            { key: 'overall_score', label: 'Overall Score' },
+            { key: 'flops_m', label: 'FLOPs (M)' },
+            { key: 'model_size_mb', label: 'Size (MB)' },
+            { key: 'overall_score', label: 'Score (/100)' },
           ].map((m) => (
             <button
               key={m.key}
-              onClick={() => setSelectedMetric(m.key as any)}
+              onClick={() => setSelectedMetric(m.key as BoxplotMetricKey)}
               className={`px-3 py-1.5 rounded-md transition cursor-pointer ${
                 selectedMetric === m.key
                   ? 'bg-[var(--accent)] text-white font-bold shadow-sm'
@@ -86,7 +84,7 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">Top Performer (Mean)</div>
             <div className="text-sm font-bold text-[var(--text-primary)] font-mono mt-0.5">{bestMeanAlg}</div>
             <div className="text-[11px] text-[var(--success)] font-mono font-semibold">
-              Mean: {statistics[bestMeanAlg]?.[selectedMetric]?.mean.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
+              Mean: {(statistics[bestMeanAlg] as any)?.[selectedMetric]?.mean?.toFixed(selectedMetric === 'energy_j' ? 4 : 2) || '--'}
             </div>
           </div>
           <Award className="w-6 h-6 text-[var(--success)] opacity-80" />
@@ -97,7 +95,7 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
             <div className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">Most Stable (Min &sigma;)</div>
             <div className="text-sm font-bold text-[var(--text-primary)] font-mono mt-0.5">{mostStableAlg}</div>
             <div className="text-[11px] text-purple-400 font-mono font-semibold">
-              Std Dev: &plusmn;{statistics[mostStableAlg]?.[selectedMetric]?.std.toFixed(selectedMetric === 'energy_j' ? 4 : 2)}
+              Std Dev: &plusmn;{(statistics[mostStableAlg] as any)?.[selectedMetric]?.std?.toFixed(selectedMetric === 'energy_j' ? 4 : 2) || '--'}
             </div>
           </div>
           <ShieldCheck className="w-6 h-6 text-purple-400 opacity-80" />
@@ -133,7 +131,7 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
                 <th>Algorithm</th>
                 <th className="text-right">Runs</th>
                 <th className="text-right">Mean</th>
-                <th className="text-right">Std Dev</th>
+                <th className="text-right">Std Dev (σ)</th>
                 <th className="text-right">Median</th>
                 <th className="text-right">Min</th>
                 <th className="text-right">Max</th>
@@ -142,7 +140,7 @@ export const MultiRunStatsView: React.FC<MultiRunStatsViewProps> = ({
             </thead>
             <tbody>
               {algKeys.map((alg) => {
-                const summary = statistics[alg]?.[selectedMetric];
+                const summary = (statistics[alg] as any)?.[selectedMetric];
                 if (!summary) return null;
                 return (
                   <tr key={alg}>
