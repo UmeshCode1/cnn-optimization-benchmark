@@ -1095,7 +1095,8 @@ export const DocumentationView: React.FC = () => {
                       )}
                       {selectedAlg.key === 'WOA' && (
                         <>
-                          <div className="text-sky-400 font-bold">Encircling: X(t+1) = X*(t) - A * |C * X*(t) - X(t)| &nbsp; (if p &lt; 0.5)</div>
+                          <div className="text-sky-400 font-bold">Encircling: X(t+1) = X*(t) - A * |C * X*(t) - X(t)| &nbsp; (if p &lt; 0.5 &amp; |A| &lt; 1)</div>
+                          <div className="text-sky-300 font-bold">Search Prey: X(t+1) = X_rand - A * |C * X_rand - X(t)| &nbsp; (if p &lt; 0.5 &amp; |A| &ge; 1)</div>
                           <div className="text-purple-400 font-bold">Spiral: X(t+1) = D&#39; * exp(b*l) * cos(2*pi*l) + X*(t) &nbsp; (if p &ge; 0.5)</div>
                         </>
                       )}
@@ -1108,7 +1109,7 @@ export const DocumentationView: React.FC = () => {
                       {selectedAlg.key === 'MFO' && (
                         <>
                           <div className="text-sky-400 font-bold">Spiral Trajectory: S(M_i, F_j) = D_i * exp(b*t) * cos(2*pi*t) + F_j</div>
-                          <div className="text-amber-400 font-bold">Adaptive Flames: Flame_No = round(N - t * (N-1)/T)</div>
+                          <div className="text-amber-400 font-bold">Adaptive Flames: Flames(t) = round(N - t * (N-1)/T)</div>
                         </>
                       )}
                       {selectedAlg.key === 'GOA' && (
@@ -1296,6 +1297,29 @@ export const DocumentationView: React.FC = () => {
                 <div className="p-2.5 rounded bg-[var(--surface)] font-mono text-[11px] text-purple-300">
                   Energy (J) = &int;<sub>0</sub><sup>T</sup> P(t) dt &approx; &sum;<sub>k=1</sub><sup>M</sup> P(t_k) &bull; &Delta;t_k
                 </div>
+              </div>
+            </div>
+
+            {/* Continuous Power & Compute Density Formulas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans pt-2">
+              <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1.5">
+                <span className="font-bold text-amber-400 font-mono text-xs block">Continuous Average Power Draw (Watts / mW)</span>
+                <div className="p-2.5 rounded bg-[var(--surface)] font-mono text-[11px] text-amber-300">
+                  Power (W) = Energy (Joules) / (Latency (ms) &times; 10<sup>-3</sup>)
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Measures steady-state continuous thermal power dissipation during sustained inference bursts.
+                </p>
+              </div>
+
+              <div className="p-4 rounded bg-[var(--surface-secondary)] border border-[var(--border)] space-y-1.5">
+                <span className="font-bold text-cyan-400 font-mono text-xs block">Compute Throughput Density (TOPs)</span>
+                <div className="p-2.5 rounded bg-[var(--surface)] font-mono text-[11px] text-cyan-300">
+                  TOPs = (FLOPs (M) &times; 10<sup>6</sup>) / (Latency (ms) &times; 10<sup>-3</sup> &times; 10<sup>12</sup>)
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Normalized Tera-Operations Per Second indicating mathematical workload efficiency across compressed layers.
+                </p>
               </div>
             </div>
           </div>
