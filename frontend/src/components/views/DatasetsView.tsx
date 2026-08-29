@@ -3,6 +3,7 @@ import { Database, Plus, Trash2, CheckCircle2, AlertCircle, Layers, Search, Filt
 import { DatasetInfo } from '../../types';
 import { api } from '../../services/api';
 import { DatasetUploadModal } from '../common/DatasetUploadModal';
+import { DatasetPreviewModal } from '../common/DatasetPreviewModal';
 
 interface DatasetsViewProps {
   onSelectDatasetForBenchmark?: (dataset: DatasetInfo) => void;
