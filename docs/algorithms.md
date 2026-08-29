@@ -55,18 +55,18 @@ Where:
 * **Hierarchy**: The population is structured into $\alpha$ (leader), $\beta$ (subordinate advisor), $\delta$ (scout/sentinel), and $\omega$ (general pack).
 
 #### Encircling Prey Formulation:
-$$\vec{D} = \left| \vec{C} \odot \vec{X}_p(t) - \vec{X}(t) \right|$$
-$$\vec{X}(t+1) = \vec{X}_p(t) - \vec{A} \odot \vec{D}$$
+$$\vec{D} = \left| \vec{C} \cdot \vec{X}_p(t) - \vec{X}(t) \right|$$
+$$\vec{X}(t+1) = \vec{X}_p(t) - \vec{A} \cdot \vec{D}$$
 
 Where the coefficient vectors $\vec{A}$ and $\vec{C}$ are computed as:
-$$\vec{A} = 2\vec{a} \odot \vec{r}_1 - \vec{a}, \quad \vec{C} = 2\vec{r}_2$$
+$$\vec{A} = 2\vec{a} \cdot \vec{r}_1 - \vec{a}, \quad \vec{C} = 2\vec{r}_2$$
 $$\vec{a}(t) = 2 - 2 \cdot \left(\frac{t}{T}\right)$$
 $\vec{r}_1, \vec{r}_2 \sim \mathcal{U}(0, 1)^D$, and $t$ is the current iteration out of maximum $T$.
 
 #### Hunting Position Update:
-$$\vec{X}_1 = \vec{X}_\alpha - \vec{A}_1 \odot \left| \vec{C}_1 \odot \vec{X}_\alpha - \vec{X} \right|$$
-$$\vec{X}_2 = \vec{X}_\beta - \vec{A}_2 \odot \left| \vec{C}_2 \odot \vec{X}_\beta - \vec{X} \right|$$
-$$\vec{X}_3 = \vec{X}_\delta - \vec{A}_3 \odot \left| \vec{C}_3 \odot \vec{X}_\delta - \vec{X} \right|$$
+$$\vec{X}_1 = \vec{X}_\alpha - \vec{A}_1 \cdot \left| \vec{C}_1 \cdot \vec{X}_\alpha - \vec{X} \right|$$
+$$\vec{X}_2 = \vec{X}_\beta - \vec{A}_2 \cdot \left| \vec{C}_2 \cdot \vec{X}_\beta - \vec{X} \right|$$
+$$\vec{X}_3 = \vec{X}_\delta - \vec{A}_3 \cdot \left| \vec{C}_3 \cdot \vec{X}_\delta - \vec{X} \right|$$
 $$\vec{X}(t+1) = \frac{\vec{X}_1 + \vec{X}_2 + \vec{X}_3}{3}$$
 
 ---
@@ -76,13 +76,17 @@ $$\vec{X}(t+1) = \frac{\vec{X}_1 + \vec{X}_2 + \vec{X}_3}{3}$$
 * **Mechanics**: Combines shrinking encircling with a logarithmic spiral trajectory simulating bubble-net feeding.
 
 #### Position Update Equations:
-$$\vec{X}(t+1) = \begin{cases} 
-\vec{X}^{*}(t) - \vec{A} \odot \left| \vec{C} \odot \vec{X}^{*}(t) - \vec{X}(t) \right| & \text{if } p < 0.5 \text{ and } |\vec{A}| < 1 \\
-\vec{X}_{\text{rand}} - \vec{A} \odot \left| \vec{C} \odot \vec{X}_{\text{rand}} - \vec{X}(t) \right| & \text{if } p < 0.5 \text{ and } |\vec{A}| \ge 1 \\
-\vec{D}' \odot e^{b l} \cdot \cos(2\pi l) + \vec{X}^{*}(t) & \text{if } p \ge 0.5
-\end{cases}$$
 
-Where $\vec{D}' = |\vec{X}^{*}(t) - \vec{X}(t)|$, $b$ is a constant defining the logarithmic spiral shape, $l \sim \mathcal{U}(-1, 1)$, and $p \sim \mathcal{U}(0, 1)$.
+**1. Encircling Prey ($p < 0.5$ and $|\vec{A}| < 1$):**
+$$\vec{X}(t+1) = \vec{X}^*(t) - \vec{A} \cdot \left| \vec{C} \cdot \vec{X}^*(t) - \vec{X}(t) \right|$$
+
+**2. Search for Prey ($p < 0.5$ and $|\vec{A}| \ge 1$):**
+$$\vec{X}(t+1) = \vec{X}_{\text{rand}} - \vec{A} \cdot \left| \vec{C} \cdot \vec{X}_{\text{rand}} - \vec{X}(t) \right|$$
+
+**3. Spiral Bubble-Net Feeding ($p \ge 0.5$):**
+$$\vec{X}(t+1) = \vec{D}' \cdot e^{b l} \cdot \cos(2\pi l) + \vec{X}^*(t)$$
+
+Where $\vec{D}' = |\vec{X}^*(t) - \vec{X}(t)|$, $b$ is a constant defining the logarithmic spiral shape, $l \sim \mathcal{U}(-1, 1)$, and $p \sim \mathcal{U}(0, 1)$.
 
 ---
 
@@ -135,12 +139,16 @@ $$c = c_{\text{max}} - t \cdot \frac{c_{\text{max}} - c_{\text{min}}}{T}$$
 * **Citation**: Mirjalili, S., Mirjalili, S. M., & Hatamlou, A. (2016). *Multi-Verse Optimizer: a nature-inspired algorithm for global optimization*. Neural Computing and Applications, 27(2), 495–513.
 * **Mechanics**: Cosmological model utilizing white hole inflation rates, black hole matter attraction, and wormhole space tunnels.
 
-#### Wormhole Tunneling Equation:
-$$x_i^j(t+1) = \begin{cases} 
-X_j^* + \text{TDR} \cdot ((ub_j - lb_j) \cdot r_4 + lb_j) & \text{if } r_2 < \text{WEP} \text{ and } r_3 < 0.5 \\
-X_j^* - \text{TDR} \cdot ((ub_j - lb_j) \cdot r_4 + lb_j) & \text{if } r_2 < \text{WEP} \text{ and } r_3 \ge 0.5 \\
-x_i^j(t) & \text{if } r_2 \ge \text{WEP}
-\end{cases}$$
+#### Wormhole Tunneling Equations:
+
+**1. White Hole Tunneling ($r_2 < \text{WEP}$ and $r_3 < 0.5$):**
+$$x_i^j(t+1) = X_j^* + \text{TDR} \cdot ((ub_j - lb_j) \cdot r_4 + lb_j)$$
+
+**2. Black Hole Tunneling ($r_2 < \text{WEP}$ and $r_3 \ge 0.5$):**
+$$x_i^j(t+1) = X_j^* - \text{TDR} \cdot ((ub_j - lb_j) \cdot r_4 + lb_j)$$
+
+**3. Unmodified Orbit ($r_2 \ge \text{WEP}$):**
+$$x_i^j(t+1) = x_i^j(t)$$
 
 Where the Wormhole Existence Probability ($\text{WEP}$) and Traveling Distance Rate ($\text{TDR}$) are defined as:
 $$\text{WEP} = \text{WEP}_{\text{min}} + t \cdot \left(\frac{\text{WEP}_{\text{max}} - \text{WEP}_{\text{min}}}{T}\right)$$
@@ -152,11 +160,13 @@ $$\text{TDR} = 1 - \left(\frac{t}{T}\right)^{1/p}$$
 * **Citation**: Mirjalili, S. (2016). *SCA: A Sine Cosine Algorithm for solving optimization problems*. Knowledge-Based Systems, 96, 120–133.
 * **Mechanics**: Trigonometric wave oscillation spanning inward and outward search vectors.
 
-#### Position Update:
-$$X_i^{t+1} = \begin{cases} 
-X_i^t + r_1 \cdot \sin(r_2) \cdot \left| r_3 P_i^t - X_i^t \right| & \text{if } r_4 < 0.5 \\
-X_i^t + r_1 \cdot \cos(r_2) \cdot \left| r_3 P_i^t - X_i^t \right| & \text{if } r_4 \ge 0.5 
-\end{cases}$$
+#### Position Update Equations:
+
+**1. Sine Mode ($r_4 < 0.5$):**
+$$X_i^{t+1} = X_i^t + r_1 \cdot \sin(r_2) \cdot \left| r_3 P_i^t - X_i^t \right|$$
+
+**2. Cosine Mode ($r_4 \ge 0.5$):**
+$$X_i^{t+1} = X_i^t + r_1 \cdot \cos(r_2) \cdot \left| r_3 P_i^t - X_i^t \right|$$
 
 Where $P_i^t$ is the destination position (best candidate solution), $r_1 = a - t \frac{a}{T}$ linearly contracts search amplitude from $a$ to $0$, $r_2 \sim \mathcal{U}(0, 2\pi)$, $r_3 \sim \mathcal{U}(0, 2)$, and $r_4 \sim \mathcal{U}(0, 1)$.
 
@@ -170,12 +180,18 @@ Where $P_i^t$ is the destination position (best candidate solution), $r_1 = a - 
 $$\text{MOA}(t) = \text{Min} + t \cdot \left(\frac{\text{Max} - \text{Min}}{T}\right)$$
 
 #### Position Update Equations:
-$$x_{i,j}(t+1) = \begin{cases} 
-x_{\text{best},j} \div (\text{MOP} + \epsilon) \cdot ((ub_j - lb_j) \cdot \mu + lb_j) & \text{if } r_1 > \text{MOA}(t) \text{ and } r_2 < 0.5 \\
-x_{\text{best},j} \times \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j) & \text{if } r_1 > \text{MOA}(t) \text{ and } r_2 \ge 0.5 \\
-x_{\text{best},j} - \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j) & \text{if } r_1 \le \text{MOA}(t) \text{ and } r_3 < 0.5 \\
-x_{\text{best},j} + \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j) & \text{if } r_1 \le \text{MOA}(t) \text{ and } r_3 \ge 0.5
-\end{cases}$$
+
+**1. Division Exploration ($r_1 > \text{MOA}$ and $r_2 < 0.5$):**
+$$x_{i,j}(t+1) = \frac{x_{\text{best},j}}{\text{MOP} + \epsilon} \cdot ((ub_j - lb_j) \cdot \mu + lb_j)$$
+
+**2. Multiplication Exploration ($r_1 > \text{MOA}$ and $r_2 \ge 0.5$):**
+$$x_{i,j}(t+1) = x_{\text{best},j} \cdot \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j)$$
+
+**3. Subtraction Exploitation ($r_1 \le \text{MOA}$ and $r_3 < 0.5$):**
+$$x_{i,j}(t+1) = x_{\text{best},j} - \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j)$$
+
+**4. Addition Exploitation ($r_1 \le \text{MOA}$ and $r_3 \ge 0.5$):**
+$$x_{i,j}(t+1) = x_{\text{best},j} + \text{MOP} \cdot ((ub_j - lb_j) \cdot \mu + lb_j)$$
 
 Where the Math Optimizer Probability is $\text{MOP}(t) = 1 - \left(\frac{t}{T}\right)^{1/\alpha}$.
 
@@ -185,12 +201,16 @@ Where the Math Optimizer Probability is $\text{MOP}(t) = 1 - \left(\frac{t}{T}\r
 * **Citation**: Abdollahzadeh, B., Gharehchopogh, F. S., Khodadadi, N., & Mirjalili, S. (2022). *Mountain Gazelle Optimizer: a new nature-inspired metaheuristic algorithm*. Advances in Engineering Software, 174, 103282.
 * **Mechanics**: Models the social hierarchy of mountain gazelles including bachelor male herds, maternal herds, and solitary territorial males.
 
-#### Dynamic Behavioral Update:
-$$X_{\text{new}} = \begin{cases} 
-X_{\text{best}} + \text{Cof}_1 \cdot (X_{\text{rand}} - X_i) & \text{if } r < 0.25 \quad (\text{Territorial defense}) \\
-X_i + \text{Cof}_2 \cdot (X_{\text{best}} - X_{\text{rand}}) & \text{if } 0.25 \le r < 0.50 \quad (\text{Maternal nursing herd}) \\
-X_{\text{rand}} + \text{Cof}_3 \cdot (ub - lb) \cdot r' & \text{if } r \ge 0.50 \quad (\text{Bachelor herd migration}) 
-\end{cases}$$
+#### Dynamic Behavioral Update Equations:
+
+**1. Solitary Territorial Males ($r < 0.25$):**
+$$X_{\text{new}} = X_{\text{best}} + \text{Cof}_1 \cdot (X_{\text{rand}} - X_i)$$
+
+**2. Maternal Nursing Herd ($0.25 \le r < 0.50$):**
+$$X_{\text{new}} = X_i + \text{Cof}_2 \cdot (X_{\text{best}} - X_{\text{rand}})$$
+
+**3. Bachelor Herd Migration ($r \ge 0.50$):**
+$$X_{\text{new}} = X_{\text{rand}} + \text{Cof}_3 \cdot (ub - lb) \cdot r'$$
 
 ---
 
