@@ -2,15 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Download,
   FileJson,
-  Layers,
-  Sparkles,
-  GitCompare,
-  TrendingDown,
-  TrendingUp,
   AlertTriangle,
   RefreshCw,
   Search,
-  ArrowRight,
   ShieldCheck,
   BarChart3,
 } from 'lucide-react';
