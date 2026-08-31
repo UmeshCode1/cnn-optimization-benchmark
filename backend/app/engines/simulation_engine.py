@@ -244,11 +244,11 @@ class SimulationEngine(BaseExperimentEngine):
         quant_info = QuantizationManager.apply_quantization({}, quantization_type)
 
         # Fixed compression output (same for all algorithms — fairness requirement)
-        fixed_lat = baseline_latency_ms * quant_info["latency_multiplier"] * pruning_info["latency_factor"]
-        fixed_size = baseline_size_mb * (1.0 / quant_info["compression_factor"]) * (1.0 - pruning_ratio)
-        fixed_energy = baseline_energy_j * quant_info["latency_multiplier"]
-        final_params_m = pruning_info["effective_params_m"]
-        final_flops_m = pruning_info["effective_flops_m"]
+        fixed_lat = float(baseline_latency_ms * quant_info["latency_multiplier"] * pruning_info["latency_factor"])
+        fixed_size = float(baseline_size_mb * (1.0 / quant_info["compression_factor"]) * (1.0 - pruning_ratio))
+        fixed_energy = float(baseline_energy_j * quant_info["latency_multiplier"])
+        fixed_params_m = float(pruning_info["effective_params_m"])
+        fixed_flops_m = float(pruning_info["effective_flops_m"])
 
         # ── Fitness evaluator ───────────────────────────────────────────────
         fitness_evaluator = MultiObjectiveFitness(
@@ -329,29 +329,34 @@ class SimulationEngine(BaseExperimentEngine):
 
                 # ── Final evaluation of best solution ───────────────────────
                 best_solution = np.array(opt_result.best_solution)
-                final_acc, final_lat, final_size, final_eng = evaluate_candidate_metrics(best_solution)
+                raw_acc, raw_lat, raw_size, raw_eng = evaluate_candidate_metrics(best_solution)
                 acc_info = self._simulate_accuracy(
                     baseline_accuracy, pruning_ratio, quantization_type, best_solution
                 )
-                final_acc = acc_info["accuracy"]
+                final_acc = float(acc_info["accuracy"])
+                final_lat = float(raw_lat)
+                final_size = float(raw_size)
+                final_eng = float(raw_eng)
+                final_params_m = float(fixed_params_m)
+                final_flops_m = float(fixed_flops_m)
 
-                score = fitness_evaluator.compute_overall_score_100(
+                score = float(fitness_evaluator.compute_overall_score_100(
                     accuracy=final_acc,
                     latency_ms=final_lat,
                     model_size_mb=final_size,
                     energy_j=final_eng,
-                )
+                ))
 
                 # Derived metrics (CALCULATED from ESTIMATED inputs → ESTIMATED)
-                compression_ratio = round(baseline_size_mb / max(0.01, final_size), 2)
-                speedup = round(baseline_latency_ms / max(0.01, final_lat), 2)
-                size_reduction_pct = round(((baseline_size_mb - final_size) / baseline_size_mb) * 100.0, 1)
-                energy_reduction_pct = round(((baseline_energy_j - final_eng) / baseline_energy_j) * 100.0, 1)
+                compression_ratio = round(float(baseline_size_mb / max(0.01, final_size)), 2)
+                speedup = round(float(baseline_latency_ms / max(0.01, final_lat)), 2)
+                size_reduction_pct = round(float(((baseline_size_mb - final_size) / baseline_size_mb) * 100.0), 1)
+                energy_reduction_pct = round(float(((baseline_energy_j - final_eng) / baseline_energy_j) * 100.0), 1)
 
                 run = RunResult(
                     algorithm=alg_key,
-                    run_index=run_idx,
-                    seed=seed,
+                    run_index=int(run_idx),
+                    seed=int(seed),
                     status="COMPLETED",
                     # Accuracy — SIMULATED
                     accuracy=final_acc,
@@ -359,7 +364,7 @@ class SimulationEngine(BaseExperimentEngine):
                     accuracy_source="SIMULATION_MODEL",
                     accuracy_method=acc_info["method"],
                     accuracy_sample_count=None,
-                    accuracy_drop=acc_info["accuracy_drop"],
+                    accuracy_drop=float(acc_info["accuracy_drop"]),
                     # Latency — SIMULATED (compression formula + layer parameter optimization)
                     latency_mean_ms=round(final_lat, 3),
                     latency_median_ms=round(final_lat, 3),
@@ -377,8 +382,8 @@ class SimulationEngine(BaseExperimentEngine):
                     model_size_provenance="ESTIMATED",
                     model_size_method="Analytical: pruned parameters × dtype bytes",
                     # Energy — ESTIMATED (TDP model)
-                    energy_j=round(fixed_energy, 6),
-                    energy_per_inference_j=round(fixed_energy, 6),
+                    energy_j=round(float(fixed_energy), 6),
+                    energy_per_inference_j=round(float(fixed_energy), 6),
                     avg_power_watts=0.0,
                     energy_provenance="ESTIMATED",
                     energy_source="TDP_MODEL",
@@ -395,11 +400,11 @@ class SimulationEngine(BaseExperimentEngine):
                     energy_reduction_pct=energy_reduction_pct,
                     derived_metrics_provenance="ESTIMATED",
                     # Optimizer
-                    best_fitness=round(opt_result.best_fitness, 4),
+                    best_fitness=round(float(opt_result.best_fitness), 4),
                     overall_score=round(score, 2),
-                    optimization_time_seconds=round(opt_time, 3),
-                    candidate_evaluations=opt_result.all_candidate_evaluations,
-                    convergence_curve=opt_result.convergence_curve,
+                    optimization_time_seconds=round(float(opt_time), 3),
+                    candidate_evaluations=int(opt_result.all_candidate_evaluations),
+                    convergence_curve=[float(x) for x in opt_result.convergence_curve],
                     execution_mode="DEMO",
                 )
                 all_runs.append(run)
