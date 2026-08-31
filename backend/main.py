@@ -59,6 +59,50 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[Startup] Capability detection warning: {e}")
 
+    # Recover or finalize any experiments that were left in RUNNING/QUEUED before server restart
+    try:
+        import json
+        from datetime import datetime, timezone
+        from app.database.session import SessionLocal
+        from app.database.models import Experiment
+        from app.services.statistics_service import StatisticsService
+        from app.services.scoring_service import ScoringService
+        from app.services.pareto_service import ParetoService
+
+        with SessionLocal() as db_session:
+            stale_exps = db_session.query(Experiment).filter(
+                Experiment.status.in_(["RUNNING", "QUEUED"])
+            ).all()
+            for st_exp in stale_exps:
+                if st_exp.runs and len(st_exp.runs) > 0:
+                    try:
+                        runs = [r.to_dict() for r in st_exp.runs]
+                        stats_by_alg = StatisticsService.aggregate_algorithm_runs(runs)
+                        ranked = ScoringService.recalculate_overall_scores(
+                            aggregated_stats=stats_by_alg,
+                            weight_accuracy=st_exp.weight_accuracy,
+                            weight_latency=st_exp.weight_latency,
+                            weight_model_size=st_exp.weight_model_size,
+                            weight_energy=st_exp.weight_energy,
+                            stat_mode="MEAN",
+                        )
+                        pareto_results = ParetoService.compute_pareto_front(ranked)
+                        pareto_algorithms = [p["algorithm"] for p in pareto_results if p.get("is_pareto")]
+                        st_exp.pareto_optimal_algorithms_json = json.dumps(pareto_algorithms)
+                        if ranked:
+                            st_exp.best_algorithm = ranked[0]["algorithm"]
+                        st_exp.status = "COMPLETED"
+                        st_exp.completed_at = datetime.now(timezone.utc)
+                    except Exception:
+                        st_exp.status = "INTERRUPTED"
+                        st_exp.error_message = "Server restarted during benchmark execution."
+                else:
+                    st_exp.status = "INTERRUPTED"
+                    st_exp.error_message = "Benchmark execution interrupted by server restart."
+            db_session.commit()
+    except Exception as e:
+        print(f"[Startup] Stale experiment recovery note: {e}")
+
     yield
     # ── Shutdown ───────────────────────────────────────────────────────────
 

@@ -38,6 +38,12 @@ export const api = {
     return res.json();
   },
 
+  async deleteExperiment(expId: string): Promise<{ status: string; experiment_id: string }> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`Failed to delete experiment ${expId}`);
+    return res.json();
+  },
+
   // Experiments
   async listExperiments(dataset?: string, model?: string, status?: string): Promise<Experiment[]> {
     const params = new URLSearchParams();

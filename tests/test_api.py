@@ -230,3 +230,35 @@ def test_installer_endpoints():
     assert "powershell" in bat_res.text.lower()
 
 
+def test_clone_cancel_delete_experiment():
+    # 1. List experiments to get an existing ID
+    exps_res = client.get("/api/experiments")
+    assert exps_res.status_code == 200
+    exps = exps_res.json()
+    assert len(exps) > 0
+    src_id = exps[0]["id"]
+
+    # 2. Clone experiment
+    clone_res = client.post(f"/api/experiments/{src_id}/clone")
+    assert clone_res.status_code == 200
+    cloned = clone_res.json()
+    cloned_id = cloned["id"]
+    assert cloned_id != src_id
+    assert cloned["status"] == "DRAFT"
+
+    # 3. Cancel experiment
+    cancel_res = client.post(f"/api/experiments/{cloned_id}/cancel")
+    assert cancel_res.status_code == 200
+    assert cancel_res.json()["status"] == "CANCELLED"
+
+    # 4. Delete experiment
+    del_res = client.delete(f"/api/experiments/{cloned_id}")
+    assert del_res.status_code == 200
+    assert del_res.json()["status"] == "DELETED"
+
+    # 5. Verify deleted
+    get_res = client.get(f"/api/experiments/{cloned_id}")
+    assert get_res.status_code == 404
+
+
+

@@ -11,6 +11,12 @@ import {
   BarChart3,
   Sparkles,
   Calendar,
+  Trash2,
+  Play,
+  XCircle,
+  AlertTriangle,
+  RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import { Experiment } from '../../types';
 
@@ -19,6 +25,10 @@ interface HistoryViewProps {
   activeExperimentId?: string;
   onSelectExperiment: (expId: string) => void;
   onNewBenchmark: () => void;
+  onOpenLiveRun?: (expId: string) => void;
+  onCancelExperiment?: (expId: string) => Promise<void>;
+  onDeleteExperiment?: (expId: string) => Promise<void>;
+  onRunExperiment?: (expId: string) => Promise<void>;
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({
@@ -26,14 +36,31 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   activeExperimentId,
   onSelectExperiment,
   onNewBenchmark,
+  onOpenLiveRun,
+  onCancelExperiment,
+  onDeleteExperiment,
+  onRunExperiment,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'RUNNING'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'RUNNING' | 'INTERRUPTED_CANCELLED'>('ALL');
   const [selectedDataset, setSelectedDataset] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'title_asc' | 'title_desc' | 'status'>('date_desc');
+  const [busyExpId, setBusyExpId] = useState<string | null>(null);
 
   // Unique datasets for filter
   const uniqueDatasets = Array.from(new Set(experiments.map((e) => e.dataset_name).filter(Boolean)));
+
+  const handleAction = async (e: React.MouseEvent, action: () => Promise<void>, expId: string) => {
+    e.stopPropagation();
+    try {
+      setBusyExpId(expId);
+      await action();
+    } catch (err) {
+      console.error('Action failed:', err);
+    } finally {
+      setBusyExpId(null);
+    }
+  };
 
   // Filter & Sort experiments
   const filteredExperiments = experiments
@@ -50,7 +77,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       const matchesStatus =
         statusFilter === 'ALL' ||
         (statusFilter === 'COMPLETED' && exp.status === 'COMPLETED') ||
-        (statusFilter === 'RUNNING' && (exp.status === 'RUNNING' || exp.status === 'QUEUED'));
+        (statusFilter === 'RUNNING' && (exp.status === 'RUNNING' || exp.status === 'QUEUED')) ||
+        (statusFilter === 'INTERRUPTED_CANCELLED' && ['INTERRUPTED', 'CANCELLED', 'FAILED'].includes(exp.status));
 
       const matchesDataset = selectedDataset === 'ALL' || exp.dataset_name === selectedDataset;
 
@@ -83,11 +111,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           <div className="flex items-center gap-2">
             <h2 className="ws-page-title">Experiment Archive &amp; Data Explorer</h2>
             <span className="font-mono text-xs px-2 py-0.5 rounded bg-[var(--surface-secondary)] text-[var(--text-secondary)] border border-[var(--border)]">
-              {experiments.length} Experiments in SQLite
+              {experiments.length} Experiments in Database
             </span>
           </div>
           <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Search, filter, and inspect all persistent benchmark runs and historical research results.
+            Search, filter, re-run, manage, and inspect all persistent benchmark runs and research results.
           </p>
         </div>
 
@@ -125,17 +153,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
           {/* Status Filter */}
           <div className="flex items-center gap-1 bg-[var(--surface-secondary)] p-1 rounded-md border border-[var(--border)] text-xs font-mono">
-            {(['ALL', 'COMPLETED', 'RUNNING'] as const).map((st) => (
+            {[
+              { id: 'ALL', label: 'ALL' },
+              { id: 'COMPLETED', label: 'COMPLETED' },
+              { id: 'RUNNING', label: 'RUNNING' },
+              { id: 'INTERRUPTED_CANCELLED', label: 'OTHER' },
+            ].map((st) => (
               <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
+                key={st.id}
+                onClick={() => setStatusFilter(st.id as any)}
                 className={`px-2.5 py-1 rounded text-xs transition ${
-                  statusFilter === st
+                  statusFilter === st.id
                     ? 'bg-[var(--accent)] text-white font-bold'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                {st}
+                {st.label}
               </button>
             ))}
           </div>
@@ -202,19 +235,29 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 <th>Status</th>
                 <th>Winner (Rank #1)</th>
                 <th>Created At</th>
-                <th className="text-right">Action</th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredExperiments.map((exp) => {
                 const isActive = exp.id === activeExperimentId;
+                const isRunning = exp.status === 'RUNNING' || exp.status === 'QUEUED';
+                const isInterrupted = ['INTERRUPTED', 'CANCELLED', 'FAILED'].includes(exp.status);
+                const isBusy = busyExpId === exp.id;
+
                 return (
                   <tr
                     key={exp.id}
                     className={`transition-colors cursor-pointer ${
                       isActive ? 'bg-[var(--surface-elevated)] border-l-2 border-[var(--accent)]' : ''
                     }`}
-                    onClick={() => onSelectExperiment(exp.id)}
+                    onClick={() => {
+                      if (isRunning && onOpenLiveRun) {
+                        onOpenLiveRun(exp.id);
+                      } else {
+                        onSelectExperiment(exp.id);
+                      }
+                    }}
                   >
                     <td>
                       <div className="flex items-center gap-2">
@@ -240,14 +283,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                           exp.status === 'COMPLETED'
                             ? 'bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30'
-                            : exp.status === 'RUNNING'
+                            : isRunning
                             ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]/30'
+                            : isInterrupted
+                            ? 'bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/30'
                             : 'bg-[var(--surface-secondary)] text-[var(--text-muted)]'
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            exp.status === 'COMPLETED' ? 'bg-[var(--success)]' : 'bg-[var(--warning)] animate-pulse'
+                            exp.status === 'COMPLETED'
+                              ? 'bg-[var(--success)]'
+                              : isRunning
+                              ? 'bg-[var(--warning)] animate-pulse'
+                              : isInterrupted
+                              ? 'bg-[var(--danger)]'
+                              : 'bg-[var(--text-muted)]'
                           }`}
                         />
                         <span>{exp.status}</span>
@@ -267,16 +318,79 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       {exp.created_at ? exp.created_at.slice(0, 19).replace('T', ' ') : 'Recent'}
                     </td>
                     <td className="text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectExperiment(exp.id);
-                        }}
-                        className="flex items-center gap-1 px-2.5 py-1 ws-button-secondary text-xs font-sans float-right"
-                      >
-                        <span>Open Analysis</span>
-                        <ArrowRight className="w-3 h-3 text-[var(--accent)]" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {/* If Running: Live View or Cancel */}
+                        {isRunning && (
+                          <>
+                            {onOpenLiveRun && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onOpenLiveRun(exp.id);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 ws-button-primary text-xs font-sans"
+                                title="View Live Run Progress"
+                              >
+                                <Clock className="w-3 h-3 animate-spin" />
+                                <span>Live</span>
+                              </button>
+                            )}
+                            {onCancelExperiment && (
+                              <button
+                                disabled={isBusy}
+                                onClick={(e) => handleAction(e, () => onCancelExperiment(exp.id), exp.id)}
+                                className="p-1 text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded transition"
+                                title="Cancel Benchmark Run"
+                              >
+                                {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        {/* If Completed: Open Analysis */}
+                        {exp.status === 'COMPLETED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectExperiment(exp.id);
+                            }}
+                            className="flex items-center gap-1 px-2.5 py-1 ws-button-secondary text-xs font-sans"
+                          >
+                            <span>Open Analysis</span>
+                            <ArrowRight className="w-3 h-3 text-[var(--accent)]" />
+                          </button>
+                        )}
+
+                        {/* If Interrupted or Cancelled: Re-run */}
+                        {isInterrupted && onRunExperiment && (
+                          <button
+                            disabled={isBusy}
+                            onClick={(e) => handleAction(e, () => onRunExperiment(exp.id), exp.id)}
+                            className="flex items-center gap-1 px-2 py-1 bg-[var(--warning)]/10 text-[var(--warning)] hover:bg-[var(--warning)]/20 border border-[var(--warning)]/30 rounded text-xs font-sans"
+                            title="Re-run Benchmark"
+                          >
+                            {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                            <span>Re-run</span>
+                          </button>
+                        )}
+
+                        {/* Delete Experiment */}
+                        {onDeleteExperiment && (
+                          <button
+                            disabled={isBusy}
+                            onClick={(e) => {
+                              if (window.confirm(`Are you sure you want to delete benchmark ${exp.id}?`)) {
+                                handleAction(e, () => onDeleteExperiment(exp.id), exp.id);
+                              }
+                            }}
+                            className="p-1 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded transition ml-1"
+                            title={`Delete benchmark ${exp.id}`}
+                          >
+                            {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

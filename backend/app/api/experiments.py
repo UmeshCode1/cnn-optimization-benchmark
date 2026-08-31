@@ -261,6 +261,40 @@ def clone_experiment(exp_id: str, db: Session = Depends(get_db)):
     return cloned.to_dict()
 
 
+@router.post("/{exp_id}/cancel")
+def cancel_experiment_endpoint(exp_id: str, db: Session = Depends(get_db)):
+    """Cancel execution of a running experiment."""
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    was_active = request_cancellation(exp_id)
+    exp.status = "CANCELLED"
+    exp.error_message = "Benchmark cancelled by user."
+    exp.completed_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {
+        "status": "CANCELLED",
+        "experiment_id": exp_id,
+        "worker_signalled": was_active,
+        "message": f"Experiment {exp_id} cancelled successfully",
+    }
+
+
+@router.delete("/{exp_id}")
+def delete_experiment(exp_id: str, db: Session = Depends(get_db)):
+    """Delete an experiment and all associated runs, metrics, and ablation records."""
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    request_cancellation(exp_id)
+    db.delete(exp)
+    db.commit()
+    return {"status": "DELETED", "experiment_id": exp_id}
+
+
 @router.post("/{exp_id}/recalculate-weights")
 def recalculate_weights(
     exp_id: str,

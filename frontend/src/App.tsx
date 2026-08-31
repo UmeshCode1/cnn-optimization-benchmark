@@ -169,6 +169,46 @@ export const App: React.FC = () => {
     setActiveTab('results');
   };
 
+  const handleDeleteExperiment = async (expId: string) => {
+    try {
+      await api.deleteExperiment(expId);
+      if (activeExperimentId === expId) {
+        const remaining = experiments.filter((e) => e.id !== expId);
+        if (remaining.length > 0) {
+          handleSelectExperiment(remaining[0].id);
+        } else {
+          setActiveExperimentId(null);
+          setExperimentDetails(null);
+        }
+      }
+      await loadData(true);
+    } catch (err) {
+      console.error('Failed to delete experiment:', err);
+    }
+  };
+
+  const handleCancelExperiment = async (expId: string) => {
+    try {
+      await api.cancelExperiment(expId);
+      await loadData(true);
+      if (activeExperimentId === expId) {
+        await loadExperimentDetails(expId);
+      }
+    } catch (err) {
+      console.error('Failed to cancel experiment:', err);
+    }
+  };
+
+  const handleRunExperiment = async (expId: string) => {
+    try {
+      await api.runExperiment(expId);
+      setRunningExperimentId(expId);
+      await loadData(true);
+    } catch (err) {
+      console.error('Failed to run experiment:', err);
+    }
+  };
+
   const isAnalysisTab = ['results', 'pareto', 'convergence', 'statistics', 'confusion', 'ablation', 'reports'].includes(activeTab);
 
   // ── Global Loading Screen ──────────────────────────────────────────────────
@@ -422,6 +462,10 @@ export const App: React.FC = () => {
                   setActiveTab('results');
                 }}
                 onNewBenchmark={() => setActiveTab('wizard')}
+                onOpenLiveRun={(id) => setRunningExperimentId(id)}
+                onCancelExperiment={handleCancelExperiment}
+                onDeleteExperiment={handleDeleteExperiment}
+                onRunExperiment={handleRunExperiment}
               />
             )}
           </ErrorBoundary>
