@@ -262,8 +262,20 @@ export interface PerClassMetric {
   true_positives: number;
   false_positives: number;
   false_negatives: number;
+  true_negatives: number;
+  tp: number;
+  tn: number;
+  fp: number;
+  fn: number;
   precision: number;
   recall: number;
+  sensitivity?: number;
+  specificity: number;
+  fpr?: number;
+  fnr?: number;
+  npv?: number;
+  balanced_accuracy?: number;
+  mcc?: number;
   f1_score: number;
   baseline_recall?: number | null;
   recall_drop_pp?: number | null;
@@ -303,10 +315,17 @@ export interface ConfusionGlobalMetrics {
   accuracy: number;
   macro_precision: number;
   macro_recall: number;
+  macro_specificity?: number;
+  balanced_accuracy?: number;
+  macro_mcc?: number;
   macro_f1: number;
   weighted_f1: number;
   total_samples: number;
   total_correct: number;
+  total_true_positives?: number;
+  total_false_positives?: number;
+  total_false_negatives?: number;
+  total_true_negatives?: number;
 }
 
 export interface ConfusionMatrixEvaluation {

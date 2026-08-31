@@ -197,29 +197,51 @@ class ConfusionMatrixEvaluator:
                 baseline_recalls[i] = r_b
                 baseline_precisions[i] = p_b
 
+        specificities: List[float] = []
+        mccs: List[float] = []
+        balanced_accs: List[float] = []
+
         for i in range(K):
             class_name = dataset_def.get_class_name(i)
             support = int(row_sums[i, 0])
             tp = int(raw_matrix[i, i])
             fn = int(support - tp)
             fp = int(col_sums[i] - tp)
+            tn = int(total_samples - (tp + fp + fn))
 
-            # Precision = TP / (TP + FP)
+            # Precision (PPV) = TP / (TP + FP)
             precision = float((tp / (tp + fp)) * 100.0) if (tp + fp) > 0 else 0.0
-            # Recall = TP / (TP + FN) = TP / support
+            # Recall (TPR / Sensitivity) = TP / (TP + FN) = TP / support
             recall = float((tp / support) * 100.0) if support > 0 else 0.0
-            # F1 = 2 * (P * R) / (P + R)
+            # Specificity (TNR / Selectivity) = TN / (TN + FP)
+            specificity = float((tn / (tn + fp)) * 100.0) if (tn + fp) > 0 else 0.0
+            # False Positive Rate (FPR / Fall-out) = FP / (FP + TN) = 100 - Specificity
+            fpr = float((fp / (fp + tn)) * 100.0) if (fp + tn) > 0 else 0.0
+            # False Negative Rate (FNR / Miss Rate) = FN / (FN + TP) = 100 - Recall
+            fnr = float((fn / (fn + tp)) * 100.0) if (fn + tp) > 0 else 0.0
+            # Negative Predictive Value (NPV) = TN / (TN + FN)
+            npv = float((tn / (tn + fn)) * 100.0) if (tn + fn) > 0 else 0.0
+            # Balanced Accuracy = (Recall + Specificity) / 2
+            balanced_acc = float((recall + specificity) / 2.0)
+            # F1 Score = 2 * (P * R) / (P + R)
             f1 = float((2 * precision * recall) / (precision + recall)) if (precision + recall) > 0 else 0.0
+
+            # Matthews Correlation Coefficient (MCC)
+            mcc_denom = np.sqrt(float((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)))
+            mcc = float((tp * tn - fp * fn) / mcc_denom) if mcc_denom > 0 else 0.0
 
             recalls.append(recall)
             precisions.append(precision)
+            specificities.append(specificity)
             f1_scores.append(f1)
+            mccs.append(mcc)
+            balanced_accs.append(balanced_acc)
             supports.append(support)
 
             b_rec = baseline_recalls.get(i)
             b_prec = baseline_precisions.get(i)
-            recall_drop = round(b_rec - recall, 2) if b_rec is not None else None
-            precision_drop = round(b_prec - precision, 2) if b_prec is not None else None
+            recall_drop = round(float(b_rec - recall), 2) if b_rec is not None else None
+            precision_drop = round(float(b_prec - precision), 2) if b_prec is not None else None
 
             per_class_metrics.append({
                 "class_index": i,
@@ -229,12 +251,24 @@ class ConfusionMatrixEvaluator:
                 "true_positives": tp,
                 "false_positives": fp,
                 "false_negatives": fn,
+                "true_negatives": tn,
+                "tp": tp,
+                "tn": tn,
+                "fp": fp,
+                "fn": fn,
                 "precision": round(precision, 2),
                 "recall": round(recall, 2),
+                "sensitivity": round(recall, 2),
+                "specificity": round(specificity, 2),
+                "fpr": round(fpr, 2),
+                "fnr": round(fnr, 2),
+                "npv": round(npv, 2),
+                "balanced_accuracy": round(balanced_acc, 2),
+                "mcc": round(mcc, 3),
                 "f1_score": round(f1, 2),
-                "baseline_recall": round(b_rec, 2) if b_rec is not None else None,
+                "baseline_recall": round(float(b_rec), 2) if b_rec is not None else None,
                 "recall_drop_pp": recall_drop,  # in percentage points
-                "baseline_precision": round(b_prec, 2) if b_prec is not None else None,
+                "baseline_precision": round(float(b_prec), 2) if b_prec is not None else None,
                 "precision_drop_pp": precision_drop,
             })
 
@@ -243,6 +277,9 @@ class ConfusionMatrixEvaluator:
         overall_accuracy = float((total_correct / total_samples) * 100.0) if total_samples > 0 else 0.0
         macro_precision = float(np.mean(precisions)) if precisions else 0.0
         macro_recall = float(np.mean(recalls)) if recalls else 0.0
+        macro_specificity = float(np.mean(specificities)) if specificities else 0.0
+        macro_balanced_accuracy = float(np.mean(balanced_accs)) if balanced_accs else 0.0
+        macro_mcc = float(np.mean(mccs)) if mccs else 0.0
         macro_f1 = float(np.mean(f1_scores)) if f1_scores else 0.0
 
         # Weighted F1
@@ -354,10 +391,17 @@ class ConfusionMatrixEvaluator:
                 "accuracy": round(overall_accuracy, 2),
                 "macro_precision": round(macro_precision, 2),
                 "macro_recall": round(macro_recall, 2),
+                "macro_specificity": round(macro_specificity, 2),
+                "balanced_accuracy": round(macro_balanced_accuracy, 2),
+                "macro_mcc": round(macro_mcc, 3),
                 "macro_f1": round(macro_f1, 2),
                 "weighted_f1": round(weighted_f1, 2),
                 "total_samples": total_samples,
                 "total_correct": total_correct,
+                "total_true_positives": sum(m["tp"] for m in per_class_metrics),
+                "total_false_positives": sum(m["fp"] for m in per_class_metrics),
+                "total_false_negatives": sum(m["fn"] for m in per_class_metrics),
+                "total_true_negatives": sum(m["tn"] for m in per_class_metrics),
             },
             "per_class_metrics": per_class_metrics,
             "top_confused_pairs": confused_pairs[:20],
