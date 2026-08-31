@@ -8,22 +8,14 @@ import {
   TrendingDown,
   TrendingUp,
   AlertTriangle,
-  CheckCircle2,
-  HelpCircle,
-  BarChart3,
-  Sliders,
   RefreshCw,
   Search,
-  Filter,
   ArrowRight,
   ShieldCheck,
-  Cpu,
 } from 'lucide-react';
 import {
   Experiment,
   ConfusionMatrixResponse,
-  PerClassMetric,
-  ConfusedPair,
 } from '../../types';
 import { api } from '../../services/api';
 import { ConfusionMatrixHeatmap } from '../charts/ConfusionMatrixHeatmap';
