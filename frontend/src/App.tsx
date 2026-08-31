@@ -169,7 +169,7 @@ export const App: React.FC = () => {
     setActiveTab('results');
   };
 
-  const isAnalysisTab = ['results', 'pareto', 'convergence', 'statistics', 'ablation', 'reports'].includes(activeTab);
+  const isAnalysisTab = ['results', 'pareto', 'convergence', 'statistics', 'confusion', 'ablation', 'reports'].includes(activeTab);
 
   // ── Global Loading Screen ──────────────────────────────────────────────────
   if (isLoading) {
