@@ -5,6 +5,8 @@ import {
   TrendingDown,
   Layers2,
   Zap,
+  BarChart3,
+  Grid,
 } from 'lucide-react';
 import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats } from '../../types';
 import { AlgorithmComparisonWorkbench } from '../common/AlgorithmComparisonWorkbench';
