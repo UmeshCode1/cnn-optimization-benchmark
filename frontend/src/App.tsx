@@ -201,8 +201,9 @@ export const App: React.FC = () => {
 
   const handleRunExperiment = async (expId: string) => {
     try {
-      await api.runExperiment(expId);
+      await api.rerunExperiment(expId);
       setRunningExperimentId(expId);
+      setActiveExperimentId(expId);
       await loadData(true);
     } catch (err) {
       console.error('Failed to run experiment:', err);

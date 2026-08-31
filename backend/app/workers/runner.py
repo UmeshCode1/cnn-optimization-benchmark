@@ -331,10 +331,16 @@ class ExperimentRunner:
             })
 
         except ExperimentCancelledError:
-            if exp:
-                exp.status = "CANCELLED"
-                exp.error_message = "Cancelled by user request."
-                db.commit()
+            try:
+                db.rollback()
+                exp = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+                if exp:
+                    exp.status = "CANCELLED"
+                    exp.error_message = "Cancelled by user request."
+                    exp.completed_at = datetime.now(timezone.utc)
+                    db.commit()
+            except Exception as dbe:
+                print(f"[Runner] Error recording cancellation: {dbe}")
             await broadcast_progress(experiment_id, {
                 "event": "BENCHMARK_CANCELLED",
                 "experiment_id": experiment_id,
@@ -344,10 +350,16 @@ class ExperimentRunner:
             import traceback
             tb = traceback.format_exc()
             print(f"[Runner] Experiment {experiment_id} FAILED:\n{tb}")
-            if exp:
-                exp.status = "FAILED"
-                exp.error_message = f"{type(e).__name__}: {str(e)}"
-                db.commit()
+            try:
+                db.rollback()
+                exp = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+                if exp:
+                    exp.status = "FAILED"
+                    exp.error_message = f"{type(e).__name__}: {str(e)}"
+                    exp.completed_at = datetime.now(timezone.utc)
+                    db.commit()
+            except Exception as dbe:
+                print(f"[Runner] Error recording failure: {dbe}")
             await broadcast_progress(experiment_id, {
                 "event": "BENCHMARK_FAILED",
                 "experiment_id": experiment_id,
@@ -356,4 +368,7 @@ class ExperimentRunner:
 
         finally:
             _cleanup_cancel_event(experiment_id)
-            db.close()
+            try:
+                db.close()
+            except Exception:
+                pass

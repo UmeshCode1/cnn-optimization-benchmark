@@ -209,6 +209,34 @@ def run_experiment(
     return {"status": "QUEUED", "experiment_id": exp.id}
 
 
+@router.post("/{exp_id}/rerun", response_model=Dict[str, Any])
+def rerun_experiment_endpoint(
+    exp_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Re-execute an existing experiment, clearing old runs and re-queuing fresh execution."""
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    request_cancellation(exp_id)
+    db.query(ExperimentRun).filter(ExperimentRun.experiment_id == exp_id).delete()
+    db.query(MetricRecord).filter(MetricRecord.experiment_id == exp_id).delete()
+    db.query(AblationRecord).filter(AblationRecord.experiment_id == exp_id).delete()
+
+    exp.status = "QUEUED"
+    exp.error_message = None
+    exp.best_algorithm = None
+    exp.started_at = None
+    exp.completed_at = None
+    db.commit()
+    db.refresh(exp)
+
+    background_tasks.add_task(ExperimentRunner.run_experiment_task, exp.id)
+    return exp.to_dict()
+
+
 @router.post("/{exp_id}/clone", response_model=Dict[str, Any])
 def clone_experiment(exp_id: str, db: Session = Depends(get_db)):
     """Clone an existing experiment configuration for reproduction or modification."""

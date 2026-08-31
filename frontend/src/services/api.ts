@@ -107,6 +107,12 @@ export const api = {
     return res.json();
   },
 
+  async rerunExperiment(expId: string): Promise<Experiment> {
+    const res = await fetch(`${API_BASE}/experiments/${expId}/rerun`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to rerun benchmark');
+    return res.json();
+  },
+
   async cloneExperiment(expId: string): Promise<Experiment> {
     const res = await fetch(`${API_BASE}/experiments/${expId}/clone`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to clone experiment');
