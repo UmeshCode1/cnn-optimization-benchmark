@@ -12,6 +12,7 @@ import {
   Search,
   ArrowRight,
   ShieldCheck,
+  BarChart3,
 } from 'lucide-react';
 import {
   Experiment,
