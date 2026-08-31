@@ -121,6 +121,61 @@ DATASET_CATALOG: Dict[str, DatasetDefinition] = {
         default_test_samples=10000,
         description="Zalando fashion product grayscale images in 10 classes.",
     ),
+    "EUROSAT": DatasetDefinition(
+        name="EuroSAT",
+        num_classes=10,
+        class_names=[
+            "AnnualCrop", "Forest", "HerbaceousVegetation", "Highway", "Industrial",
+            "Pasture", "PermanentCrop", "Residential", "River", "SeaLake"
+        ],
+        semantic_groups={
+            "Natural Vegetation": ["AnnualCrop", "Forest", "HerbaceousVegetation", "Pasture", "PermanentCrop"],
+            "Human Infrastructure": ["Highway", "Industrial", "Residential"],
+            "Water Bodies": ["River", "SeaLake"],
+        },
+        default_test_samples=5400,
+        description="Sentinel-2 satellite land cover classification across 10 distinct terrain classes.",
+    ),
+    "BLOODMNIST": DatasetDefinition(
+        name="BloodMNIST",
+        num_classes=8,
+        class_names=[
+            "basophil", "eosinophil", "erythroblast", "immature granulocyte",
+            "lymphocyte", "monocyte", "neutrophil", "platelet"
+        ],
+        semantic_groups={
+            "Granulocytes": ["basophil", "eosinophil", "neutrophil", "immature granulocyte"],
+            "Agranulocytes": ["lymphocyte", "monocyte"],
+            "Precursors & Fragments": ["erythroblast", "platelet"],
+        },
+        default_test_samples=3421,
+        description="Biomedical microscopic images of 8 peripheral blood cell morphology types.",
+    ),
+    "SVHN": DatasetDefinition(
+        name="SVHN",
+        num_classes=10,
+        class_names=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        semantic_groups={
+            "Low Digits": ["0", "1", "2", "3", "4"],
+            "High Digits": ["5", "6", "7", "8", "9"],
+        },
+        default_test_samples=26032,
+        description="Street View House Numbers 32x32 color digits cropped from real-world photos.",
+    ),
+    "STL-10": DatasetDefinition(
+        name="STL-10",
+        num_classes=10,
+        class_names=[
+            "airplane", "bird", "car", "cat", "deer",
+            "dog", "horse", "monkey", "ship", "truck"
+        ],
+        semantic_groups={
+            "Vehicles": ["airplane", "car", "ship", "truck"],
+            "Animals": ["bird", "cat", "deer", "dog", "horse", "monkey"],
+        },
+        default_test_samples=8000,
+        description="96x96 resolution vision benchmark dataset inspired by CIFAR-10 with higher detail.",
+    ),
     "IMAGENET-1K": DatasetDefinition(
         name="ImageNet-1k Subset",
         num_classes=100,
@@ -139,6 +194,14 @@ DATASET_CATALOG: Dict[str, DatasetDefinition] = {
 def normalize_dataset_key(name: str) -> str:
     """Normalize dataset name for catalog key lookup."""
     clean = (name or "").strip().upper().replace("_", "-")
+    if "EUROSAT" in clean:
+        return "EUROSAT"
+    if "BLOOD" in clean:
+        return "BLOODMNIST"
+    if "SVHN" in clean:
+        return "SVHN"
+    if "STL" in clean:
+        return "STL-10"
     if "CIFAR-100" in clean:
         return "CIFAR-100"
     if "CIFAR-10" in clean or "CIFAR10" in clean:

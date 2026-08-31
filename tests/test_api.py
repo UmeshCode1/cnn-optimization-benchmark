@@ -1,12 +1,18 @@
-"""
-Integration tests for FastAPI endpoints including custom algorithm and model registration.
-"""
-
+import sys
 import io
 import zipfile
+from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
+
+backend_dir = Path(__file__).resolve().parent.parent / "backend"
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+try:
+    from main import app
+except ImportError:
+    from backend.main import app
 
 client = TestClient(app)
 
