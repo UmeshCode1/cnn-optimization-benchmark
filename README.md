@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Bundler-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![TailwindCSS](https://img.shields.io/badge/Styling-TailwindCSS-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Pytest](https://img.shields.io/badge/Tests-35%20Passing-19A974?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Tests-47%20Passing-19A974?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 **A Scientific Research Workstation & Laboratory Platform for Empirically Benchmarking Metaheuristic Optimization Algorithms on Deep CNN Compression**
@@ -39,6 +39,8 @@ The **CNN Optimization Benchmark Platform** provides an empirical, reproducible,
 - 📉 **Multi-Objective Pareto Analysis**: Automatic extraction and 6-axis interactive visualization of the empirical non-dominated frontier.
 - 📈 **Convergence & Stochastic Telemetry**: Real-time WebSocket iteration tracking and multi-run statistical boxplots (Mean, Median, Std Dev, Min, Max, 95% Student's $t$ Confidence Intervals).
 - 🧩 **5-Stage Ablation Decomposition**: Isolates the marginal contributions of Quantization (FP16/INT8), Pruning (Structured Channel / Filter), and Metaheuristic Optimization.
+- 📊 **Confusion Matrix & Per-Class Degradation Suite**: Interactive $K \times K$ heatmaps (Raw Counts, Row-Normalized Recall %, Column-Normalized Precision %), Top Confusion Pairs ranking, Per-Class Sensitivity Analysis, Macro/Micro Average metrics, and Differential algorithm comparison grids ($\Delta \text{Cell} = A_{i,j} - B_{i,j}$).
+- 🚀 **1-Click Local Laptop Automated Installer**: Automated zero-friction scripts for Windows PowerShell (`install.ps1`), Command Prompt (`install.bat`), and macOS/Linux Bash (`install.sh`) with auto-dependency bootstrapping and local daemon launching.
 - 🏷️ **Data Provenance Badging**: Explicit scientific provenance labeling (`● MEASURED`, `◆ CALCULATED`, `▲ ESTIMATED`, `DEMO DATA`).
 - 📁 **Custom Extensibility**: 1-Click modal uploads for custom Python optimizers (`BaseOptimizer`), custom image dataset archives (.zip), and custom PyTorch CNN architectures.
 - 📄 **Publication-Ready Exports**: 1-Click downloads in **CSV**, **JSON**, **Markdown**, **Microsoft Word (.doc)**, and **Plain Text (.txt)** formats.
@@ -171,13 +173,19 @@ python -m pytest tests backend/tests -v
 | `POST` | `/api/experiments` | Create and trigger an asynchronous benchmark experiment |
 | `GET` | `/api/experiments` | List all historical benchmark runs with metadata filters |
 | `GET` | `/api/experiments/{id}` | Retrieve comprehensive results, statistics, Pareto points, and ablations |
+| `POST` | `/api/experiments/{id}/cancel` | Cancel active benchmark execution |
+| `DELETE` | `/api/experiments/{id}` | Delete experiment record and cascading runs/metrics |
+| `POST` | `/api/experiments/{id}/clone` | Clone benchmark configuration for reproduction |
 | `POST` | `/api/experiments/{id}/recalculate` | Live dynamic recalculation of scores and rankings with custom weights |
+| `GET` | `/api/experiments/{id}/confusion-matrix` | Retrieve research-grade $K \times K$ confusion matrix & per-class error analytics |
 | `GET` | `/api/reports/{id}/csv` | Export results in CSV format |
 | `GET` | `/api/reports/{id}/json` | Export results in JSON format |
 | `GET` | `/api/reports/{id}/markdown` | Export formatted Markdown research report |
 | `GET` | `/api/reports/{id}/doc` | Export Microsoft Word (.doc) formatted report |
 | `GET` | `/api/reports/{id}/txt` | Export formatted Plain Text (.txt) report |
 | `WS` | `/api/experiments/{id}/ws` | Real-time WebSocket stream for live iteration telemetry |
+| `GET` | `/api/installer/preflight` | Pre-flight diagnostics and automated 1-click install instructions |
+| `GET` | `/install.ps1` / `/install.sh` / `/install.bat` | Raw automated 1-click laptop installation scripts |
 | `GET` | `/api/algorithms` | List all verified and custom metaheuristic optimizers |
 | `POST` | `/api/algorithms` | Register a new custom metaheuristic optimizer plugin |
 | `GET` | `/api/datasets` | List available datasets and resolution parameters |
