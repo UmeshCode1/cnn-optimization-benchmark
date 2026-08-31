@@ -1,19 +1,32 @@
-"""
-Comprehensive Unit Tests for Confusion Matrix & Per-Class Degradation Suite.
-Verifies mathematical accuracy, row normalization, top confused pairs,
-differential delta analysis, and scientific provenance guarantees.
-"""
-
+import sys
+from pathlib import Path
 import pytest
 import numpy as np
 from fastapi.testclient import TestClient
 
-from backend.app.evaluation.dataset_registry import (
-    get_dataset_definition,
-    DatasetDefinition,
-)
-from backend.app.evaluation.confusion_matrix import ConfusionMatrixEvaluator
-from backend.main import app
+# Ensure backend root is in sys.path
+backend_dir = Path(__file__).resolve().parent.parent / "backend"
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+try:
+    from app.evaluation.dataset_registry import (
+        get_dataset_definition,
+        DatasetDefinition,
+    )
+    from app.evaluation.confusion_matrix import ConfusionMatrixEvaluator
+    from app.database.session import SessionLocal
+    from app.database.models import Experiment, ExperimentRun
+    from main import app
+except ImportError:
+    from backend.app.evaluation.dataset_registry import (
+        get_dataset_definition,
+        DatasetDefinition,
+    )
+    from backend.app.evaluation.confusion_matrix import ConfusionMatrixEvaluator
+    from backend.app.database.session import SessionLocal
+    from backend.app.database.models import Experiment, ExperimentRun
+    from backend.main import app
 
 
 client = TestClient(app)
@@ -203,8 +216,6 @@ def test_confusion_matrix_api_endpoint():
     exp_id = create_res.json()["id"]
 
     # Trigger synchronous worker or simulation run
-    from backend.app.database.session import SessionLocal
-    from backend.app.database.models import Experiment, ExperimentRun
     db = SessionLocal()
     exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
     exp.baseline_accuracy = 93.4

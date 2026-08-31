@@ -1,13 +1,18 @@
-"""
-Unit tests for all 10 Metaheuristic Optimizers.
-Verifies initialization, boundary handling, fitness minimization, convergence monotonicity,
-and standardized BaseOptimizer contract.
-"""
-
+import sys
+from pathlib import Path
 import pytest
 import numpy as np
-from backend.app.optimizers.registry import OPTIMIZER_REGISTRY, get_optimizer, list_available_algorithms
-from backend.app.optimizers.base import BaseOptimizer, OptimizationResult
+
+backend_dir = Path(__file__).resolve().parent.parent / "backend"
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+try:
+    from app.optimizers.registry import OPTIMIZER_REGISTRY, get_optimizer, list_available_algorithms
+    from app.optimizers.base import BaseOptimizer, OptimizationResult
+except ImportError:
+    from backend.app.optimizers.registry import OPTIMIZER_REGISTRY, get_optimizer, list_available_algorithms
+    from backend.app.optimizers.base import BaseOptimizer, OptimizationResult
 
 
 @pytest.mark.parametrize("alg_name", list(OPTIMIZER_REGISTRY.keys()))

@@ -1,17 +1,30 @@
-"""
-Unit tests for Accuracy, Latency, Model Size, Energy, FLOPs, Pruning, and Quantization modules.
-"""
-
+import sys
+from pathlib import Path
 import pytest
 import numpy as np
-from backend.app.evaluation.accuracy import AccuracyEvaluator
-from backend.app.evaluation.latency import LatencyEvaluator
-from backend.app.evaluation.model_size import ModelSizeEvaluator
-from backend.app.evaluation.energy import EnergyEvaluator
-from backend.app.evaluation.flops import FlopsEvaluator
-from backend.app.evaluation.quantization import QuantizationManager
-from backend.app.evaluation.pruning import PruningManager
-from backend.app.evaluation.fitness import MultiObjectiveFitness
+
+backend_dir = Path(__file__).resolve().parent.parent / "backend"
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
+
+try:
+    from app.evaluation.accuracy import AccuracyEvaluator
+    from app.evaluation.latency import LatencyEvaluator
+    from app.evaluation.model_size import ModelSizeEvaluator
+    from app.evaluation.energy import EnergyEvaluator
+    from app.evaluation.flops import FlopsEvaluator
+    from app.evaluation.quantization import QuantizationManager
+    from app.evaluation.pruning import PruningManager
+    from app.evaluation.fitness import MultiObjectiveFitness
+except ImportError:
+    from backend.app.evaluation.accuracy import AccuracyEvaluator
+    from backend.app.evaluation.latency import LatencyEvaluator
+    from backend.app.evaluation.model_size import ModelSizeEvaluator
+    from backend.app.evaluation.energy import EnergyEvaluator
+    from backend.app.evaluation.flops import FlopsEvaluator
+    from backend.app.evaluation.quantization import QuantizationManager
+    from backend.app.evaluation.pruning import PruningManager
+    from backend.app.evaluation.fitness import MultiObjectiveFitness
 
 
 def test_flops_and_parameter_accounting():
