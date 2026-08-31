@@ -85,7 +85,8 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
     title: 'ResNet-18 INT8 Compression on CIFAR-10',
     description: 'Comprehensive comparative evaluation across metaheuristic optimizers.',
     preset: 'STANDARD',
-    is_demo: false,
+    is_demo: true,
+    execution_mode: 'DEMO',
 
     // Step 1: Dataset
     dataset_name: 'CIFAR-10',
@@ -624,20 +625,21 @@ export const NewBenchmarkWizard: React.FC<NewBenchmarkWizardProps> = ({
                 <div>
                   <label className="text-[11px] font-mono text-[var(--text-muted)] block mb-1">Execution Engine:</label>
                   <select
-                    value={formData.is_demo ? 'DEMO' : 'AUTO'}
+                    value={formData.execution_mode || 'DEMO'}
                     onChange={(e) => {
-                      const isDemo = e.target.value === 'DEMO';
+                      const mode = e.target.value;
+                      const isDemo = mode === 'DEMO';
                       setFormData({
                         ...formData,
                         is_demo: isDemo,
                         // @ts-ignore
-                        execution_mode: isDemo ? 'DEMO' : 'AUTO',
+                        execution_mode: mode,
                       });
                     }}
                     className="w-full ws-input p-2 text-xs font-mono"
                   >
-                    <option value="AUTO">Auto-Select (Real if PyTorch available, otherwise Simulation)</option>
-                    <option value="DEMO">Deterministic Simulation (Cloud Sandbox)</option>
+                    <option value="DEMO">Deterministic Simulation (Cloud Sandbox &amp; Instant)</option>
+                    <option value="REAL">Direct PyTorch Hardware Execution (Requires Local Workstation)</option>
                   </select>
                 </div>
                 <div>

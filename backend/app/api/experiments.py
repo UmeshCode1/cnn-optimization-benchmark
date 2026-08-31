@@ -74,7 +74,7 @@ def create_experiment(
         raise HTTPException(status_code=422, detail={"errors": errors})
 
     # ── Execution mode ──────────────────────────────────────────────────────
-    requested_mode = getattr(request, "execution_mode", None) or get_default_mode()
+    requested_mode = getattr(request, "execution_mode", None) or ("DEMO" if request.is_demo else get_default_mode())
 
     caps_check = CapabilityService.validate_for_real_experiment(
         model_name=request.cnn_model_name,
@@ -83,15 +83,10 @@ def create_experiment(
         pruning_method=request.pruning_method,
     )
 
-    if requested_mode == "AUTO":
-        effective_mode = "REAL" if caps_check["ok"] else "DEMO"
-    elif requested_mode == "REAL":
-        if caps_check["ok"]:
-            effective_mode = "REAL"
-        else:
-            # If user explicitly requested REAL but environment lacks PyTorch, fallback to calibrated DEMO mode
-            effective_mode = "DEMO"
+    if requested_mode == "REAL" and caps_check["ok"]:
+        effective_mode = "REAL"
     else:
+        # Default to high-performance deterministic simulation for cloud sandbox and browser sessions
         effective_mode = "DEMO"
 
     exp = Experiment(
