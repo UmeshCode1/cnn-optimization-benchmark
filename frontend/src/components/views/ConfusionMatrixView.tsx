@@ -863,8 +863,8 @@ export const ConfusionMatrixView: React.FC<ConfusionMatrixViewProps> = ({
           </div>
 
           {/* Scientific Provenance Audit Panel */}
-          <div className="p-4 bg-slate-950/60 border border-[var(--border)] rounded-xl font-mono text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+          <div className="p-4 bg-[var(--surface-secondary)]/50 border border-[var(--border)] rounded-xl font-mono text-xs">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border)] mb-3">
               <span className="text-[var(--text-primary)] font-bold flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-blue-400" />
                 SCIENTIFIC PROVENANCE & AUDIT TRAIL
@@ -877,26 +877,26 @@ export const ConfusionMatrixView: React.FC<ConfusionMatrixViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
               <div>
                 <div className="text-[var(--text-muted)]">Execution Mode:</div>
-                <div className="text-white font-bold">{data.evaluation.provenance.mode}</div>
+                <div className="text-[var(--text-primary)] font-bold">{data.evaluation.provenance.mode}</div>
               </div>
               <div>
                 <div className="text-[var(--text-muted)]">Prediction Source:</div>
-                <div className="text-blue-400 font-bold">{data.evaluation.provenance.prediction_source}</div>
-              </div>
-              <div>
-                <div className="text-[var(--text-muted)]">Total Evaluated Samples:</div>
-                <div className="text-white font-bold">
-                  {data.evaluation.provenance.sample_count.toLocaleString()}
+                <div className="text-[var(--text-primary)] font-bold truncate" title={data.evaluation.provenance.prediction_source}>
+                  {data.evaluation.provenance.prediction_source}
                 </div>
               </div>
               <div>
-                <div className="text-[var(--text-muted)]">Provenance Tag:</div>
-                <div className="text-amber-400 font-bold">{data.evaluation.provenance.provenance}</div>
+                <div className="text-[var(--text-muted)]">Calibration Grounding:</div>
+                <div className="text-[var(--text-primary)] truncate" title={data.evaluation.provenance.calibration}>
+                  {data.evaluation.provenance.calibration || 'N/A'}
+                </div>
               </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-slate-800/80 text-[10px] text-[var(--text-muted)]">
-              {data.evaluation.provenance.notes}
+              <div>
+                <div className="text-[var(--text-muted)]">Dataset / Classes:</div>
+                <div className="text-[var(--text-primary)] font-bold">
+                  {data.evaluation.dataset} ({data.evaluation.classes_count} Classes)
+                </div>
+              </div>
             </div>
           </div>
         </>

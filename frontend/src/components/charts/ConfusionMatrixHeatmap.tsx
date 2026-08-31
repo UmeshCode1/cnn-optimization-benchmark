@@ -89,25 +89,25 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({
       // Diverging Delta Color Scale:
       // For diagonal (correct predictions): positive = improved (green), negative = degraded (red)
       // For off-diagonal (misclassification errors): positive = increased error (red), negative = reduced error (green)
-      if (value === 0) return 'rgba(30, 41, 59, 0.4)'; // neutral slate
+      if (value === 0) return 'var(--surface-secondary)';
 
       if (isDiagonal) {
         if (value > 0) {
           const intensity = Math.min(1, Math.abs(value) / 15.0);
-          return `rgba(16, 185, 129, ${0.2 + intensity * 0.7})`; // emerald
+          return `rgba(16, 185, 129, ${0.25 + intensity * 0.65})`; // emerald
         } else {
           const intensity = Math.min(1, Math.abs(value) / 15.0);
-          return `rgba(239, 68, 68, ${0.25 + intensity * 0.7})`; // rose/red
+          return `rgba(239, 68, 68, ${0.30 + intensity * 0.65})`; // rose/red
         }
       } else {
         if (value > 0) {
           // Increased confusion error
           const intensity = Math.min(1, Math.abs(value) / 8.0);
-          return `rgba(244, 63, 94, ${0.2 + intensity * 0.75})`; // crimson
+          return `rgba(244, 63, 94, ${0.25 + intensity * 0.70})`; // crimson
         } else {
           // Reduced confusion error
           const intensity = Math.min(1, Math.abs(value) / 8.0);
-          return `rgba(16, 185, 129, ${0.15 + intensity * 0.65})`; // emerald
+          return `rgba(16, 185, 129, ${0.20 + intensity * 0.60})`; // emerald
         }
       }
     }
@@ -116,25 +116,25 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({
     // Normalized: 0 to 100%
     if (isNormalized) {
       if (isDiagonal) {
-        // Diagonal: Strong Cyan / Blue / Emerald gradient based on accuracy
-        const intensity = Math.min(1, Math.max(0.1, value / 100.0));
-        return `rgba(59, 130, 246, ${0.15 + intensity * 0.8})`;
+        // Diagonal: Strong Blue gradient based on accuracy
+        const intensity = Math.min(1, Math.max(0.12, value / 100.0));
+        return `rgba(2, 132, 199, ${0.20 + intensity * 0.75})`;
       } else {
-        // Off-diagonal errors: subtle dark purple to bright amber/red for high confusion
-        if (value <= 0.1) return 'rgba(15, 23, 42, 0.5)';
+        // Off-diagonal errors: subtle accent/pink for high confusion
+        if (value <= 0.1) return 'var(--surface-secondary)';
         const intensity = Math.min(1, value / 20.0);
-        return `rgba(236, 72, 153, ${0.15 + intensity * 0.75})`;
+        return `rgba(236, 72, 153, ${0.20 + intensity * 0.75})`;
       }
     } else {
       // Raw Counts
       const maxCount = evaluation.global_metrics.total_samples / K;
       if (isDiagonal) {
-        const intensity = Math.min(1, Math.max(0.1, value / (maxCount || 1000)));
-        return `rgba(59, 130, 246, ${0.15 + intensity * 0.8})`;
+        const intensity = Math.min(1, Math.max(0.12, value / (maxCount || 1000)));
+        return `rgba(2, 132, 199, ${0.20 + intensity * 0.75})`;
       } else {
-        if (value === 0) return 'rgba(15, 23, 42, 0.5)';
+        if (value === 0) return 'var(--surface-secondary)';
         const intensity = Math.min(1, value / ((maxCount * 0.2) || 200));
-        return `rgba(236, 72, 153, ${0.15 + intensity * 0.75})`;
+        return `rgba(236, 72, 153, ${0.20 + intensity * 0.75})`;
       }
     }
   };
@@ -149,8 +149,8 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({
 
   return (
     <div
-      className={`bg-[var(--surface-primary)] border border-[var(--border)] rounded-xl shadow-lg flex flex-col transition-all ${
-        isFullscreen ? 'fixed inset-4 z-50 overflow-hidden bg-slate-950/95 backdrop-blur-md p-6' : 'p-5'
+      className={`bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg flex flex-col transition-all ${
+        isFullscreen ? 'fixed inset-4 z-50 overflow-hidden bg-[var(--surface-elevated)]/98 backdrop-blur-md p-6' : 'p-5'
       }`}
     >
       {/* Header Toolbar */}
@@ -272,11 +272,11 @@ export const ConfusionMatrixHeatmap: React.FC<ConfusionMatrixHeatmapProps> = ({
       <div
         role="grid"
         aria-label="Confusion Matrix Grid"
-        className="relative flex-1 overflow-auto rounded-lg border border-[var(--border)] bg-slate-950/40 p-4 max-h-[620px]"
+        className="relative flex-1 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--surface-secondary)]/30 p-4 max-h-[620px]"
       >
         <div className="inline-block min-w-full">
           {/* Top Column Headers (Predicted Labels) */}
-          <div className="flex ml-28 sticky top-0 bg-slate-950/90 backdrop-blur-xs z-20 pb-2 border-b border-[var(--border)]">
+          <div className="flex ml-28 sticky top-0 bg-[var(--surface)]/95 backdrop-blur-xs z-20 pb-2 border-b border-[var(--border)]">
             <div className="flex" style={{ gap: `${Math.max(2, Math.round(2 * zoomLevel))}px` }}>
               {classes.map((className, colIdx) => {
                 const isSelected = selectedClass === className;

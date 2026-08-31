@@ -489,7 +489,7 @@ export const LocalInstallWizardModal: React.FC<LocalInstallWizardModalProps> = (
           </div>
 
           {/* Automated Setup Workflow Steps */}
-          <div className="p-4 rounded-xl bg-slate-950/50 border border-[var(--border)] space-y-3 text-xs font-mono">
+          <div className="p-4 rounded-xl bg-[var(--surface-secondary)]/50 border border-[var(--border)] space-y-3 text-xs font-mono">
             <div className="font-bold text-[var(--text-primary)] flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               <span>WHAT THE AUTOMATED INSTALLER DOES ON YOUR LAPTOP:</span>
