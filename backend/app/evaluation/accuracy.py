@@ -104,3 +104,50 @@ class AccuracyEvaluator:
             ),
             "simulation_mode": True,
         }
+
+    @staticmethod
+    def compute_confusion_matrix(
+        dataset_name: str,
+        accuracy_pct: float,
+        baseline_accuracy_pct: float = None,
+        predictions_and_targets=None,
+        total_samples: int = None,
+        seed: int = 42,
+        pruning_ratio: float = 0.0,
+        quantization_type: str = "INT8",
+        algorithm_name: str = "UNKNOWN",
+        run_index: int = 1,
+        cnn_model_name: str = "ResNet-18",
+    ) -> Dict[str, Any]:
+        """
+        Unified router for computing confusion matrix in REAL or SIMULATION mode.
+        """
+        from .dataset_registry import get_dataset_definition
+        from .confusion_matrix import ConfusionMatrixEvaluator
+
+        dataset_def = get_dataset_definition(dataset_name)
+
+        if REAL_EVAL_AVAILABLE and predictions_and_targets is not None:
+            preds, targets = predictions_and_targets
+            return ConfusionMatrixEvaluator.calculate_from_predictions(
+                y_true=targets,
+                y_pred=preds,
+                dataset_def=dataset_def,
+                algorithm_name=algorithm_name,
+                run_index=run_index,
+                cnn_model_name=cnn_model_name,
+            )
+
+        return ConfusionMatrixEvaluator.calculate_from_simulation(
+            dataset_def=dataset_def,
+            accuracy_pct=accuracy_pct,
+            baseline_accuracy_pct=baseline_accuracy_pct,
+            total_samples=total_samples,
+            seed=seed,
+            pruning_ratio=pruning_ratio,
+            quantization_type=quantization_type,
+            algorithm_name=algorithm_name,
+            run_index=run_index,
+            cnn_model_name=cnn_model_name,
+        )
+

@@ -23,6 +23,8 @@ from ..services.statistics_service import StatisticsService
 from ..services.scoring_service import ScoringService
 from ..services.pareto_service import ParetoService
 from ..services.capability_service import CapabilityService
+from ..evaluation.dataset_registry import get_dataset_definition
+from ..evaluation.confusion_matrix import ConfusionMatrixEvaluator
 from ..workers.runner import ExperimentRunner, request_cancellation
 from ..engines import get_engine, get_default_mode
 from ..engines.base import EngineValidationError
@@ -341,6 +343,158 @@ def compare_selected(
         "statistics_by_algorithm": stats_by_alg,
         "pareto_points": pareto_points,
         "runs": filtered_runs,
+    }
+
+
+@router.get("/{exp_id}/confusion-matrix")
+def get_experiment_confusion_matrix(
+    exp_id: str,
+    algorithm: Optional[str] = Query(None, description="Algorithm acronym to inspect"),
+    compare_algorithm: Optional[str] = Query(None, description="Optional algorithm acronym for Algorithm A vs B differential"),
+    run_index: Optional[int] = Query(None, description="Specific run index (defaults to best run)"),
+    normalized: bool = Query(True, description="Whether matrices are row-normalized (%)"),
+    comparison: str = Query("BASELINE", description="Comparison mode: BASELINE, ALGORITHM, NONE"),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve research-grade confusion matrix, per-class metrics, degradation analysis,
+    top confused pairs, and differential delta matrices for an experiment run.
+    Supports both REAL (actual inference) and SIMULATION (calibrated synthetic) modes.
+    """
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+
+    if not exp.runs:
+        raise HTTPException(
+            status_code=422,
+            detail="No completed runs found for this experiment. Please run the benchmark first.",
+        )
+
+    # Determine primary algorithm
+    target_alg = algorithm
+    if not target_alg:
+        target_alg = exp.best_algorithm or exp.runs[0].algorithm_acronym
+
+    # Filter runs matching target algorithm
+    alg_runs = [r for r in exp.runs if r.algorithm_acronym.upper() == target_alg.upper()]
+    if not alg_runs:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Algorithm '{target_alg}' not found in experiment runs. Available: {list(set(r.algorithm_acronym for r in exp.runs))}",
+        )
+
+    # Select specific run or best run by overall score / accuracy
+    selected_run = None
+    if run_index is not None:
+        matched = [r for r in alg_runs if r.run_index == run_index]
+        if not matched:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Run index #{run_index} not found for algorithm '{target_alg}'. Available runs: {[r.run_index for r in alg_runs]}",
+            )
+        selected_run = matched[0]
+    else:
+        # Default to highest accuracy run
+        selected_run = max(alg_runs, key=lambda r: r.accuracy)
+
+    dataset_def = get_dataset_definition(exp.dataset_name)
+
+    # Check execution mode and compute matrix
+    execution_mode = exp.execution_mode or "DEMO"
+    
+    # Execution mode evaluation
+    # Real mode requires actual prediction arrays. If not serialized, generate calibrated simulation with explicit SIMULATED_MODEL tag.
+    raw_preds = getattr(selected_run, "raw_predictions", None)
+    raw_targets = getattr(selected_run, "raw_targets", None)
+
+    if execution_mode == "REAL" and raw_preds is not None and raw_targets is not None:
+        eval_result = ConfusionMatrixEvaluator.calculate_from_predictions(
+            y_true=raw_targets,
+            y_pred=raw_preds,
+            dataset_def=dataset_def,
+            algorithm_name=selected_run.algorithm_acronym,
+            run_index=selected_run.run_index,
+            cnn_model_name=exp.cnn_model_name,
+            extra_metadata={
+                "experiment_id": exp.id,
+                "execution_mode": "REAL",
+                "accuracy_provenance": "ACTUAL_PREDICTIONS",
+                "synthetic": False,
+            },
+        )
+    else:
+        eval_result = ConfusionMatrixEvaluator.calculate_from_simulation(
+            dataset_def=dataset_def,
+            accuracy_pct=selected_run.accuracy,
+            baseline_accuracy_pct=exp.baseline_accuracy,
+            seed=selected_run.seed,
+            pruning_ratio=exp.pruning_ratio,
+            quantization_type=exp.quantization_type,
+            algorithm_name=selected_run.algorithm_acronym,
+            run_index=selected_run.run_index,
+            cnn_model_name=exp.cnn_model_name,
+            extra_metadata={
+                "experiment_id": exp.id,
+                "execution_mode": "SIMULATION" if execution_mode == "DEMO" else "REAL_SIMULATED_FALLBACK",
+                "accuracy_provenance": "SIMULATED_MODEL",
+                "synthetic": True,
+                "notes": (
+                    "DEMO DATA — Statistically synthesized via analytical degradation & semantic affinity model."
+                    if execution_mode == "DEMO"
+                    else "REAL execution mode without raw sample array serialization. Calibrated simulation rendered."
+                ),
+            },
+        )
+
+    # Optional Algorithm A vs Algorithm B comparison
+    algorithm_comparison = None
+    if compare_algorithm and comparison.upper() == "ALGORITHM":
+        comp_runs = [r for r in exp.runs if r.algorithm_acronym.upper() == compare_algorithm.upper()]
+        if not comp_runs:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Comparison algorithm '{compare_algorithm}' not found in experiment runs.",
+            )
+        comp_run = max(comp_runs, key=lambda r: r.accuracy)
+        comp_eval = ConfusionMatrixEvaluator.calculate_from_simulation(
+            dataset_def=dataset_def,
+            accuracy_pct=comp_run.accuracy,
+            baseline_accuracy_pct=exp.baseline_accuracy,
+            seed=comp_run.seed,
+            pruning_ratio=exp.pruning_ratio,
+            quantization_type=exp.quantization_type,
+            algorithm_name=comp_run.algorithm_acronym,
+            run_index=comp_run.run_index,
+            cnn_model_name=exp.cnn_model_name,
+        )
+        algorithm_comparison = ConfusionMatrixEvaluator.calculate_algorithm_differential(
+            eval_a=eval_result,
+            eval_b=comp_eval,
+        )
+
+    # Extract all available algorithms and runs for UI controls
+    available_algorithms = sorted(list(set(r.algorithm_acronym for r in exp.runs)))
+    algorithm_runs_map = {
+        alg: [r.run_index for r in exp.runs if r.algorithm_acronym == alg]
+        for alg in available_algorithms
+    }
+
+    return {
+        "experiment_id": exp.id,
+        "experiment_title": exp.title,
+        "dataset_name": exp.dataset_name,
+        "cnn_model_name": exp.cnn_model_name,
+        "selected_algorithm": target_alg,
+        "selected_run_index": selected_run.run_index,
+        "available_algorithms": available_algorithms,
+        "algorithm_runs_map": algorithm_runs_map,
+        "evaluation": eval_result,
+        "algorithm_comparison": algorithm_comparison,
+        "comparison_mode": comparison.upper(),
+        "baseline_accuracy": exp.baseline_accuracy,
+        "model_accuracy": selected_run.accuracy,
+        "accuracy_drop": selected_run.accuracy_drop,
     }
 
 

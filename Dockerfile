@@ -21,6 +21,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ /app/backend/
+COPY scripts/ /app/scripts/
+COPY install.ps1 install.sh install.bat local_runner.py /app/
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 ENV PYTHONPATH=/app:/app/backend

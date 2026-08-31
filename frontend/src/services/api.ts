@@ -9,6 +9,7 @@ import {
   SystemCapabilities,
   DatasetInfo,
   CNNModelInfo,
+  ConfusionMatrixResponse,
 } from '../types';
 
 const API_BASE = '/api';
@@ -257,6 +258,32 @@ export const api = {
     return res.json();
   },
 
+  // Confusion Matrix
+  async getConfusionMatrix(
+    expId: string,
+    params?: {
+      algorithm?: string;
+      compare_algorithm?: string;
+      run_index?: number;
+      normalized?: boolean;
+      comparison?: 'BASELINE' | 'ALGORITHM' | 'NONE';
+    }
+  ): Promise<ConfusionMatrixResponse> {
+    const query = new URLSearchParams();
+    if (params?.algorithm) query.append('algorithm', params.algorithm);
+    if (params?.compare_algorithm) query.append('compare_algorithm', params.compare_algorithm);
+    if (params?.run_index !== undefined) query.append('run_index', String(params.run_index));
+    if (params?.normalized !== undefined) query.append('normalized', String(params.normalized));
+    if (params?.comparison) query.append('comparison', params.comparison);
+
+    const res = await fetch(`${API_BASE}/experiments/${expId}/confusion-matrix?${query.toString()}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to fetch confusion matrix' }));
+      throw new Error(err.detail || 'Failed to fetch confusion matrix');
+    }
+    return res.json();
+  },
+
   // Reports
   getExportUrl(expId: string, format: 'csv' | 'markdown' | 'json'): string {
     return `${API_BASE}/reports/${expId}/${format}`;
@@ -286,6 +313,32 @@ export const api = {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error('Failed to delete dataset');
+  },
+
+  // Installer & Local Daemon Probing
+  async getInstallerPreflight(): Promise<InstallerPreflightInfo> {
+    const res = await fetch(`${API_BASE}/installer/preflight`);
+    if (!res.ok) throw new Error('Failed to fetch installer preflight specs');
+    return res.json();
+  },
+
+  async probeLocalDaemon(port = 8000): Promise<{ isRunning: boolean; data?: any }> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const res = await fetch(`http://localhost:${port}/api/health`, {
+        signal: controller.signal,
+        mode: 'cors',
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        return { isRunning: true, data };
+      }
+    } catch {
+      // Local daemon offline or not yet started
+    }
+    return { isRunning: false };
   },
 
   // WebSocket

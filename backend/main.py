@@ -30,6 +30,8 @@ from app.api.pareto import router as pareto_router
 from app.api.ablation import router as ablation_router
 from app.api.reports import router as reports_router
 from app.api.websocket import router as websocket_router
+from app.api.installer import router as installer_router, WINDOWS_PS1_TEMPLATE, WINDOWS_BAT_TEMPLATE, UNIX_SH_TEMPLATE
+from fastapi.responses import PlainTextResponse
 
 
 @asynccontextmanager
@@ -93,6 +95,25 @@ app.include_router(pareto_router)
 app.include_router(ablation_router)
 app.include_router(reports_router)
 app.include_router(websocket_router)
+app.include_router(installer_router)
+
+
+@app.get("/install.ps1", response_class=PlainTextResponse)
+def root_install_ps1():
+    """Direct root one-liner endpoint for powershell irm https://cnn.umeshlabs.in/install.ps1 | iex"""
+    return PlainTextResponse(content=WINDOWS_PS1_TEMPLATE, media_type="text/plain")
+
+
+@app.get("/install.sh", response_class=PlainTextResponse)
+def root_install_sh():
+    """Direct root one-liner endpoint for curl -fsSL https://cnn.umeshlabs.in/install.sh | bash"""
+    return PlainTextResponse(content=UNIX_SH_TEMPLATE, media_type="text/plain")
+
+
+@app.get("/install.bat", response_class=PlainTextResponse)
+def root_install_bat():
+    """Direct root batch file endpoint"""
+    return PlainTextResponse(content=WINDOWS_BAT_TEMPLATE, media_type="text/plain")
 
 
 @app.get("/api/health")

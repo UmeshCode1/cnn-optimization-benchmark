@@ -195,3 +195,32 @@ def test_export_reports_formats():
     assert "experiment" in data
     assert "ranked_algorithms" in data
 
+
+def test_installer_endpoints():
+    # 1. Preflight checklist
+    pref_res = client.get("/api/installer/preflight")
+    assert pref_res.status_code == 200
+    pref_data = pref_res.json()
+    assert "system_requirements" in pref_data
+    assert "commands" in pref_data
+    assert "windows_powershell" in pref_data["commands"]
+    assert "mac_linux_bash" in pref_data["commands"]
+
+    # 2. Raw PowerShell script endpoint
+    ps1_res = client.get("/install.ps1")
+    assert ps1_res.status_code == 200
+    assert "AUTOMATED LOCAL LAPTOP INSTALLER" in ps1_res.text
+    assert "pip install" in ps1_res.text
+
+    # 3. Raw Bash script endpoint
+    sh_res = client.get("/install.sh")
+    assert sh_res.status_code == 200
+    assert "AUTOMATED LAPTOP / WORKSTATION INSTALLER" in sh_res.text
+    assert "pip install" in sh_res.text
+
+    # 4. Batch script endpoint
+    bat_res = client.get("/install.bat")
+    assert bat_res.status_code == 200
+    assert "powershell" in bat_res.text.lower()
+
+

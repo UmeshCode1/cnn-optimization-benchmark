@@ -237,3 +237,147 @@ export interface DatasetInfo {
   created_at: string;
   file_size_bytes?: number;
 }
+
+export interface ConfusionProvenance {
+  mode: 'REAL' | 'SIMULATION';
+  provenance: 'ACTUAL_PREDICTIONS' | 'SIMULATED_MODEL';
+  synthetic: boolean;
+  prediction_source: string;
+  dataset_name: string;
+  cnn_model_name: string;
+  algorithm_name: string;
+  run_index: number;
+  sample_count: number;
+  classes_count: number;
+  calibration?: string;
+  notes: string;
+  [key: string]: any;
+}
+
+export interface PerClassMetric {
+  class_index: number;
+  class_name: string;
+  semantic_group?: string;
+  support: number;
+  true_positives: number;
+  false_positives: number;
+  false_negatives: number;
+  precision: number;
+  recall: number;
+  f1_score: number;
+  baseline_recall?: number | null;
+  recall_drop_pp?: number | null;
+  baseline_precision?: number | null;
+  precision_drop_pp?: number | null;
+}
+
+export interface ConfusedPair {
+  true_class_index: number;
+  true_class: string;
+  pred_class_index: number;
+  predicted_class: string;
+  count: number;
+  percentage_of_true_class: number;
+}
+
+export interface SymmetricConfusedPair {
+  class_a: string;
+  class_b: string;
+  class_a_index: number;
+  class_b_index: number;
+  a_to_b_count: number;
+  b_to_a_count: number;
+  total_mutual_confusion: number;
+}
+
+export interface SemanticGroupSummary {
+  group_name: string;
+  classes_count: number;
+  total_support: number;
+  mean_recall: number;
+  mean_f1: number;
+  mean_recall_drop_pp?: number | null;
+}
+
+export interface ConfusionGlobalMetrics {
+  accuracy: number;
+  macro_precision: number;
+  macro_recall: number;
+  macro_f1: number;
+  weighted_f1: number;
+  total_samples: number;
+  total_correct: number;
+}
+
+export interface ConfusionMatrixEvaluation {
+  dataset: string;
+  classes: string[];
+  classes_count: number;
+  algorithm: string;
+  provenance: ConfusionProvenance;
+  raw_matrix: number[][];
+  normalized_matrix: number[][];
+  baseline_raw_matrix?: number[][] | null;
+  baseline_normalized_matrix?: number[][] | null;
+  delta_normalized_matrix?: number[][] | null;
+  delta_raw_matrix?: number[][] | null;
+  global_metrics: ConfusionGlobalMetrics;
+  per_class_metrics: PerClassMetric[];
+  top_confused_pairs: ConfusedPair[];
+  top_symmetric_pairs: SymmetricConfusedPair[];
+  degraded_classes: PerClassMetric[];
+  semantic_summary: SemanticGroupSummary[];
+}
+
+export interface AlgorithmComparisonDifferential {
+  comparison_type: string;
+  algorithm_a: string;
+  algorithm_b: string;
+  delta_normalized_matrix: number[][];
+  delta_raw_matrix: number[][];
+  accuracy_diff: number;
+  macro_f1_diff: number;
+}
+
+export interface ConfusionMatrixResponse {
+  experiment_id: string;
+  experiment_title: string;
+  dataset_name: string;
+  cnn_model_name: string;
+  selected_algorithm: string;
+  selected_run_index: number;
+  available_algorithms: string[];
+  algorithm_runs_map: Record<string, number[]>;
+  evaluation: ConfusionMatrixEvaluation;
+  algorithm_comparison?: AlgorithmComparisonDifferential | null;
+  comparison_mode: 'BASELINE' | 'ALGORITHM' | 'NONE';
+  baseline_accuracy: number;
+  model_accuracy: number;
+  accuracy_drop: number;
+}
+
+export interface InstallerPreflightInfo {
+  server_status: string;
+  current_server_mode: 'DEMO' | 'REAL';
+  system_requirements: {
+    os: string[];
+    ram_minimum_gb: number;
+    ram_recommended_gb: number;
+    python_minimum: string;
+    python_recommended: string;
+    gpu_support: string;
+    disk_space_gb: number;
+  };
+  commands: {
+    windows_powershell: string;
+    mac_linux_bash: string;
+    docker_compose: string;
+    python_manual: string;
+  };
+  download_urls: {
+    windows_bat: string;
+    windows_ps1: string;
+    unix_sh: string;
+  };
+}
+

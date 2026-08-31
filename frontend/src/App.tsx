@@ -14,6 +14,7 @@ import { ReportsView } from './components/views/ReportsView';
 import { DatasetsView } from './components/views/DatasetsView';
 import { HistoryView } from './components/views/HistoryView';
 import { LiveRunModal } from './components/views/LiveRunModal';
+import { ConfusionMatrixView } from './components/views/ConfusionMatrixView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ExecutionModeBanner } from './components/common/ExecutionModeBanner';
 import { api } from './services/api';
@@ -342,6 +343,7 @@ export const App: React.FC = () => {
                     onViewPareto={() => setActiveTab('pareto')}
                     onViewConvergence={() => setActiveTab('convergence')}
                     onViewStatistics={() => setActiveTab('statistics')}
+                    onViewConfusion={() => setActiveTab('confusion')}
                   />
                 )}
               </ErrorBoundary>
@@ -369,6 +371,14 @@ export const App: React.FC = () => {
                   <MultiRunStatsView
                     experiment={experimentDetails.experiment}
                     statistics={experimentDetails.statistics_by_algorithm}
+                  />
+                )}
+              </ErrorBoundary>
+
+              <ErrorBoundary>
+                {activeTab === 'confusion' && (
+                  <ConfusionMatrixView
+                    experiment={experimentDetails.experiment}
                   />
                 )}
               </ErrorBoundary>

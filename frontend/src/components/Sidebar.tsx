@@ -18,6 +18,7 @@ import {
   FlaskConical,
   CheckCircle2,
   Activity,
+  Grid,
 } from 'lucide-react';
 
 export type NavTab =
@@ -28,6 +29,7 @@ export type NavTab =
   | 'pareto'
   | 'convergence'
   | 'statistics'
+  | 'confusion'
   | 'ablation'
   | 'hardware'
   | 'documentation'
@@ -67,6 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'pareto', label: 'Pareto Front', icon: GitFork },
         { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
         { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
+        { id: 'confusion', label: 'Confusion Matrix', icon: Grid },
         { id: 'ablation', label: 'Ablation Study', icon: SlidersHorizontal },
       ],
     },

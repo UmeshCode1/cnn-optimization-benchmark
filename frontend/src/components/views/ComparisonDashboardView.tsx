@@ -20,6 +20,7 @@ interface ComparisonDashboardViewProps {
   onViewPareto: () => void;
   onViewConvergence: () => void;
   onViewStatistics: () => void;
+  onViewConfusion?: () => void;
 }
 
 // Compute power draw in milliwatts from energy (J) and latency (ms)
@@ -53,6 +54,7 @@ export const ComparisonDashboardView: React.FC<ComparisonDashboardViewProps> = (
   onViewPareto,
   onViewConvergence,
   onViewStatistics,
+  onViewConfusion,
 }) => {
   const [sortKey, setSortKey] = useState<string>('overall_score');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -112,28 +114,37 @@ export const ComparisonDashboardView: React.FC<ComparisonDashboardViewProps> = (
         </div>
 
         {/* Quick Analytical Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={onViewPareto}
-            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer"
           >
             <GitFork className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Pareto Front</span>
           </button>
           <button
             onClick={onViewConvergence}
-            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer"
           >
             <TrendingDown className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Convergence</span>
           </button>
           <button
             onClick={onViewStatistics}
-            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer"
           >
             <Layers2 className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Multi-Run Stats</span>
           </button>
+          {onViewConfusion && (
+            <button
+              onClick={onViewConfusion}
+              className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer text-blue-400 border-blue-500/30 hover:bg-blue-500/10"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Confusion Matrix</span>
+            </button>
+          )}
         </div>
       </div>
 
