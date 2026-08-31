@@ -45,13 +45,14 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
                 ...prev.slice(0, 40),
               ]);
               if (pollInterval) clearInterval(pollInterval);
-            } else if (exp.status === 'FAILED') {
-              setStatus('FAILED');
-              setLogs((prev) => [`[ERROR] Benchmark execution failed: ${exp.error_message || 'Unknown error'}`, ...prev]);
+            } else if (exp.status === 'FAILED' || exp.status === 'CANCELLED' || exp.status === 'INTERRUPTED') {
+              setStatus(exp.status);
+              setIsDone(true);
+              setLogs((prev) => [`[${exp.status}] Benchmark ${exp.status.toLowerCase()}: ${exp.error_message || 'Stopped'}`, ...prev]);
               if (pollInterval) clearInterval(pollInterval);
             } else if (details.runs && details.runs.length > 0) {
               const completedCount = details.runs.length;
-              const expectedTotal = (exp.selected_algorithms?.length || 10) * exp.number_of_runs;
+              const expectedTotal = (exp.selected_algorithms?.length || 10) * (exp.number_of_runs || 5);
               const pct = Math.min(95, Math.round((completedCount / (expectedTotal || 1)) * 100));
               setProgressPct(pct);
               const lastRun = details.runs[details.runs.length - 1];
@@ -67,7 +68,7 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
         } catch (e) {
           // ignore poll errors
         }
-      }, 1200);
+      }, 1000);
     };
 
     const ws = api.createProgressWebSocket(experimentId, (data) => {
@@ -75,21 +76,22 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
       if (data.event === 'RUN_START') {
         setCurrentAlgorithm(data.algorithm);
         setCurrentRunIndex(data.run_index);
-        setTotalRuns(data.total_runs);
+        if (data.total_runs) setTotalRuns(data.total_runs);
         setProgressPct(data.progress_pct);
         setLogs((prev) => [
-          `[STAGE 4/5: OPTIMIZING] ${data.algorithm} &bull; Stochastic Run #${data.run_index}/${data.total_runs} initiated.`,
+          `[STAGE 4/5: OPTIMIZING] ${data.algorithm} &bull; Stochastic Run #${data.run_index}/${data.total_runs || totalRuns} initiated.`,
           ...prev.slice(0, 40),
         ]);
       } else if (data.event === 'RUN_COMPLETED') {
         setProgressPct(data.progress_pct);
+        const m = data.run_data || data.metrics;
         setLatestMetrics({
-          accuracy: data.run_data?.accuracy,
-          latency: data.run_data?.latency_ms,
-          score: data.run_data?.overall_score,
+          accuracy: m?.accuracy,
+          latency: m?.latency_ms,
+          score: m?.overall_score,
         });
         setLogs((prev) => [
-          `[EVAL SUCCESS] ${data.algorithm} Run #${data.run_index} &rarr; Acc: ${data.run_data?.accuracy?.toFixed(2)}%, Lat: ${data.run_data?.latency_ms?.toFixed(2)}ms, Score: ${data.run_data?.overall_score?.toFixed(1)}/100`,
+          `[EVAL SUCCESS] ${data.algorithm} Run #${data.run_index} &rarr; Acc: ${m?.accuracy?.toFixed(2)}%, Lat: ${m?.latency_ms?.toFixed(2)}ms, Score: ${m?.overall_score?.toFixed(1)}/100`,
           ...prev.slice(0, 40),
         ]);
       } else if (data.event === 'BENCHMARK_COMPLETED') {
@@ -97,12 +99,18 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
         setStatus('COMPLETED');
         setIsDone(true);
         setLogs((prev) => [
-          `[STAGE 5/5: COMPLETE] Benchmark completed. Winner: ${data.best_algorithm}. Computing Pareto frontiers & statistics.`,
+          `[STAGE 5/5: COMPLETE] Benchmark completed. Winner: ${data.best_algorithm || 'Optimal'}. Computing Pareto frontiers & statistics.`,
           ...prev,
         ]);
         if (pollInterval) clearInterval(pollInterval);
+      } else if (data.event === 'BENCHMARK_CANCELLED') {
+        setStatus('CANCELLED');
+        setIsDone(true);
+        setLogs((prev) => [`[CANCELLED] Benchmark execution was cancelled by user.`, ...prev]);
+        if (pollInterval) clearInterval(pollInterval);
       } else if (data.event === 'BENCHMARK_FAILED') {
         setStatus('FAILED');
+        setIsDone(true);
         setLogs((prev) => [`[ERROR] Benchmark execution failed: ${data.error}`, ...prev]);
         if (pollInterval) clearInterval(pollInterval);
       }
@@ -261,12 +269,26 @@ export const LiveRunModal: React.FC<LiveRunModalProps> = ({
               <span>Inspect Results Dashboard &rarr;</span>
             </button>
           ) : (
-            <button
-              onClick={onClose}
-              className="px-3.5 py-1.5 ws-button-secondary text-xs"
-            >
-              Run in Background
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    await api.cancelExperiment(experimentId);
+                  } catch (e) {
+                    console.error('Cancel failed', e);
+                  }
+                }}
+                className="px-3 py-1.5 text-xs text-[var(--danger)] hover:bg-[var(--danger)]/10 border border-[var(--danger)]/30 rounded transition"
+              >
+                Cancel Run
+              </button>
+              <button
+                onClick={onClose}
+                className="px-3.5 py-1.5 ws-button-secondary text-xs"
+              >
+                Run in Background
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -152,14 +152,18 @@ class ExperimentRunner:
             loop = asyncio.get_event_loop()
 
             def progress_callback(payload: Dict[str, Any]):
-                asyncio.run_coroutine_threadsafe(
-                    broadcast_progress(experiment_id, payload), loop
-                )
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        broadcast_progress(experiment_id, payload), loop
+                    )
+                except Exception as cb_err:
+                    print(f"[Runner] Progress broadcast error: {cb_err}")
 
-            # ── Run engine ──────────────────────────────────────────────────
-            result: BenchmarkResult = engine.run_experiment(
-                experiment_config=experiment_config,
-                progress_callback=progress_callback,
+            # ── Run engine in background worker thread to prevent event loop blocking ───────
+            result: BenchmarkResult = await asyncio.to_thread(
+                engine.run_experiment,
+                experiment_config,
+                progress_callback,
             )
 
             # ── Persist baseline ────────────────────────────────────────────

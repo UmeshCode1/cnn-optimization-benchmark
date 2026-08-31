@@ -405,6 +405,13 @@ class SimulationEngine(BaseExperimentEngine):
                 all_runs.append(run)
 
                 if progress_callback:
+                    run_summary = {
+                        "accuracy": final_acc,
+                        "accuracy_provenance": "SIMULATED",
+                        "latency_ms": fixed_lat,
+                        "latency_provenance": "SIMULATED",
+                        "overall_score": score,
+                    }
                     progress_callback({
                         "event": "RUN_COMPLETED",
                         "experiment_id": exp_id,
@@ -412,14 +419,12 @@ class SimulationEngine(BaseExperimentEngine):
                         "algorithm": alg_key,
                         "run_index": run_idx,
                         "progress_pct": round((current_step / total_steps) * 100.0, 1),
-                        "metrics": {
-                            "accuracy": final_acc,
-                            "accuracy_provenance": "SIMULATED",
-                            "latency_ms": fixed_lat,
-                            "latency_provenance": "SIMULATED",
-                            "overall_score": score,
-                        },
+                        "metrics": run_summary,
+                        "run_data": run_summary,
                     })
+
+                # Yield briefly so the UI animation and WebSocket stream smoothly
+                time.sleep(0.03)
 
         return BenchmarkResult(
             experiment_id=exp_id,
