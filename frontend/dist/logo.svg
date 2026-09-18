@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f19" />
+      <stop offset="50%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+
+    <!-- Cyber Shield / Hex Core Gradient -->
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d2ff" />
+      <stop offset="40%" stop-color="#3b82f6" />
+      <stop offset="80%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <!-- Metaheuristic Swarm Trajectory Glow -->
+    <linearGradient id="swarmGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+
+    <!-- Inner Kernel Glow -->
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="30%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="70%" stop-color="#6366f1" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Drop Shadow & Neon Filters -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00d2ff" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Icon Container -->
+  <rect width="128" height="128" rx="28" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="2" />
+  
+  <!-- Outer Subtle Orbit Ring -->
+  <circle cx="64" cy="64" r="50" fill="none" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.8" />
+  
+  <!-- Dynamic Metaheuristic Swarm Orbital Arc (Search Trajectory) -->
+  <ellipse cx="64" cy="64" rx="46" ry="24" transform="rotate(-30 64 64)" fill="none" stroke="url(#swarmGrad)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="120 40" filter="url(#neonGlow)" />
+  <ellipse cx="64" cy="64" rx="46" ry="24" transform="rotate(45 64 64)" fill="none" stroke="url(#coreGrad)" stroke-width="2" stroke-linecap="round" stroke-dasharray="90 60" opacity="0.85" />
+
+  <!-- Multi-Layer CNN Feature Map Diamonds / Nodes -->
+  <g transform="translate(64, 64) scale(0.92) translate(-64, -64)">
+    <!-- Interconnecting Synapse Rays -->
+    <line x1="32" y1="64" x2="64" y2="34" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.6" />
+    <line x1="32" y1="64" x2="64" y2="94" stroke="#00d2ff" stroke-width="1.5" stroke-opacity="0.6" />
+    <line x1="96" y1="64" x2="64" y2="34" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.6" />
+    <line x1="96" y1="64" x2="64" y2="94" stroke="#ec4899" stroke-width="1.5" stroke-opacity="0.6" />
+    <line x1="64" y1="34" x2="64" y2="94" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.4" stroke-dasharray="3 3" />
+    <line x1="32" y1="64" x2="96" y2="64" stroke="#3b82f6" stroke-width="1.5" stroke-opacity="0.4" stroke-dasharray="3 3" />
+
+    <!-- Isometric Central CNN Kernel Cube / Pruning Shield -->
+    <path d="M 64 24 L 98 44 L 98 84 L 64 104 L 30 84 L 30 44 Z" fill="none" stroke="url(#coreGrad)" stroke-width="3" stroke-linejoin="round" filter="url(#softShadow)" />
+
+    <!-- Inner Concentric Optimized Topology (Pruned Sub-network) -->
+    <path d="M 64 38 L 86 51 L 86 77 L 64 90 L 42 77 L 42 51 Z" fill="#0f172a" fill-opacity="0.75" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round" />
+
+    <!-- Central Global Optimum Core -->
+    <circle cx="64" cy="64" r="14" fill="url(#innerGlow)" />
+    <circle cx="64" cy="64" r="6" fill="#ffffff" filter="url(#neonGlow)" />
+
+    <!-- Swarm Particle Agents (Metaheuristic Search Wolves / Whales / Lions) -->
+    <circle cx="32" cy="64" r="4.5" fill="#00d2ff" stroke="#ffffff" stroke-width="1.5" filter="url(#neonGlow)" />
+    <circle cx="96" cy="64" r="4.5" fill="#ec4899" stroke="#ffffff" stroke-width="1.5" filter="url(#neonGlow)" />
+    <circle cx="64" cy="34" r="4.5" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" filter="url(#neonGlow)" />
+    <circle cx="64" cy="94" r="4.5" fill="#10b981" stroke="#ffffff" stroke-width="1.5" filter="url(#neonGlow)" />
+
+    <!-- Orbiting Swarm Scout Particles -->
+    <circle cx="92" cy="42" r="3" fill="#fbbf24" filter="url(#neonGlow)" />
+    <circle cx="38" cy="86" r="2.5" fill="#a78bfa" filter="url(#neonGlow)" />
+  </g>
+</svg>

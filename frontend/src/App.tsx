@@ -15,6 +15,8 @@ import { DatasetsView } from './components/views/DatasetsView';
 import { HistoryView } from './components/views/HistoryView';
 import { LiveRunModal } from './components/views/LiveRunModal';
 import { ConfusionMatrixView } from './components/views/ConfusionMatrixView';
+import { CnnLayerOperationsView } from './components/views/CnnLayerOperationsView';
+import { DeviceSimulationView } from './components/views/DeviceSimulationView';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ExecutionModeBanner } from './components/common/ExecutionModeBanner';
 import { api } from './services/api';
@@ -318,6 +320,27 @@ export const App: React.FC = () => {
             )}
           </ErrorBoundary>
 
+          <ErrorBoundary>
+            {activeTab === 'layers' && (
+              <CnnLayerOperationsView
+                initialModelName={experimentDetails?.experiment?.cnn_model_name || 'ResNet-18'}
+                onSelectModelForBenchmark={() => {
+                  setActiveTab('wizard');
+                }}
+              />
+            )}
+          </ErrorBoundary>
+
+          <ErrorBoundary>
+            {activeTab === 'device-simulation' && (
+              <DeviceSimulationView
+                experiment={experimentDetails?.experiment}
+                onNavigateToWizard={() => setActiveTab('wizard')}
+                onNavigateToLayers={() => setActiveTab('layers')}
+              />
+            )}
+          </ErrorBoundary>
+
           {/* Analysis Views Loading State */}
           {isAnalysisTab && isLoadingDetails && (
             <div className="flex flex-col items-center justify-center min-h-[400px] text-xs font-mono text-[var(--text-muted)] space-y-3">
@@ -385,6 +408,8 @@ export const App: React.FC = () => {
                     onViewConvergence={() => setActiveTab('convergence')}
                     onViewStatistics={() => setActiveTab('statistics')}
                     onViewConfusion={() => setActiveTab('confusion')}
+                    onViewLayers={() => setActiveTab('layers')}
+                    onViewDeviceSimulation={() => setActiveTab('device-simulation')}
                   />
                 )}
               </ErrorBoundary>

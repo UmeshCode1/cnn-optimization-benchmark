@@ -27,6 +27,11 @@ BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 os.environ["EXECUTION_MODE"] = "REAL"
 
 
@@ -118,10 +123,29 @@ def run_cli_experiment(args):
     print("=" * 60 + "\n")
 
 
-def start_server(port=8000, host="0.0.0.0"):
+def start_server(port=8000, host="0.0.0.0", open_browser_flag=True):
     """Start FastAPI server with full Real Mode support."""
     import uvicorn
-    print(f"\n🚀 Starting CNN Benchmark Server in REAL/LOCAL mode on http://localhost:{port}")
+    import webbrowser
+    import threading
+    import time
+
+    if open_browser_flag:
+        def _open():
+            time.sleep(1.8)
+            try:
+                webbrowser.open(f"http://localhost:{port}")
+            except Exception:
+                pass
+        threading.Thread(target=_open, daemon=True).start()
+
+    print(f"\n=========================================================================")
+    print(f"  CNN BENCHMARK WORKSTATION RUNNING")
+    print(f"=========================================================================")
+    print(f"  * Web Dashboard:  http://localhost:{port}")
+    print(f"  * API Docs:       http://localhost:{port}/docs")
+    print(f"  * Telemetry API:  http://localhost:{port}/api/hardware/telemetry")
+    print(f"=========================================================================\n")
     uvicorn.run("main:app", host=host, port=port, reload=True, app_dir=str(BACKEND_DIR))
 
 

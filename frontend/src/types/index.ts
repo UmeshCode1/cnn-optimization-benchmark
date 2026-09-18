@@ -223,6 +223,75 @@ export interface CNNModelInfo {
   description: string;
 }
 
+export interface CnnLayerOperation {
+  layer_index: number;
+  name: string;
+  stage: string;
+  op_type: string;
+  input_shape: number[];
+  output_shape: number[];
+  kernel_size?: number[] | null;
+  stride?: number[] | null;
+  padding?: number[] | null;
+  dilation?: number[] | null;
+  groups: number;
+  has_bias: boolean;
+  weight_params: number;
+  bias_params: number;
+  total_params: number;
+  base_params: number;
+  param_formula: string;
+  macs: number;
+  flops: number;
+  base_flops: number;
+  flops_formula: string;
+  activation_memory_kb: number;
+  weight_memory_kb: number;
+  receptive_field: number;
+  cumulative_flops: number;
+  cumulative_params: number;
+  cumulative_flops_m: number;
+  cumulative_params_m: number;
+  flops_pct: number;
+  cumulative_flops_pct: number;
+}
+
+export interface CnnModelLayerProfile {
+  model_name: string;
+  input_resolution: number[];
+  batch_size: number;
+  quantization_type: string;
+  precision_bits: number;
+  pruning_ratio: number;
+  total_layers: number;
+  total_parameters: number;
+  total_parameters_m: number;
+  total_flops: number;
+  total_flops_m: number;
+  total_weight_memory_mb: number;
+  peak_activation_memory_mb: number;
+  total_activation_buffer_mb: number;
+  layers: CnnLayerOperation[];
+}
+
+export interface CustomLayerCalculationRequest {
+  op_type: string;
+  c_in: number;
+  c_out: number;
+  h_in: number;
+  w_in: number;
+  kernel_size?: number;
+  stride?: number;
+  padding?: number;
+  dilation?: number;
+  groups?: number;
+  has_bias?: boolean;
+  batch_size?: number;
+  precision_bits?: number;
+  pruning_ratio?: number;
+}
+
+
 export interface DatasetInfo {
   id: string;
   name: string;
@@ -399,4 +468,143 @@ export interface InstallerPreflightInfo {
     unix_sh: string;
   };
 }
+
+export interface DeviceHardwareProfile {
+  id: string;
+  name: string;
+  category: string;
+  processor: string;
+  compute_gflops: number;
+  memory_type: string;
+  memory_bandwidth_gbps: number;
+  tdp_watts: number;
+  idle_power_mw: number;
+  max_active_power_mw: number;
+  thermal_resistance_c_per_w: number;
+  thermal_time_constant_s: number;
+  battery_capacity_mah: number;
+  battery_voltage_v: number;
+  battery_energy_wh: number;
+  skin_contact_limit_c: number;
+  description: string;
+}
+
+export interface ThermalPoint {
+  time_seconds: number;
+  temperature_c: number;
+  delta_c: number;
+}
+
+export interface DeviceSimulationResult {
+  device: DeviceHardwareProfile;
+  inputs: {
+    flops_m: number;
+    parameters_m: number;
+    model_size_mb: number;
+    accuracy: number;
+    quantization_type: string;
+    ambient_temp_c: number;
+  };
+  performance: {
+    latency_ms: number;
+    throttled_latency_ms: number;
+    fps: number;
+    speedup_vs_fp32: number;
+  };
+  power_and_energy: {
+    total_power_mw: number;
+    total_power_w: number;
+    energy_mj: number;
+    energy_uj: number;
+    idle_power_mw: number;
+  };
+  thermal: {
+    ambient_temp_c: number;
+    delta_temp_c: number;
+    operating_temp_c: number;
+    skin_contact_limit_c: number;
+    thermal_status: 'SAFE' | 'WARM' | 'OVERHEATING_WARNING';
+    thermal_status_msg: string;
+    thermal_curve: ThermalPoint[];
+    thermal_resistance_c_per_w: number;
+  };
+  battery: {
+    battery_capacity_mah: number;
+    battery_energy_wh: number;
+    continuous_runtime_hours: number;
+    total_inferences_on_charge: number;
+  };
+}
+
+export interface LayerWiseOptimizationRow {
+  layer_number: number;
+  layer_name: string;
+  stage: string;
+  op_type: string;
+  sensitivity: number;
+  pruning_ratio: number;
+  pruning_ratio_pct: string;
+  precision: string;
+  validation_accuracy_impact_pp: number;
+  validation_accuracy_impact_str: string;
+  remaining_accuracy: number;
+  weights_count: number;
+  flops_m: number;
+}
+
+export interface ResearchAblationAnswers {
+  model_name: string;
+  dataset_name: string;
+  optimizer_name: string;
+  q1_quantization: {
+    question: string;
+    table: Array<{
+      precision: string;
+      size_mb: number;
+      size_reduction_pct: string;
+      latency_ms: number;
+      speedup: string;
+      accuracy: number;
+      accuracy_drop_pp: string;
+    }>;
+    conclusion: string;
+  };
+  q2_structured_pruning: {
+    question: string;
+    table: Array<{
+      pruning_ratio: string;
+      params_m: number;
+      param_reduction: string;
+      flops_m: number;
+      flops_reduction: string;
+      accuracy: number;
+    }>;
+    conclusion: string;
+  };
+  q3_layer_sensitivity: {
+    question: string;
+    table: Array<{
+      method: string;
+      accuracy: number;
+      flops_m: number;
+      latency_ms: number;
+      accuracy_retention: string;
+      verdict: string;
+    }>;
+    conclusion: string;
+  };
+  q4_metaheuristic_sca: {
+    question: string;
+    table: Array<{
+      strategy: string;
+      accuracy: number;
+      latency_ms: number;
+      model_size_mb: number;
+      overall_score: number;
+      feasibility: string;
+    }>;
+    conclusion: string;
+  };
+}
+
 

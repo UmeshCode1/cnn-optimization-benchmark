@@ -12,7 +12,8 @@ import {
   ConfusionMatrixResponse,
 } from '../types';
 
-const API_BASE = '/api';
+const rawApiUrl = (import.meta as any).env?.VITE_API_URL || '';
+const API_BASE = rawApiUrl ? `${rawApiUrl.replace(/\/$/, '')}/api` : '/api';
 
 export const api = {
   // System Capabilities & Mode
@@ -256,6 +257,39 @@ export const api = {
     if (!res.ok) throw new Error(`Failed to delete model ${modelId}`);
   },
 
+  async getCnnLayerProfile(
+    modelId: string,
+    options?: {
+      resolution?: string;
+      batch_size?: number;
+      pruning_ratio?: number;
+      quantization_type?: string;
+    }
+  ): Promise<import('../types').CnnModelLayerProfile> {
+    const params = new URLSearchParams();
+    if (options?.resolution) params.append('resolution', options.resolution);
+    if (options?.batch_size) params.append('batch_size', String(options.batch_size));
+    if (options?.pruning_ratio !== undefined) params.append('pruning_ratio', String(options.pruning_ratio));
+    if (options?.quantization_type) params.append('quantization_type', options.quantization_type);
+
+    const res = await fetch(`${API_BASE}/models/${modelId}/layers?${params.toString()}`);
+    if (!res.ok) throw new Error(`Failed to fetch CNN layer profile for ${modelId}`);
+    return res.json();
+  },
+
+  async calculateCustomLayer(
+    payload: import('../types').CustomLayerCalculationRequest
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE}/models/calculate-layer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to calculate custom layer');
+    return res.json();
+  },
+
+
   // Hardware
   async getHardwareProfile(): Promise<HardwareProfile> {
     const res = await fetch(`${API_BASE}/hardware`);
@@ -263,12 +297,56 @@ export const api = {
     return res.json();
   },
 
-  // Ablation
+  async getDeviceProfiles(): Promise<import('../types').DeviceHardwareProfile[]> {
+    const res = await fetch(`${API_BASE}/hardware/devices`);
+    if (!res.ok) throw new Error('Failed to fetch target edge/wearable device profiles');
+    return res.json();
+  },
+
+  async simulateDeviceDeployment(payload: {
+    device_id: string;
+    flops_m: number;
+    parameters_m: number;
+    model_size_mb: number;
+    accuracy: number;
+    quantization_type?: string;
+    ambient_temp_c?: number;
+    continuous_inference_duration_s?: number;
+  }): Promise<import('../types').DeviceSimulationResult> {
+    const res = await fetch(`${API_BASE}/hardware/simulate-device`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to simulate device hardware deployment');
+    return res.json();
+  },
+
+  // Ablation & Research Paper Suite
   async getAblationStudy(expId: string): Promise<{ experiment_id: string; stages: AblationRecord[] }> {
     const res = await fetch(`${API_BASE}/ablation/${expId}`);
     if (!res.ok) throw new Error('Failed to fetch ablation study');
     return res.json();
   },
+
+  async getLayerWiseOptimization(expId: string): Promise<{
+    experiment_id: string;
+    model_name: string;
+    dataset_name: string;
+    optimizer_name: string;
+    layers: import('../types').LayerWiseOptimizationRow[];
+  }> {
+    const res = await fetch(`${API_BASE}/ablation/${expId}/layer-wise`);
+    if (!res.ok) throw new Error('Failed to fetch layer-wise optimization results');
+    return res.json();
+  },
+
+  async getResearchAblationAnswers(expId: string): Promise<import('../types').ResearchAblationAnswers> {
+    const res = await fetch(`${API_BASE}/ablation/${expId}/research-answers`);
+    if (!res.ok) throw new Error('Failed to fetch research ablation answers');
+    return res.json();
+  },
+
 
   // Confusion Matrix
   async getConfusionMatrix(
@@ -355,9 +433,21 @@ export const api = {
 
   // WebSocket
   createProgressWebSocket(expId: string, onMessage: (data: any) => void): WebSocket {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws/experiment/${expId}`;
+    let wsUrl: string;
+    if (rawApiUrl) {
+      try {
+        const url = new URL(rawApiUrl, window.location.href);
+        const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${url.host}/ws/experiment/${expId}`;
+      } catch {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.host}/ws/experiment/${expId}`;
+      }
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws/experiment/${expId}`;
+    }
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {

@@ -7,6 +7,8 @@ import {
   Zap,
   BarChart3,
   Grid,
+  Layers,
+  Watch,
 } from 'lucide-react';
 import { Experiment, RankedAlgorithm, ParetoPoint, AlgorithmStats } from '../../types';
 import { AlgorithmComparisonWorkbench } from '../common/AlgorithmComparisonWorkbench';
@@ -23,6 +25,8 @@ interface ComparisonDashboardViewProps {
   onViewConvergence: () => void;
   onViewStatistics: () => void;
   onViewConfusion?: () => void;
+  onViewLayers?: () => void;
+  onViewDeviceSimulation?: () => void;
 }
 
 // Compute power draw in milliwatts from energy (J) and latency (ms)
@@ -57,6 +61,7 @@ export const ComparisonDashboardView: React.FC<ComparisonDashboardViewProps> = (
   onViewConvergence,
   onViewStatistics,
   onViewConfusion,
+  onViewLayers,
 }) => {
   const [sortKey, setSortKey] = useState<string>('overall_score');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -145,6 +150,24 @@ export const ComparisonDashboardView: React.FC<ComparisonDashboardViewProps> = (
             >
               <BarChart3 className="w-3.5 h-3.5" />
               <span>Confusion Matrix</span>
+            </button>
+          )}
+          {onViewLayers && (
+            <button
+              onClick={onViewLayers}
+              className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer text-[var(--accent)] border-[var(--accent)]/30 hover:bg-[var(--accent)]/10 font-medium"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>CNN Layer Operations</span>
+            </button>
+          )}
+          {onViewDeviceSimulation && (
+            <button
+              onClick={onViewDeviceSimulation}
+              className="flex items-center gap-1.5 px-3 py-1.5 ws-button-secondary text-xs cursor-pointer text-blue-400 border-blue-500/30 hover:bg-blue-500/10 font-medium"
+            >
+              <Watch className="w-3.5 h-3.5" />
+              <span>Edge &amp; Watch Simulator</span>
             </button>
           )}
         </div>

@@ -136,3 +136,89 @@ def delete_model(model_id: str):
     del metadata[model_id]
     save_metadata(metadata)
     return None
+
+
+class LayerCalculationRequest(BaseModel):
+    op_type: str = Field("Conv2d", description="Layer type (Conv2d, DepthwiseConv2d, BatchNorm2d, MaxPool2d, Linear)")
+    c_in: int = Field(64, gt=0, description="Input channels")
+    c_out: int = Field(128, gt=0, description="Output channels")
+    h_in: int = Field(32, gt=0, description="Input height")
+    w_in: int = Field(32, gt=0, description="Input width")
+    kernel_size: int = Field(3, ge=1, description="Spatial kernel size")
+    stride: int = Field(1, ge=1, description="Stride step")
+    padding: int = Field(1, ge=0, description="Zero-padding size")
+    dilation: int = Field(1, ge=1, description="Dilation rate")
+    groups: int = Field(1, ge=1, description="Grouped convolution parameter")
+    has_bias: bool = Field(False, description="Whether layer has additive bias")
+    batch_size: int = Field(1, ge=1, description="Batch dimension")
+    precision_bits: int = Field(32, description="Bitwidth (32=FP32, 16=FP16, 8=INT8, 4=INT4)")
+    pruning_ratio: float = Field(0.0, ge=0.0, le=0.95, description="Pruning sparsity ratio [0.0 - 0.95]")
+
+
+@router.post("/calculate-layer", response_model=Dict[str, Any])
+def calculate_custom_layer_endpoint(req: LayerCalculationRequest):
+    """Calculate exact tensor arithmetic, parameters, MACs, FLOPs, and memory for any custom layer."""
+    from ..services.cnn_profiler_service import CnnProfilerService
+    return CnnProfilerService.calculate_custom_layer(
+        op_type=req.op_type,
+        c_in=req.c_in,
+        c_out=req.c_out,
+        h_in=req.h_in,
+        w_in=req.w_in,
+        kernel_size=req.kernel_size,
+        stride=req.stride,
+        padding=req.padding,
+        dilation=req.dilation,
+        groups=req.groups,
+        has_bias=req.has_bias,
+        batch_size=req.batch_size,
+        precision_bits=req.precision_bits,
+        pruning_ratio=req.pruning_ratio,
+    )
+
+
+@router.get("/{model_id}/layers", response_model=Dict[str, Any])
+def get_model_layers(
+    model_id: str,
+    resolution: str = "3,32,32",
+    batch_size: int = 1,
+    pruning_ratio: float = 0.0,
+    quantization_type: str = "FP32",
+):
+    """
+    Retrieve full sequential layer decomposition and mathematical operations for a CNN architecture.
+    Returns input/output shapes, parameter formulas, MACs, FLOPs, activation/weight memory, and cumulative curves.
+    """
+    from ..services.cnn_profiler_service import CnnProfilerService
+
+    # Parse resolution: e.g. "3,32,32" or "32x32" or "3,224,224"
+    try:
+        if "," in resolution:
+            parts = [int(p.strip()) for p in resolution.split(",")]
+            if len(parts) == 3:
+                res = (parts[0], parts[1], parts[2])
+            elif len(parts) == 2:
+                res = (3, parts[0], parts[1])
+            else:
+                res = (3, 32, 32)
+        elif "x" in resolution.lower():
+            parts = [int(p.strip()) for p in resolution.lower().split("x")]
+            if len(parts) == 2:
+                res = (3, parts[0], parts[1])
+            elif len(parts) == 3:
+                res = (parts[0], parts[1], parts[2])
+            else:
+                res = (3, 32, 32)
+        else:
+            res = (3, 32, 32)
+    except Exception:
+        res = (3, 32, 32)
+
+    return CnnProfilerService.get_model_layer_decomposition(
+        model_name=model_id,
+        input_resolution=res,
+        batch_size=batch_size,
+        pruning_ratio=pruning_ratio,
+        quantization_type=quantization_type,
+    )
+

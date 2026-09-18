@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Activity,
   Grid,
+  Watch,
 } from 'lucide-react';
 
 export type NavTab =
@@ -26,6 +27,8 @@ export type NavTab =
   | 'wizard'
   | 'datasets'
   | 'results'
+  | 'layers'
+  | 'device-simulation'
   | 'pareto'
   | 'convergence'
   | 'statistics'
@@ -64,17 +67,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: 'ANALYSIS',
+      title: 'CNN ARCHITECTURE & LAYERS',
       items: [
-        { id: 'pareto', label: 'Pareto Front', icon: GitFork },
+        { id: 'layers', label: 'CNN Layer Operations', icon: Layers },
+        { id: 'device-simulation', label: 'Edge & Watch Simulator', icon: Watch },
+      ],
+    },
+    {
+      title: 'ANALYSIS & CURVES',
+      items: [
         { id: 'convergence', label: 'Convergence Curves', icon: TrendingDown },
+        { id: 'pareto', label: 'Pareto Front', icon: GitFork },
         { id: 'statistics', label: 'Multi-Run Statistics', icon: Layers2 },
         { id: 'confusion', label: 'Confusion Matrix', icon: Grid },
         { id: 'ablation', label: 'Ablation Study', icon: SlidersHorizontal },
       ],
     },
     {
-      title: 'RESOURCES',
+      title: 'RESOURCES & LAB',
       items: [
         { id: 'datasets', label: 'Dataset Repository', icon: Database },
         { id: 'hardware', label: 'Hardware Telemetry', icon: Cpu },

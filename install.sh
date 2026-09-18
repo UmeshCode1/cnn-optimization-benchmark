@@ -19,7 +19,17 @@ echo -e "${CYAN}  Target: Real Mode PyTorch Inference with Hardware Telemetry${N
 echo -e "${CYAN}==============================================================================${NC}"
 echo ""
 
-INSTALL_DIR="$HOME/cnn-benchmark-local"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/backend/main.py" ] && [ -d "$SCRIPT_DIR/frontend" ]; then
+    INSTALL_DIR="$SCRIPT_DIR"
+    IS_LOCAL_SOURCE=true
+    echo -e "${GREEN}[SETUP] Using local project files at $INSTALL_DIR${NC}"
+else
+    INSTALL_DIR="$HOME/cnn-benchmark-local"
+    IS_LOCAL_SOURCE=false
+    echo -e "${CYAN}[SETUP] Target installation directory: $INSTALL_DIR${NC}"
+fi
+
 REPO_URL="https://github.com/UmeshCode1/cnn-optimization-benchmark.git"
 
 # ── 1. Pre-flight Checks ──────────────────────────────────────────────────────
@@ -58,17 +68,21 @@ if [ -z "$PYTHON_BIN" ]; then
     exit 1
 fi
 
-# ── 3. Clone Repository ───────────────────────────────────────────────────────
-echo -e "\n${GREEN}[3/5] Setting up project at $INSTALL_DIR...${NC}"
-if [ -d "$INSTALL_DIR/.git" ]; then
-    echo "  * Existing installation found. Updating..."
-    cd "$INSTALL_DIR" && git pull || true
+# ── 3. Clone or Validate Repository ───────────────────────────────────────────
+echo -e "\n${GREEN}[3/5] Validating project directory at $INSTALL_DIR...${NC}"
+if [ "$IS_LOCAL_SOURCE" = true ]; then
+    echo "  * Local files verified. No network download needed."
 else
-    if command -v git &> /dev/null; then
-        git clone "$REPO_URL" "$INSTALL_DIR"
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        echo "  * Existing installation found. Updating..."
+        cd "$INSTALL_DIR" && git pull || true
     else
-        mkdir -p "$INSTALL_DIR"
-        curl -fsSL "https://github.com/UmeshCode1/cnn-optimization-benchmark/archive/refs/heads/main.tar.gz" | tar -xz -C "$INSTALL_DIR" --strip-components=1
+        if command -v git &> /dev/null; then
+            git clone "$REPO_URL" "$INSTALL_DIR"
+        else
+            mkdir -p "$INSTALL_DIR"
+            curl -fsSL "https://github.com/UmeshCode1/cnn-optimization-benchmark/archive/refs/heads/main.tar.gz" | tar -xz -C "$INSTALL_DIR" --strip-components=1
+        fi
     fi
 fi
 
@@ -86,9 +100,12 @@ pip install --upgrade pip -q
 if [ "$HAS_CUDA" = true ]; then
     echo -e "  * Installing CUDA PyTorch..."
     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121 -q
-else
-    echo -e "  * Installing CPU/MPS PyTorch..."
+elif [[ "$OS_TYPE" == "Darwin" ]]; then
+    echo -e "  * Installing Apple Silicon Metal PyTorch..."
     pip install torch torchvision -q
+else
+    echo -e "  * Installing CPU-optimized PyTorch..."
+    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu -q
 fi
 
 pip install -r backend/requirements.txt -q

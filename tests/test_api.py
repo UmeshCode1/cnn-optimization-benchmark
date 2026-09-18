@@ -261,4 +261,74 @@ def test_clone_cancel_delete_experiment():
     assert get_res.status_code == 404
 
 
+def test_device_hardware_and_simulation():
+    # 1. Test hardware device catalog
+    devs_res = client.get("/api/hardware/devices")
+    assert devs_res.status_code == 200
+    devs = devs_res.json()
+    assert len(devs) >= 6
+    smartwatch = next((d for d in devs if d["id"] == "mini-watch-smartwatch"), None)
+    assert smartwatch is not None
+    assert smartwatch["thermal_resistance_c_per_w"] >= 30.0
+
+    # 2. Test smartwatch simulation
+    payload = {
+        "device_id": "mini-watch-smartwatch",
+        "model_name": "Wearable-Test-CNN",
+        "flops_m": 25.0,
+        "parameters_m": 0.2,
+        "model_size_mb": 0.8,
+        "accuracy": 95.0,
+        "quantization_type": "INT8",
+        "ambient_temp_c": 25.0,
+    }
+    sim_res = client.post("/api/hardware/simulate-device", json=payload)
+    assert sim_res.status_code == 200
+    res = sim_res.json()
+    assert "performance" in res
+    assert "power_and_energy" in res
+    assert "thermal" in res
+    assert "battery" in res
+    assert res["performance"]["latency_ms"] > 0
+    assert res["power_and_energy"]["total_power_mw"] > 0
+    assert len(res["thermal"]["thermal_curve"]) > 0
+
+
+def test_layer_operations_and_custom_layer():
+    # 1. Test layer profile
+    layers_res = client.get("/api/models/ResNet-18/layers")
+    assert layers_res.status_code == 200
+    profile = layers_res.json()
+    assert profile["model_name"] == "ResNet-18"
+    assert len(profile["layers"]) > 0
+    assert profile["total_parameters_m"] > 0
+    assert profile["total_flops_m"] > 0
+
+    # 2. Test custom layer calculator
+    calc_payload = {
+        "op_type": "Conv2d",
+        "c_in": 64,
+        "c_out": 128,
+        "h_in": 56,
+        "w_in": 56,
+        "kernel_size": 3,
+        "stride": 2,
+        "padding": 1,
+        "dilation": 1,
+        "groups": 1,
+        "has_bias": True,
+        "batch_size": 1,
+        "precision_bits": 8,
+        "pruning_ratio": 0.0,
+    }
+    calc_res = client.post("/api/models/calculate-layer", json=calc_payload)
+    assert calc_res.status_code == 200
+    calc_data = calc_res.json()
+    assert calc_data["output_shape"] == [128, 28, 28]
+    assert calc_data["weight_params"] == 64 * 128 * 3 * 3
+    assert calc_data["total_params"] == (64 * 128 * 3 * 3) + 128
+    assert calc_data["flops"] > 0
+
+
+
 

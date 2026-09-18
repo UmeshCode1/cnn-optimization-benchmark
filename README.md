@@ -121,35 +121,48 @@ $$\text{TOPs} = \frac{\text{FLOPs (M)} \times 10^6}{\text{Latency (ms)} \times 1
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Quick Start & 1-Click Launch
 
-### Prerequisites
-- **Python 3.10+** (Tested on Python 3.10, 3.11, 3.12, 3.14)
-- **Node.js v18+** & `npm`
-- **Git**
+> [!TIP]
+> **Complete Setup & Troubleshooting Guide**: See [SETUP_GUIDE.md](file:///u:/cnn%20model/SETUP_GUIDE.md) for detailed laptop installation, offline setups, and fixes.
 
-### 1. Clone Repository & Setup Backend
+### ⚡ 1-Click Launch (Recommended for Any Laptop)
+* **Windows**: Simply double-click **`start_local.bat`** (or run `install.bat` for initial setup). It activates the virtual environment, verifies dependencies, and automatically opens **`http://localhost:8000`** in your browser.
+* **macOS / Linux**: Run `./start_local.sh` (or `./install.sh`).
+
+> **Note**: No Node.js is required to run the web platform! The complete React frontend UI is pre-compiled into `frontend/dist` and served directly by the Python backend.
+
+---
+
+### 💻 Manual Command Line Setup
+
+#### 1. Backend Setup & Workstation Launch
 ```bash
 # Clone the repository
 git clone https://github.com/UmeshCode1/cnn-optimization-benchmark.git
 cd cnn-optimization-benchmark
 
-# Install Python dependencies
-python -m pip install -r requirements.txt
+# Create and activate virtual environment
+python -m venv .venv
+# Windows: .venv\Scripts\activate | macOS/Linux: source .venv/bin/activate
 
-# Launch FastAPI Backend Server
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+# Install dependencies (CPU mode, ~180MB fast download)
+pip install -r backend/requirements.txt
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Launch complete unified workstation
+python local_runner.py --server
 ```
+Visit **`http://localhost:8000`** in your browser.
 
-### 2. Setup & Launch Frontend Workstation
-In a separate terminal window:
+#### 2. Optional: Frontend Development Mode
+Only needed if you are modifying React code:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-Visit **`http://localhost:5173`** (or **`http://localhost:8000`** for FastAPI production bundle).
+Visit **`http://localhost:5173`** for hot-reloading dev mode.
 
 ---
 

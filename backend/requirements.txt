@@ -3,6 +3,9 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.5.0
 sqlalchemy>=2.0.0
+python-multipart>=0.0.9
+aiosqlite>=0.19.0
+httpx>=0.24.0
 
 # Scientific & Optimization Libraries
 numpy>=1.24.0
