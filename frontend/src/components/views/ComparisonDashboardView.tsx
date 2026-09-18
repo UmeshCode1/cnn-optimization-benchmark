@@ -62,6 +62,7 @@ export const ComparisonDashboardView: React.FC<ComparisonDashboardViewProps> = (
   onViewStatistics,
   onViewConfusion,
   onViewLayers,
+  onViewDeviceSimulation,
 }) => {
   const [sortKey, setSortKey] = useState<string>('overall_score');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
