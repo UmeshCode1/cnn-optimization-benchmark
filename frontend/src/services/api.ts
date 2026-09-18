@@ -10,6 +10,7 @@ import {
   DatasetInfo,
   CNNModelInfo,
   ConfusionMatrixResponse,
+  InstallerPreflightInfo,
 } from '../types';
 
 const rawApiUrl = (import.meta as any).env?.VITE_API_URL || '';
