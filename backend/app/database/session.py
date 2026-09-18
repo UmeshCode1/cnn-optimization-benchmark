@@ -932,6 +932,19 @@ def seed_initial_experiments(session: Session, hw_id: int):
 
 def init_db():
     """Create all database tables, bootstrap hardware profile, and seed benchmark experiments."""
+    global engine, SessionLocal
+    try:
+        # Test connection
+        with engine.connect() as conn:
+            pass
+    except Exception as e:
+        print(f"[Database Warning] Primary database connection failed: {e}")
+        print("[Database Fallback] Switching to persistent local SQLite to guarantee 100% free uptime and zero cost...")
+        db_path = os.environ.get("DB_PATH", str(Path(__file__).parent.parent.parent / "benchmark.db"))
+        fallback_url = f"sqlite:///{db_path}"
+        engine = create_engine(fallback_url, connect_args={"check_same_thread": False}, echo=False)
+        SessionLocal.configure(bind=engine)
+
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as session:
         hw_profile = session.query(HardwareProfile).first()
