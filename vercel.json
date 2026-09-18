@@ -1,15 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "npm --prefix frontend install && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://cnn-optimization-benchmark.onrender.com/api/:match*"
+      "source": "/api/:path*",
+      "destination": "https://cnn-optimization-benchmark.onrender.com/api/:path*"
     },
     {
-      "source": "/((?!api/|assets/|favicon.svg|icons.svg|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

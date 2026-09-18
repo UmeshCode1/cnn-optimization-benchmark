@@ -5,11 +5,11 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://cnn-optimization-benchmark.onrender.com/api/:match*"
+      "source": "/api/:path*",
+      "destination": "https://cnn-optimization-benchmark.onrender.com/api/:path*"
     },
     {
-      "source": "/((?!api/|assets/|favicon.svg|icons.svg|robots.txt|sitemap.xml).*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

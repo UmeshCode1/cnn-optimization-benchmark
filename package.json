@@ -1,0 +1,10 @@
+{
+  "name": "cnn-optimization-benchmark",
+  "version": "2.5.0",
+  "private": true,
+  "description": "CNN Optimization Benchmark - Research Platform",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "dev": "npm --prefix frontend run dev"
+  }
+}
