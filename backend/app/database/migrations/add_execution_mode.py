@@ -35,6 +35,7 @@ def run_migration():
                 applied += 1
                 print(f"  [Applied] {sql}")
             except Exception as e:
+                conn.rollback()
                 err_str = str(e).lower()
                 if "duplicate column" in err_str or "already exists" in err_str:
                     skipped += 1

@@ -19,8 +19,30 @@ from .models import (
 )
 import platform
 
-# Database Configuration (Persistent Cloud Volume / SQLite)
+# Database Configuration (Persistent Cloud Volume / SQLite / Neon Postgres)
 DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    for candidate_dir in [Path(__file__).resolve().parents[3], Path(__file__).resolve().parents[2]]:
+        for fname in [".env.local", ".env"]:
+            env_file = candidate_dir / fname
+            if env_file.is_file():
+                try:
+                    with open(env_file, "r", encoding="utf-8") as f:
+                        for line in f:
+                            clean_line = line.strip()
+                            if clean_line.startswith("DATABASE_URL=") and not clean_line.startswith("#"):
+                                val = clean_line.split("=", 1)[1].strip("\"'")
+                                if val:
+                                    DATABASE_URL = val
+                                    os.environ["DATABASE_URL"] = val
+                                    break
+                except Exception:
+                    pass
+            if DATABASE_URL:
+                break
+        if DATABASE_URL:
+            break
+
 if not DATABASE_URL:
     DB_PATH = os.environ.get("DB_PATH", str(Path(__file__).parent.parent.parent / "benchmark.db"))
     # Ensure directory exists for database file
@@ -31,12 +53,19 @@ if not DATABASE_URL:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {"connect_timeout": 10}
+
+engine_kwargs = {
+    "connect_args": connect_args,
+    "echo": False,
+}
+if "sqlite" not in DATABASE_URL:
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 300
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args=connect_args,
-    echo=False,
+    **engine_kwargs,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
